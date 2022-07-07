@@ -10,15 +10,15 @@
     Running this PowerShell script will delete ALL duplicate VPN connections for users and devices. All connections other than the newest connection will be removed.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Remove-VpnServerDuplicateConnection.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.11
+    Version:        1.1.2
     Creation Date:  March 14, 2022
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -75,8 +75,8 @@ Function Remove-VpnServerDuplicateConnection {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU//wm/KRw5iNTVsoFzHHiSIpS
-# zQqgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOw8Yz1pPqx5yi6Sojde3ZX55
+# 1LGgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -226,31 +226,31 @@ Function Remove-VpnServerDuplicateConnection {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQvn0uGXYMaklpys4r/3YNMI/lGdjANBgkq
-# hkiG9w0BAQEFAASCAYAZrzjFBVj8j4ZFrjG6M79+C94Jm7AGTL0nkkeDZwJN1738
-# BddWUfyba3FpIVMmJ+rKayk4WJWgoj7j0oehPJUyuDj/ViCIWYr0rHp8vb37C1wp
-# wL429nhaXLB+qNGzeqc8umjvB0AuYP3ZUKYHazzG/+6q8o2MblKCi8e8bTJnxGzd
-# sRWR8Hd3vBqyjLkd9g+5ZOFy4qu4gPcuByuEeM8qqpVVW5msxC1g2ZJCuqe+VxNM
-# V7MZCjut93d6jYdec9j7Tp0UDL+++gkVz/Gr5nd28qRqpVhnppQve2LNI/qG9eP3
-# Ka/qBqxaETAhPjle8uhJ51xIquoFOciXOZPn2O51mHMfih9ZLXHuApU+V8CHCaOr
-# POt+I286SwWLCAfvqhkj3ewo/Q76QAhlK1KLh48fpaMOCNgdrfBNRkHHtJc0hVMP
-# E/UxCLTRe90Bd3WpfbslzIKq2I2SZBRJEHgQxdEvp6SV91oh3o/jemLvDGzwx37t
-# 1G87SIPw3Mf6Qc+A8JehggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR5MySRXTiNFTq1JjCj05Wx39RLfjANBgkq
+# hkiG9w0BAQEFAASCAYDM7LbCOn3YRgdre/vZ78CZJFOLx8dcIa0B2C6F2dEd9Xre
+# qXjp7xtAuH5/2YLFqpDJw10HY6ATcByem4YPyjsmS/CGAJSSefg2X0TQ5mm/D6OE
+# KKvP1BQfn+MmgIwGdvi8JUXjQyACQlkZWhev1NGJNPxVRf/NnrUY4QDACBLLYOBt
+# OL/bVN2CjjsRqP+VmtbMzbkNz87ClEqDdZ1exVhK9iBuy1Kd5fiJJHs4jRNZqDRq
+# UeZ8EtvqKQ51fnC98TkVJh1FIYBPiNqkGhzqlt+CRedz0E6aE3L8w5tnmoVTsxvH
+# aniCdQuqAPkRacuXvXpkWrNSLMRx6pJy7UV3ingvWz5jd6UR3YqSDarf0qj9HW6G
+# ujGn9syyIOn6huZu4/oHF/clg6lQFGO6QxMD0r4+vkvI2JHJInjGIdhAU/eTpLl0
+# y9vOhXewtUEVmutMAaamOysGE5GgHr1xz90C57c3Xal5pC/7Til6bFVGb3XyZ7+/
+# Y3mNxancJChmMnsjZJihggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUxWjAv
-# BgkqhkiG9w0BCQQxIgQghWMMe1rX/UHjsOPSaYQgiYEujN/DlSmcopn1CqUa4Y8w
-# DQYJKoZIhvcNAQEBBQAEggIAJFEYWZFAbVVAyQ+gZGOnkxpXdH82DqkAsIa27oYM
-# utT9/AAlcDku0rKW/dD3BWYVVbMcvwPRmsSYHx/FcTODdkyovzsF3qLlH4/RgB2N
-# 0FC1DEH6u7Fb+iB4DbOCXoG9uA/+UMM+CkBTgv69TvOdOvyUP0mwni7tenyct4tk
-# AbKeGmDyqbUIRciyvrCBekmfhRWSMviMdIMn3ZcCENSMVCtrnDSonLs52v4GuikX
-# 3Ga4E7BJk5Ph07hAQGsI1YWq36NiMUWsWpCHx6lQpueIG9k69mt0elfGJlTre1NI
-# zXGtCDWpZPRYputSVlHVA5oLu9HP4ocZTibRAThycePGcibhU11yqFswzMkAJP1W
-# +eamB7ZIrJj+RfzJNP5BIMlegQOIyd4Sv0uDag6ya3RyJ/7K10A6WBGzdLA6w/rh
-# YtRS3uPRcG+T48HqrHk9btUnxIE7wmx5rxS7+Un5vgcguyRYeDT1tdY7xTOIZI8L
-# x3/b4jlDEo+wmOEUXUbwvO6OXnOqUw/pfxEC3rukZ/HbalrWqYJCGhYkPIMsWFjP
-# sh4AwlOLD7Vr4aGsmPJRzjHpLYTORu0tzl+vZejA1K73YR4I8UX0JrfiDQGeMuEd
-# vLpOOjOtfiC6UbZuf6MQDHFrJGazZDl0IcoRLtuWSCUqoYPMIy4yA+9F5b0c1pa3
-# dv8=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM2WjAv
+# BgkqhkiG9w0BCQQxIgQgsOyUaAhHzCEanYIusJ7xShlD6+CL9qT8dkOiBN0P4v4w
+# DQYJKoZIhvcNAQEBBQAEggIADNoL0T49HadJEBBimuL6cVMUUdgBDVGE/Edww57I
+# jUKvlRg51h/Kk6B365jA3JJunkF92jXid4/ELZhSnvgc4jbXIQOxTPcl7ucHX5Z3
+# M6uHSCh+n96NzOa9vHZtcUbZJejDcABeImdUOW6/owwcSAMebo0T42lfIgb5ojck
+# JdkK83i9GbGHncbLVa5pYPF2mSiHK7PM7giogwU5SMT4O4eNreRV2hVaZSScrCMM
+# iXYss5VsdXE7wM86TuGRuLd+UkM6LNnA2uMVWZBORQ12zIYkERT6VNrWsgoag6e1
+# v3QXIHrEE3tT+Xm0C5loQ4wYNlH2coj1TPI/GRfg+rhEJ6zfzaT0IpCTPxtfIL3B
+# n8FhANFWTXjXXECLV9Iesh8wiFP/tG8Kdp3BGirkxnbTX03IFV/8W7j0IP9aDxFC
+# cjM2bfOfnciQ5AvdSpN4easTFNsq4N/+VM6ux4kGxznCxIhkueEb4/6dY9H7weq4
+# /Go5TlIpUdqGuudfn/4xW7m6QmuVElXcyhipDhxT41afkt1s7D+ufgYwFJoOc+DA
+# WXbdqs4uo2rZpohiTIgKOXLzyay0r9obxVIztlH97YxkLO6xHmr7Zk9FhVoFqnB7
+# faZJ77C7+LfVHYycWYv3cZm1JvJxHEzkPtAWXIOv+fufpjZSOVQYuhfYv/EIhqEh
+# O/w=
 # SIG # End signature block

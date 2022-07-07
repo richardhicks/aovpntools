@@ -1,40 +1,37 @@
 <#
 
 .SYNOPSIS
-    PowerShell script to import Windows Server Routing and Remote Access Service (RRAS) configuration from text file.
+    PowerShell function to import Windows Server Routing and Remote Access Service (RRAS) configuration from text file.
 
-.PARAMETER Path
+.PARAMETER FilePath
     File name and path for the RRAS configuration export file.
 
 .PARAMETER Restart
-    Restarts the RemoteAccess service after importing the configuration file.
+    Restarts the RasMan and RemoteAccess services after importing the configuration file.
 
 .EXAMPLE
-    Import-VPNServerConfiguration -Path C:\Backup\rras.txt
+    Import-VPNServerConfiguration -FilePath C:\Backup\rasconfig.txt
 
-    Imports an RRAS configuration backup file from the path C:\Backup\rras.txt.
+    Imports an RRAS configuration backup file from the path C:\Backup\rasconfig.txt.
 
 .EXAMPLE
-    Import-VPNServerConfiguration -Path C:\Backup\rras.txt -Restart
+    Import-VPNServerConfiguration -Path C:\Backup\rasconfig.txt -Restart
 
-    Imports an RRAS configuration backup file from the path C:\Backup\rras.txt and restarts the RemoteAccess service when complete.
+    Imports an RRAS configuration backup file from the path C:\Backup\rasconfig.txt and restarts the RasMan and RemoteAccess services when complete.
 
 .DESCRIPTION
-    This script will import a previously exported Windows Server RRAS configuration backup file.
+    This function will import a previously exported Windows Server RRAS configuration backup file.
 
 .LINK
-    https://directaccess.richardhicks.com/2019/07/22/error-importing-windows-server-rras-configuration/
-
-.LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Import-VpnServerConfiguration.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.23
+    Version:        1.2.5
     Creation Date:  January 8, 2020
-    Last Updated:   May 18, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -46,44 +43,44 @@ Function Import-VpnServerConfiguration {
 
     [CmdletBinding()]
 
-    Param(
+    Param (
 
-        [Parameter(Mandatory)]
-        [string]$Path,
+        [Parameter(Mandatory, HelpMessage = 'Enter the full path and filename of the RRAS configuration file.')]
+        [string]$FilePath,
         [switch]$Restart
 
     )
 
     # // Validate backup file
-    Write-Verbose "Validating RRAS backup file $Path..."
-    If (!(Test-Path $Path)) {
+    Write-Verbose "Validating RRAS backup file $FilePath..."
+    If (!(Test-Path $FilePath)) {
 
-        Write-Warning "RRAS backup file ""$Path"" does not exist."
+        Write-Warning "RRAS backup file ""$FilePath"" does not exist."
         Return
 
     }
 
     $Parameters = @{
 
-        ScriptBlock = { netsh.exe exec $Path }
+        ScriptBlock = { netsh.exe exec $FilePath }
 
     }
 
     # // Import VPN server configuration
-    Write-Verbose "Importing VPN server configuration from ""$Path""..."
+    Write-Verbose "Importing VPN server configuration from ""$FilePath""..."
     Invoke-Command @Parameters
 
     # // Restart RemoteAccess service
     If ($Restart) {
 
-        Write-Verbose 'Restarting the RemoteAccess service...'
+        Write-Verbose 'Restarting the RasMan and RemoteAccess services...'
         Restart-Service RasMan -Force -PassThru
 
     }
 
     Else {
 
-        Write-Warning 'The RemoteAccess service must be restarted for these changes to take effect.'
+        Write-Warning 'The RasMan and RemoteAccess services must be restarted for these changes to take effect.'
 
     }
 
@@ -94,8 +91,8 @@ Function Import-VpnServerConfiguration {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUfiGCyoJnMhMp1AXsmcD882vO
-# lJCgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5fgmDQrOt5W/lMCxNzy/1FR3
+# 9pOgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -245,31 +242,31 @@ Function Import-VpnServerConfiguration {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTXl9d8AgQgWYwhO3AZvZGq81zDHDANBgkq
-# hkiG9w0BAQEFAASCAYCAwRkTSim6D6/qo29RCg+W7wnlaJTc+0/+7cgQGojXR8kW
-# i4KQQya5sCYhkr0CDJgHvxbOLnj4y4FfQlgPW1WNBhHjcb+QlBKwbuZy5vazTFaI
-# VWoBCmYxAqZ+swDtpBNTXIm9sFYxTdZBOLRMLBe3e47bF1jnEpzVROoy7Xq4BhR+
-# YO55bNLw7p7cj7hQ+xr+DghWyRhEHCjE0u/l1aDO6gc/e3aG2XDikwsd7kElbfl5
-# meJSfhDkmaCv4tz4KPB/PxRdyHRdei8BChkLIH9ZNDPlzpMHMfScA/8gM7K1OEs4
-# /v96Qe+wPdt/wS2Swh++QtYkOKhE5bPBWbX7p7ELKVVa+gA50MvmuMl67LgmEmHU
-# gQ5L1k4EdB4JJRJa5KDmmPWcebW9e2m/7rSMJge0HvCTTJmD4ipk5pN4bkfrYMDz
-# I7TY07Dvl6ltpr8vptPNKb/w/7qcRN0coyoGoi4BqkPxTeJivwrLSta6I00gWNTC
-# BOYlBuRxitGJ2FHYzjmhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTX7Hi+XG9YpgoTcCASNDa/D1wUpTANBgkq
+# hkiG9w0BAQEFAASCAYAUaUxPRBeugCtlr89HYUwaIN9H3bfj+43gX41zD0RVkeJQ
+# wsSxncuxjyqPL5ys2sCSEsMAhggVM3CCDUtMjmU2GhVoZPRYjYmqvFOu4B9k7k58
+# b3h0j8wEy/gD9fNFVXjlwE4UHNP+qMn+eGn5rj0WdPGRq9xsgLgO4MjyrFMHEn9h
+# 6k3xBsD2lzhjWhcFR34GGhl9WF9X0oPD/fftzWRY8yyl/9NfqomeNCmKumcTd7zd
+# oQ3q9VGaALw4tpMkTjngfF9Xi89cbD624oB9Tg/5qsE3jVI2LC1CLF9OoqEDC7ej
+# VOdE/yOme3Ml2dDq29xYcUVfttT9Dq1E5xN34D/Tt9+6wch5MAQyTOGzAO6u0Gfy
+# dSfpR/itKi6e+wb7v07Xf3ADppYLVyXIyvdhQVbfE9AJrLa16Qb5T9ZR/RpjNI8T
+# UW9oHHKxXFHBhOJbBCfF99ZzQe5hSDNMIqrm1wh4L+Z+sz1jsPb4ACtE8IO9dgXd
+# kqu4EuHKzBuX5KXTL6ahggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNTE4MTcxMDUwWjAv
-# BgkqhkiG9w0BCQQxIgQgHjFKe34LWxUR5igaiR0IPoArAfZoniV1yQ6JV0C7XEsw
-# DQYJKoZIhvcNAQEBBQAEggIAgvPudhjEiwZXPV6BHUjDLTrIWyk0/PLiapZxTHp2
-# WACN3doyjE90cqv3fInDt8luI0OX5HSWfzceClpbazA50SR9MV7HPLeywhSxsNEq
-# RJ4XB6dvTT+0clziEh4gYxgKgR4fV+AYRAy+u71SUTb1prjUf90Ue1dE+Ru2JyYX
-# LzoJua96/6F8iS1druMNxAVDkd5FY6rKWISLLa2RYkCj7aRGMf7UxLPQy8x7wzvE
-# U4SJOu86wnTBLewURiGrkgh/o8ipUqBA0IrlNVNgwdYV/0iQ7EumZBrdBBFG4I31
-# ziX9thmZ1aR60wJtwVvUOtjSTyrVJW75aNs+5wbP7iS+un94brmiIEWmrwXkNfCq
-# n7VvOukcNADFcIhjm1ezER3OgtqjTaa3COaHUVrAWMyz46IQDYOFF/3NB/jsTxI0
-# svETp4xDyy7bPcO7nS/5TQazShx+WAZjuxtNcHKQurccpW607epLA5deIPQKymfY
-# 9soB5R7JBcgKwYlrgVPESAgVMGJfHk/e/X82LDEzwMBi5f/jCIkJpqt7rrG+tn5u
-# lmrMKh3yWBd2DKey5tcSIJ3dzsSH4WKJulmFwyjjiXe4HGGx28gXORlgQaHJMB3T
-# /EbcR3FdBOuP74d7iBkpPszY6nUVZsiuXTcdAEEVWxo8zfS+8mlKJjrrGo9PuAhz
-# 4Xk=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM1WjAv
+# BgkqhkiG9w0BCQQxIgQgey7sRVsOwPJNcGGZuhRFRCvoqjl3L33gABnLGyX/aFUw
+# DQYJKoZIhvcNAQEBBQAEggIAaug7w0TLLLmrK/AelaUitIgx8z/8FZnx7L6sYf45
+# SbYD3ATS4CoY2jzcsGybSUwjeL1zRIJCPXPpmqMGQ7LGGeoPlPEKZpZNeFvLF3/h
+# uWgQheXkRlMJKp1ji8oUwbNVUInvaL19ttcKn7ywjOWfNMyfXBgX9aDwG5S+pB4A
+# ydrG9EOkpsfFHsAK0QUFIEH31rTJsW5HayPz22YT60RC7eddeJHMZkq3YVX9hwZR
+# Wp4/MfFR3L+DoNnDFagYeLSTjpVP5heKom1oXk7neKIY2oOkfcYxVo5PmRW/3jx4
+# L1z+M9dHr0Uufw4fYZ5jQDd9AlJdRvFufA/mJjRlpxC8ZuNtZ8cdY6z3rqQHhABF
+# yyUHfn4tKSFnJ+x3Dv3HnoZwe0Sp7oYamaQiIY7GWaGXm0rIQ4wj1gIXErKd5qRb
+# QAf6DvKs3vHo0IFlwJf2AKEoHtCV45xY8127aDeAwwZUIVbaj2oHuGgnarwc/yub
+# pn9dsOQdGTNqx3V4zgAUYFUyn2R2Xf1il5OcYVKbOTzwIPZoO8qnvKId/ivg61o1
+# NA+11z1JaP592ADiC5RxyVIoQaCgRIHV3I6CBs4pgMJRdcWlXWVT20odxip61cO3
+# 38BP0CZWEcgIMU9lmKWiQWWuoxBOCYiJRbOuV8FEL7Z5ldBfjsWAUj5iSBh0IkUX
+# Xyk=
 # SIG # End signature block

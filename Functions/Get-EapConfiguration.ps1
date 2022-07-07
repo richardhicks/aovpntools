@@ -28,15 +28,15 @@
     Use this script to extract the EAP configuration from an existing VPN connection. The output XML can be copied and pasted in to ProfileXML for configuring Windows Always On VPN connections.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-EapConfiguration.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.43
+    Version:        1.4.4
     Creation Date:  May 27, 2019
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -122,8 +122,8 @@ Function Get-EapConfiguration {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUXdOoD1ExxDiYo3ziskARYx95
-# H4Cgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCFhjUDW72/bGJK5JONBTSUpe
+# 5Nugghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -273,31 +273,31 @@ Function Get-EapConfiguration {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQZrOD7r2sYQOEsEq1KN7MX/kj2jzANBgkq
-# hkiG9w0BAQEFAASCAYApf9pKaS8r4OdbUyVe81ndwF9CFs/9i6cA1nKkKw7BukDm
-# vQz6b/DUg6YWe3TCvdAF2SCgD0MclIziJPXS0lcA6sgFx11kttLsVqkywhoucDNs
-# vUSGcc+2rkS2m5SBMOaE9dmwLqL2DMs9Xlv+PWV/Lyik+Om3O6J5iNiB0d+ZfEUe
-# 3PVcur+/c8hAZcFIjJjaDf9SbqZe/ql2Nh7JFlupfkD1xHWuPpX8rQYbTH/zTSxo
-# BRbEdmgaTrivKUreQeENDSMyc4FCD3V62F+m8fa4wXU/318FqNtMbPlNXbWDBvQp
-# rArMRvPENOBzz59THEFw4PQ4qgyOynOJpOt6UwhM0dJBbeSDUzg20jUUkHgsRkz0
-# aFrSOIY1Kz3/g9jhXaQYddNf//umPCt4z2P0Yq3F3iHwh9q7+cCTv2PK7KPpWoyZ
-# NsTLf1QbUzQBt48iwj6Q2UXhz2Ti8xX6E5jCQ5rRkFIFivIfc3ED5RGujtQXmo1u
-# T5haI5VV1JwYryuWOnihggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRQW9YQ5e5avMIoTKo7N/BtLPvV9DANBgkq
+# hkiG9w0BAQEFAASCAYC5xxT17S3TkJR8iE7qBJYGRZQcx3eKh0a7h3D4kk3JEGoF
+# pWbcgTAOjktUEod2T/fzVvQ2hRTXVX0TWT6C/b1e5xdyoyiV/qI3CKcvavJX8inp
+# KhE0onyWPtpFnKhE1tU27wZi3hvNVmxoQVJqKE5vCfsb+YaHmaAPBHt+h47+6Jfz
+# 1Xal+Ye6rnt0ANx2+pUnxssnd1n/Wzuqq90S1Ripg5x4fGCcBSmXMkj0f80rVUkC
+# AXLmfL3CA0uewNa4aZ12B2+3k3jMHrlvKcn78iTjrmg/9XnvI9k5p9hPwjTF/duh
+# cUhEZhBHSXkP0dSVuRLVu1yPiy41YT/zzUnYBSePWSTMSdszZEUZ0HFk5I9DyiCL
+# f1ojYA0D/DT4FbmGAoeNfCGogVqLerMC27dwtfZSXaIXWsHhVDaf3x/gbL+eYahE
+# INqnXWEBCzPmd488B6j+MmPPiKvAQJM3lxgezE81kS9W5pxDHWIN61VclAIwOK5/
+# livRgJtEnjG7YcoMIBKhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUwWjAv
-# BgkqhkiG9w0BCQQxIgQgRfZ4VpEaDH1jOB/z7enayWGUYNkDTY0JNrckONBDxKow
-# DQYJKoZIhvcNAQEBBQAEggIAZlOcXOdJJBHAHRW/UMlAYta2NEcu9kLkOlffhfJd
-# HepwmnipYgxVm5q70whifiOus1oRnOXBppgF0Xim0QEVZ+oh6LNKFsRBrDOEOC5h
-# JHi1p8Z5pLMmzDDoN1oZHh/nLHxl2jX158/8LmSFRWZXPNnrpbs6sOQPCIQ8yYOj
-# StBEvyQINxG7/EHtMnlKuDg8VRrAFVpx7UZax0EN8/VmSYryd7TaNeKB6L/L5vAa
-# MwkCQLTpKDRzs4pX2Q9lyiycYetZdVeuRYO2eWHormqAkzfci99l19JgHycgCGuJ
-# 5zlZV11esqdXf1iOa7/wkKmtqd/O0wKrowllp6VEjn/IZLTLfbE+6jtZerSgqypT
-# +cTtXkYYW0+DyqP5+KAbq4LHqiah83/Y8WP2vVDneG3esSan89FLL56MvA0+Caw0
-# ZeggRx82qJTsCIiGMFWqtBqg7mLtoyz4sXOEk/BkUubCAKhTBDjtxc6VKEnq5sCq
-# jpfLxcBA3EWjGljwK+MEn6pjWYGVclK54Gjop5tf7mG9KgHZQ2AxHgusdrJW9sr6
-# bIqgyrdn/Gpta+60aEIDOow8W24kLDgiKMxCERbyOftQg7DW1J4M9vVkiDkjllCh
-# N5ujD7e/EGFSO/EBPw0t8tudQUEN6iBwZz/blv0plSwxIzF20Fr6lxAsoT6nkpuW
-# +J4=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM0WjAv
+# BgkqhkiG9w0BCQQxIgQg3ivSlUN50t1ZTMFJJWMQvL+NKPXRIx4a2nNJWll7Bs8w
+# DQYJKoZIhvcNAQEBBQAEggIAsGIhguSCPnMmAQr3AoXGVaeVEsL66ktipRzZuyeQ
+# h5bxREedHAdmeH4LsFyoMttrSBrLSpv0G52DJhWf9Jnfhl1jwjuB51UlRZDjflWH
+# z8raCJNEYsnu/gwHy8yt+zEjDnGql2sQkBGuN85W4zByqiW5ZfgP0WdplQdGVJgn
+# 09H0BJ82mPO/mzHjhNpi2LvnQz2pKs0ck1PiM43NuNRSFHzolcnEbLX/u95bcGQb
+# geac7+K5o7jIG6nWYAlpdJWfH70oZCFZPnXRVjTlqGboHgSr075u28jqQYjvAJ/R
+# ElBbHkVUlq2aByVdzB85oMyh8tMiReuhmS2KCAxe1ehTjC13VsVAGHAHzemU6sGj
+# qti/yxuRaRGwTm1A/tetgEhPuzcDJc7b/dl3+LGhPcFWMqMusblvpqqXIQd75jUW
+# v36tAPfJpYF8r5MxjHWJTBxa/L0OilLNlOdU3B33IBnAty3bsAOUrB5WeWGSzlyk
+# w35I6ygMnQ6PiWAOSGmh0958K1AGmVsFb6q/crpqQzcowTpw0oTKHZZfbvj11G0N
+# tWB39HhFpNKp04oh0f3YRL0ZqvY0/b2FN/rGtGhSc2EFj0q1wcUNuBORLrLtKjwQ
+# QGmfwgCuZe9iNDQ2jju8oR8bSo3l7moZicil55MtKxPybm9O8nVwlhLuid79dy9E
+# ZmU=
 # SIG # End signature block

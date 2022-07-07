@@ -26,15 +26,15 @@
     https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/always-on-vpn-adv-options#blocking-vpn-clients-that-use-revoked-certificates
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Enable-IKEv2CrlCheck.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.04
+    Version:        1.0.5
     Creation Date:  March 10, 2020
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -46,7 +46,7 @@ Function Enable-IKEv2CrlCheck {
 
     [CmdletBinding()]
 
-    Param(
+    Param (
 
         [switch]$Restart
 
@@ -89,8 +89,8 @@ Function Enable-IKEv2CrlCheck {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyd8pbtdC9Q+2cwHoPEPS/6q1
-# Gkmgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU89xtK2aFeyy1f739KUuJpPGb
+# I66gghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -240,31 +240,31 @@ Function Enable-IKEv2CrlCheck {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTZBKYMKTLI9I0Zi4KqVufPvKA4rDANBgkq
-# hkiG9w0BAQEFAASCAYAcKDOPlkWnTpdB4b80SESB1p0AyD1gWf42WCvVMhodH4Ed
-# 08rCrBF8P14fU33LRlPUpcsyIfkgRD5rw1z/int7Cp4N/92o7S0tHYvRXeEfjnwz
-# kz9AfytvB6CZqCK4XXCusEuyWEoZwEIZLBAAdAQuo1ieJaYNy1/BWHBhx+rJqW+t
-# d96AUiaPD/k9XpL3mhk5SiETDufHJ3fZH6DjlLUJxF7ipLMTS1udzaLoUbUSKI3s
-# kXaW0IUPpb0qbBYB4+Q54qMTCz+p7Cic10zY1Rmq0qmSONAXRztKppDu55C4Jmwb
-# avKkpL2thz/eN3jaZC19CI3INiGjDT9YLVR+dcNWqh1G6oEWdHBCv7KvYfJafMGh
-# 52KGRDP1fFrL/E8Q/poKmKnkF1BeoO8KZG61eOSLGVeCwX5aGmHoQfddNu3XOvQX
-# 1vqCtUYvOCDEtPBnjRJnlV+zQkxcTJBNB8BcVG9wAAY236Jvg8lxmnRoh/OIKn05
-# UgPZ6sNGHlmp+EDOp9OhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS4bgJ3ZO/jf38bklRyMEAiMgKMwTANBgkq
+# hkiG9w0BAQEFAASCAYC7WfSCS6GuJScjUWOJslgsuqVe+dzV4UOfY307N++IFdwh
+# zVTK6pszJHShtdIA4q3SU3ZQVC7kjg9nTProR5kWzBUcsdf77681MswNm0+Fw8rW
+# +ypDKlUHdZ80FGM77JpFgP9g3t8wfu6gHBmYTUMbi0RS1rsXWdYma7UQENUv4SgW
+# hBJT7ZIv2Exwy2573VZjcA3BJ/3EiC/THY7ZESLgiQGfQuHm6AqueEgTloEd7LG5
+# QMx1L8xyqFHPdgACP/6AYLkycBLmHvjf/DbXaQ2jD46FkPZADbhBPvb4Sc7YW3MN
+# kLuZujc5XdsDnq00NviI5VZSLywV1NayGGhRaynfEij1ZQKG37kYSRES+kLxmIXO
+# TstUOJUpl8vpxmz0FGWMQ8hE1lclEW/GTIt2F9ZAsQ9yNLHgBWdT0rN/PxkUml9Z
+# RP+ZhVIPEPEAPwzCQGKqqvYpIbIsAKdWsPTPGeohs+mWnRJ9rp1gaqLfBOh4Ztwb
+# MBdOgVpcXxCfO67KuGuhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjQ5WjAv
-# BgkqhkiG9w0BCQQxIgQgupvtfGBwZmqIBxg4IbL2OHgQdAJEjZ+O5aXoK1sDePkw
-# DQYJKoZIhvcNAQEBBQAEggIAA8LxtNAyWKNA6L70uZTsYpP8VzczVgMbQcxtMGPk
-# QksExeYU9uuEdV0ZDQ5P9GENcOehf7oj/mm43mUBsPqaqjw82Mij+D6T9gHJLWAD
-# BaZZKkznykOaonGRc011vUg3TIc1ysGoDSk2+QDO8JRlgFD209gk6FN78N3TZBx+
-# Rpa6yBSy2TGSWfFhGa5dhkycK61jL6dC7hSV8rdSz6J8T0ELies/hL4IOzROP+ww
-# wm18oTxHNZo9ou4FQjS0eBy9UPxQp7xe/Uv9LCFxdZIwXG594yOqxzea2PLlYeEX
-# EdhFK3sDDs4Gy8U5/W3AuNCff7qxo/DDiozmju9lhjfgsdOKTtviA7YJcMW1FOJU
-# Kpvq0wqcVX3tSazAnZWGtfBa5Ek2lSJOb6Bnql18DzXN2G7pn2LtYPr8++U7/Fgr
-# 54CXUCgy20KwZtjrUEs7WpBnspKlbEbnd/Ce77nitNg/GgyaQTEQGpQ7dbdItIuY
-# 1VFkNSB8JUGWBnB1/t6K5uqxCOFM/vuL5/umeJnZRNVTScwBD87YFkUDoDj1MqY3
-# goW55k5aRyg+7Z+i3AKwpaTsjP2TXhOAxv3ArLjEIk+HOdQkBZtd8ggYlYIh7vER
-# Bic/Oca+3gdHmPGnTh7fi838eyJZIfh2MsWu1A6tVHr2+x1BL1+2nEsIbI/t/wxo
-# q5w=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzMzWjAv
+# BgkqhkiG9w0BCQQxIgQgPGH8dv9fRzlfyjqja4+9lACI6CbBB5Z9pNjK7uf3Z2Ew
+# DQYJKoZIhvcNAQEBBQAEggIAqWzWk6zw2haJsJXCt+MbKKKIzmnvGUhjfJr0Rox5
+# Hp+mPGSuw0B93UCkEBkUV+L/ubikYkfEskYVo+sPj1AsATwaEXpQZTqhXTE0aTRU
+# k5fxp98ImazABdZC3H6CjZWd7XwN0MRGs/u+LAM58ubUZTZ849bTrpYaG+jpJVOn
+# eS4OMCMBR8CgBVkpDl5tZ6xwrrZHqCFkqtpCL+gvt92pEF8+FEBzkO0eFRrSYJf2
+# cbzbL5NwbbDOacrouKm2I6qJC+wgASFqCO3LFWfnK/LNorjB1gKrgOe3GdeiR9Ge
+# XU22xo5TIe4vM96LRUI+QTSzF6kOQ+BPw03Wd93/InbywCO6diK1EwC+YY6ONfIS
+# iTIhiaVTixo3Nm/gJA7kpF5xsk2kpBnWMGeU+CIgBZy6rFZi7ehtIQ3g95MtzIHT
+# oWUu8yA2BL1/dLoS+6dOSRAfqL0nyCt2pepVqwdX5DVEgHD3DOnmkoEQfaawZyzo
+# 0VSv/scadowc+QJxYIRt/gjQiIynnY3hX+D+wc1KuQIxwWxcPktqBtzlg7oScWpl
+# SygfMGHMkiLOy4XQ8N6xxA9ORysJ77/cpR3lh+e6opnEZW+8aZcBkpA/DKT9CrDu
+# fz3C0a2dEmkZev8rr09a+gO+IP7EI7LjTBxzILy4y+U56abSF0lB41uKrRo2+qah
+# p9A=
 # SIG # End signature block

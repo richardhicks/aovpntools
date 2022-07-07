@@ -20,15 +20,15 @@
     Use this script to optimize TLS configuration to improve security and performance for SSTP VPN connections. TLS cipher suites are configured and optimized and deprecated TLS protocols are disabled.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Optimize-VpnServerTlsConfiguration.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.62
+    Version:        1.6.3
     Creation Date:  October 24, 2019
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -198,8 +198,8 @@ Function Optimize-VpnServerTlsConfiguration {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGfKB29tCYhaHulFXPR+I1w83
-# GHmgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUaRiCOjtIBZImgGCrNmrhFtlW
+# 4d2gghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -349,31 +349,31 @@ Function Optimize-VpnServerTlsConfiguration {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRi0styaoAvmXxqzBlqeD7oKbC8vjANBgkq
-# hkiG9w0BAQEFAASCAYCIYEPQjOuzwqBsJOHA6WnqPudx5F6OUL/AxSGpRYGpHlaW
-# CYjZjlJKW6c09HxuDqKB8H6ZSEgn3tRRoOWe+cGmWau/eDeWnScUOq7/TZd6qaET
-# pJlqsu5TxYPXtgNez9btHOP2qbGUaTCAiQPRtjt25SUZKjmOt+ypaxNM6z/n4y3k
-# uW/VsRvSjpoOplxNk3KpBNp8E62i6zgD3ZQtlfZj1yeY6ZYwRb2G5Hp8JkSaal13
-# /Dscwh93T95CyqlZKcDRNF67+jJGOg7+WvyDdprHXnf7XU86wYnDA5yHmu7lTVy6
-# 58GaWpVnxUZSN6/fPrKF8jah+3EAaZBJ7U7da4ZAnrgSW/HnZxZ08TZtpDwIfYmh
-# J7CiDUyJ/vHMnBW2uSXvpoq6nweVrGW2z+TmgG55lc5J0OHVmZmUvKERSXDommac
-# shAgTlfbTg1jfUF9jf0UVGFQ+rEUGE3DlsCClRRJZuAkxgHmeIUjHxpRFp2gHoGi
-# 9H2Aleq8jYB3O69IbROhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQR4NZKm03qWy6zMFawE+Kl6y88hDANBgkq
+# hkiG9w0BAQEFAASCAYA46em81J4VdVG9w9545JeacjJqT9m/wMi/kQkPSSfsSAUS
+# Gbtvi9dCkYl3Wpnq3IM0d4um9/aM1KVJ9h2dqd71djKeYNWMtrWdvKqF478FMvfX
+# oMo/e5bxSRTXfwnpjt/MmxKfWbzFVuiijNYpCq44L8HQYFtfeZfom6cKrIguACQe
+# bySUGOpjnSygNAimOsRtwB1XyIAx7IMY6/DB+zrBv49txjC5NH3sk8MltIBG+lOi
+# RnkJlGPLwSB92n25YSJiK6S3AQzNwAoOQ/Fx2tFDirBGQoArNjLdtu74raMo4qQr
+# xM29Bjk4cE+SRtYKIPkwsVtsfxpBUd3gwWxBJffTqlOETXr/kqrcFR2oXPsnMYDx
+# SRGlHT4bKahpmZNzMZwSwpuvNVLxu2oH7M6SUHqxTTgmUkqafap3Mvf54gQDUvax
+# OrPek3Fe3fx6rtgZfx+3O+WecU7AuzselVUylLKfALMwbDL1lhyODeiGRdYiTRUY
+# QC1tcSZ8o4osW8fULOehggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUxWjAv
-# BgkqhkiG9w0BCQQxIgQgEaD3e5bULyIVZ50Za6B5aOPqgt36kh5Qe+wmk1LJqA0w
-# DQYJKoZIhvcNAQEBBQAEggIAk+WwvBSKXbsE6V0EORSCBN8sA9MFJS3g1pi6TXLG
-# XK3JGR27Yn6yxeis2BN6yfo+iQ4xXzZa/GRBD7fKR+Ax1lNJ+mjrNALTvXmu6o2y
-# 4VUM8y1/adkh1l9cpqw/Q/cIdjOhsuqP7FBcAS2d6xRZ+h++LuQTNnrQT5aFhj+7
-# bmdcvRLGFtt6jMvxYSAzTYfithtXfRKDvs88F36mIn8ayLxyvCaduFdM47HSm7Mp
-# 4WTk/6SreBSQwWZd2+dgXWNYbOzsWg1tVllr96k9Fm+rJM8Hl5MmBJX/BgLohU6o
-# qwmsVAq36y9wyCyEr0iXValOuMQ74f+eEqVgWTo0+uCblSWAepUMiTSjXXYLdyht
-# OGYn7YUE83mYdfKl5Yu3vgvULyNgvrX1NG0DDZZajvmdqYenXfDls7TgkfZtHZuq
-# Egtdf1nAi7Q74xibkvQfl/K16m4y95Rh6/BOZKI5Ao2BK8hb/spytToyHDY6PhDz
-# p7xYzLpCd0qRP8/GNK5rI3XSRlzBpkATMIDLTkAadNdfpuTm8aCAXkFSinytC5at
-# F0nbTq/Dpdf6URzWvPUtEzaOWZxCsRvhnB0T7Ym8iDv7nbilJE9KG4MsTdfjmnXc
-# RhAnrS4EdPpbnUEEIjYbZqTkRTi8v2UIWEBTpvY6Q9arg/FZTLSsUo3OHGGUrxu4
-# 0eA=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM1WjAv
+# BgkqhkiG9w0BCQQxIgQg9HEFxlrmW4P98B1laynTn6FS32bs56ClgiXjMJl8IuQw
+# DQYJKoZIhvcNAQEBBQAEggIAk6c530TwAE/RZndO+Bj7VHsao8MJzgCoSRC0xJ78
+# BC/48kmydYUuZC/b+peXOg5I8BDcWoS5nCEVMzJgxeNuErkjq5+Fj+E3fmeh9d+v
+# EVeUZ8rXvj+CaZ9c5FM4arn8v1vba7zQo5bzkF9IOzjJ0TTT+fWCaEV2Uo5ktAo/
+# J3b2QU0Jf261plnj9mVV2e/LqtA22j4tTxkmUX43Q2EQdbe4wTZgy8qwKOMMC5ox
+# Vl71jtdWs9WE7RqAJMQVENsu4MctQQrBcgn9zQrG8T9cVaRk2pJ45tPMBfcA2oUh
+# LktWbNQE83yb1fi2ycyzIVqYZRjucpMpslCyiEh6nYBWaAGqkNoRtrFhlGwSEWwA
+# mifXssZdFt0uzDcpUugyxs4vCZqgqTNawzk0qki74ucS8B4MTruCLGyz9BRZ3oYk
+# 1R1G0Xu+aO5JwSjB0ET1nQyLEAVBIR0GpzslLIB/KHKU+lnWSiVl5UxjHCRIpKSJ
+# Xy/xCnI/J3R0Pby/gbUHkkx7+h7njRDicquTp7P/Ooh0O6JhJmn8rEiHKgo8Qjqi
+# 1zYHKowEco4eDdNwmqjWrq6B5QCGaFvegQzWsPFq/RRsVsy19cj4npWD3kYM+89S
+# XoVK8SQI+38QW8vb2JadxlM2IFZJTCs6mQbrhMGlaJ3MbXsljFFUpb2KJNcHkqNj
+# dIY=
 # SIG # End signature block

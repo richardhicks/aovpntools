@@ -31,15 +31,15 @@
     This PowerShell script is helpful for troubleshooting TLS issues associated with public websites or other HTTPS services like TLS VPNs. Using this script, administrators can view and optionally save the certificate returned during the TLS handshake. Administrators can confirm certificate details and perform revocation checks, if necessary.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-TlsCertificate.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.03
+    Version:        1.0.4
     Creation Date:  August 12, 2021
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -136,8 +136,8 @@ Function Get-TlsCertificate {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUW8HguPTDpsJw+NgorESOriD0
-# vU2gghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUamZMPbIqqkNgzK47+FhF0z4s
+# yRCgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -287,31 +287,31 @@ Function Get-TlsCertificate {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRqHcGioimEJJFc0wKfj7IgPjP5XjANBgkq
-# hkiG9w0BAQEFAASCAYDRuT6Jessgy1H7udmL9nqE4bGPO3+zbYT17y8bomaiT1CH
-# tkDk/RfjbEvRpOwLJKXetzJqqJ3VlLiSwVTi11PjALoorbGzhDX/XtEbbPA3GLE6
-# iZ46ZGwzlxteccWut2B3VP018B+gv5fv4Ae8i9htAFu4jem+abqEgJLKvcd04s/W
-# 7UfwcjhoAFm7DdUCN+3Gd3b3s3SGXp1dKz7j89VldF9xtYDZ0X18x4MFZWtnD4D5
-# d15ZuLiMFaDYBeK8Udg59X/YQbDtpoC2iBxb0NF23PAksI5ynH83SVRpmMg+AMzv
-# TZbkdcZiSaZMBSpE/F0dGaydSNT+jRvkaXeBWovXKcaHTs/E40ZrtRA/ORWV87gK
-# /t730Ah6gOmLRXA2ORBu52XvEIRyS5blGky62qq3nzCrNUwS1kr8IAHq/ikyCGwm
-# f1aWvGVRLRdaUdRJGt8HTO3LcJK11z/JhpIff6KaetBlwxkLSMH5klFMOEfyc+Xr
-# VXH5TjHVZurmYIxbwEOhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBReDkARyXwiSk/apgUIhHX2i0FHETANBgkq
+# hkiG9w0BAQEFAASCAYBsN61bSPyjHe3aAvQ2UOHWUS201CNKEAoCnmoAoZGxi98X
+# E8Z0K6s78aWKm7VLSUELDxOF7lzGW211IWxNIgYY6Fknv0hE4dOkV55EcsdXI5q7
+# ApY+Hb21tjr2yS6ooopH9fh2YaKIhN9BvbopqDQ4AibFPZN1jujuZFfbQMHtarFK
+# qKoH9GkbumcqFMJYD3u7l+UBl5ktcvpqjVsyzmOaRyBMlWtpYDF5FXW05y2Nl2b2
+# jpq35rx2QtfRbc8lldjb0d7sxIEPP7E3g9uGHkJ2n3wVVd6J+Neqe8mdw3eIv2HM
+# QiukpkPTyJd9JSJmsHKWgBWb3j2YZk8fw39298Ou03puEdfvbEGMDKaugYS7OQ7A
+# WXlPZLUl1TTELFu7fIezWE6CC/+9IUrogsC6W7aA72PSyyofGotgP5+txcmd7ncS
+# Mily7U61OUMygZm/A3eAs/qrQzIKN0ZLgOMr0N2RPqOdUXx0X8FPwhAVQ5V4o2eh
+# FGxbWql1vO77bzyJ0EChggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUwWjAv
-# BgkqhkiG9w0BCQQxIgQgB9Yr0Kr5EK9x4zHmwwwt9/F0sRJmffRIT9j0cqH6k1Uw
-# DQYJKoZIhvcNAQEBBQAEggIAgI8rB2cCsQDLAolgBtXeMpaYjn9bAr43ohSDpYKv
-# RTqp5/Ippc1N0i5Di6ieBDifD6vfCKAaluSvMtOh6Cy36Mte9+y+4DLH4K5qvtf0
-# YBY0pvNrAQrp+xsQEfkxSkK93BzUhknBUgpmfLyTiYg3U75Syyh84KlKb6Tzg55K
-# yYd1N52GSt09NGhN85EeGR4EOeD3C9aF1t10nVudDnfXQSukqwe1qPsFmdKyho3v
-# 51YfQrYMpYCf3omiogiJPEbZEsF1MHMbrzkB7tEBW7XKTqkzkG/FPzSMkkZh3phY
-# /YOXGhFfTwWOV1KrDKVCqnwHIPxro1LE5TiCAkDecS2m7z5Ej9mSgFrAthoMIH8n
-# 5iEQ+fIKyFP2HOBzI1H1R3v0lSWLCi0BVniH/Spn38e9Q8g4MOu/xQnvc3VyKXX3
-# wuU8ljZRZ8MjDVyNAHeqbflfTukndWdJNnAXx0qdlXhh8KrOKdI+6paTGAvCxf86
-# y6/Oz5EX5itav+TlaCY9xbrAZAyZsIAeD5kl7ju/LO8vdFKwAu+BQTAWoWQXej0u
-# bNahUrFUyA4YYTWcesARKjylH3uXjT2kexLnCIs/OgPFsMB88M3NV6dM8n3ya87e
-# iPl2heR1BNYTfcPvzhMyhVTocQ2rl1GIfu1PbRRIYLTBbHj8X5dtlUr/PXMPH62/
-# VEY=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM0WjAv
+# BgkqhkiG9w0BCQQxIgQgqq4jYx6aMqzEG/bnmUDJ/Mx9NGYrRznkUszLNViHaq8w
+# DQYJKoZIhvcNAQEBBQAEggIAYiIweO2QUIWS7pnVmcls0IIEPKN3H7K+l7fYws9r
+# pGmWAdZWV0j4gxiwaAKEg7gslYjzUYnqUSEr3gzDljQFCnMT6iab1MtfA7sWi8BB
+# Gtqb4EQD9txn5QXhoZJibS90TiEH/wOi5+FIYtZHQGSXzqHaEC41asbvzYuzUThS
+# vcFLRAQ4UnPD6O+iHkI5YnQCvuGV+H98/0BFc0RKi+IHUEHTuUrcyIfEIEobTUGf
+# wBUlQPeYFsqJ3Ne93zrKmYHqxujd75qPnBWzPmsfRwEm1CVTOU3iwZyqZ22vVKjP
+# dITwVM7YxCMqwUHaMaHpbTFeaF+tYJ9Qd39Rq4pW0J2h6dAlsqqN2k3SiNIq+Gtc
+# IH/NC9rSyvV2bcvANu+6Dk454Ir+iu2ly2DnYsAyx4JxIMhmSzam+nawjbsjc6h0
+# JIQE/B7mFqgIYuO0t5QD7hfJcbFf0JQB2t1pFjVtIMRMWtP26L5PWMOB44KJwdjB
+# h+oCKCI9Dzgg/mVeGkzF/tji0odJHwUqH+fm8KGVCGzUrEQKBy6piO0/GXkrPUV0
+# Dk1viv9xy/GcL9PyKdcJtgsAgRynql4QYKlYCV/4sstmhPQ11Y7YnFjo7wpssOc2
+# KbmtdTCcNgTnRTBPWI3FtP00veSIelL5J+AL+3HtkfY7AjAD6cCPnclYIwp5GV0o
+# 6c4=
 # SIG # End signature block

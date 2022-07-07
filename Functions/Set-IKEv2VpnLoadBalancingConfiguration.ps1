@@ -28,16 +28,16 @@
     When a VPN server supporting IKEv2 is placed behind a load balancer the source IP address for the connection is often the load balancer itself, not the client's original public IP address. By default, Windows is configured to expect a low number of connections from a single source IP address (10 by default). Running this script allows the administrator to adjust this parameter to a more suitable number. It is recommended to set this value to twice the number of expected concurrent IPsec connections. The default value is 50,000. This script also changes the default idle timeout and network outage times for IKEv2 connections to improve client connection failover.
 
 .LINK
-    https://support.microsoft.com/en-gb/help/2579729/ipsec-traffic-may-be-blocked-when-a-computer-that-is-running-windows-7
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Set-IKEv2VpnLoadBalancingConfiguration.ps1
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://support.microsoft.com/en-gb/help/2579729/ipsec-traffic-may-be-blocked-when-a-computer-that-is-running-windows-7
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.13
+    Version:        1.1.4
     Creation Date:  January 25, 2020
     Last Updated:   April 25, 2022
     Author:         Richard Hicks
@@ -114,8 +114,8 @@ Function Set-IKEv2VpnLoadBalancingConfiguration {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrbBNDLSXKpMB4ywoAnff+p6K
-# NLSgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUz/3oEWj8fWiHyfyAxQn1thT2
+# dligghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -265,31 +265,31 @@ Function Set-IKEv2VpnLoadBalancingConfiguration {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTbnT2f3rVLk7eZxL8c5cDGj8YaQzANBgkq
-# hkiG9w0BAQEFAASCAYBNQlBcGf8/O4k4ESEI4rfBDnVBVTvOz6PDtBmn2MWUAcU8
-# SHtSQ+tT7OLymoXbEJ6RaPcwkeKdLZhuyIQYwDCjXI8sEjfj8g/mOIX6RJtoUCQZ
-# 5xVPtDSICUj+HsrLNeHKsQavtL037FlA8t90QpJB+w06zbThjvd551aF/Sv1zzWD
-# HTOPjqt1wa7/Vym8T8/r8ogbZkTt28Y8BmZNbh81qv1fuP9XwU+LXVZr7sV0uvPy
-# +3/lh95XWxVgO5NlLWl2pQJLJDmL3YoYBzNbBPKdBZXjP/5M0l5v+RdF6Zo/7dtH
-# S0aa8VzDw9B3DYWaAn7sg2UsHlUz/5BMU/ijtVUpKTa3eBfaEvV9lZI/4jfHcHEP
-# cdyX+AdaeZeSV1iAL23cw1FegIr2++qjdIq5TodIEhii42VzUs3VZ6+m48YOASdX
-# 3/lvlhBfwgKcpHMApdc16nw5PhRup0HgRVNr4mZU1N4VTZpXiK0E1n/EkZYE0MQT
-# EDyp69PgKCNZTLtx6sGhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQagm147JxYi1rrnKw3z5flgxDHmDANBgkq
+# hkiG9w0BAQEFAASCAYBhvndlPAfVjOMbB+JZEKDA2xL04W1kW2viDTuPjkMwPBoi
+# MuFV9k3B+fcehwoRzIgxVJ3GA5jWzBllWk5YdoKNZQaQOc7YDtM0nOHo2njqQQFo
+# MeMk4ZqBiz4/aGREPfAApRGKL5jsM437TILSUVFpHEUhuSj4byi26HmrvhPhXvcd
+# M9wEwc8ZrKjyg1B6GivBLevwGf5niY2Gm3Nv2lP38UZJhr+Con6ns/mebdm2qg9Y
+# PJzmDJ8LWBG0RLZ72cAe1oLFfmBwxkb3pdrucOlzQVY6/SVL//dVboAI04wpkItv
+# UVHvsvT8t0LmArb0nN9prl3cgNHkWXZKFVmTjCYHuDSym/zqJBsnFo12cpEaeSmc
+# 4dWKH1EhyYT2CEuwe5dBOsFBUyrgecr7rDz3gTdFzYSPtIob1CXzn04U4sbJ+7z1
+# jePVDVNSja2ZS8YZ1et3sAFrlYedwGDXyG3UZqGEKaOf3POtUpkSdArpq8CpnTPh
+# BVzjF+YgQt/UCC6h48OhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUyWjAv
-# BgkqhkiG9w0BCQQxIgQgdrEP07MYksNkzsGoPlNThA26TFtDaW9UraGB3U32Fqkw
-# DQYJKoZIhvcNAQEBBQAEggIAdVszBgldH+bVnjE11Y8o8YpqSj9f9hJ1es9lGju+
-# mjKqPYK03jvW65DaPnCO4k3kmo/wJXQ997V/p8UIejaVFdzDoTVxSavZ9GoT8aix
-# 6wvpaV8bIoiVpnHrgOlAwpEaummUMjBSJDjHIK+5idItaPJn5qn5IJqioKWX49xT
-# rqaX/yu+sOhuQufme1hbdacu0mPzbOAuxqPTIFQbRr8GVM4C1KSoHtpyf6szo+GI
-# 933fwP8TpyOToJsj9j8H2p22AlU6xVhyuGLoeAGGc3MfIQ+UhtqKVu39BFJ2WgKY
-# Ft8XOAHOvOQ73wHm5eoN593OkbdAgQsqfoEdb4xlb7PX9BZHG2fDt8vVb+8N3TXc
-# 6Sh5r9drMLrcP70X6kVuyxHlf9ReoEqkxxBycWSihHEvQj9oTJSxNBfsG9dZ2uei
-# Z0H953hRVX4R7FKCPVnV33kcWCqxosJFt7mEULV5qfjNSe1Gs11D2yoINWJB1vQH
-# QObd/o2bPeeCjdfwqVus1xLne9TH3xZ3258rGscY/RFZknzHPPXBoakbSOMVQA1O
-# 6HF3doiwZxa3yTnsxxo5qHn9Y+RtINa1IjmmQlIDAfVuPJ0ySl44GnCc9EszGvak
-# +it0Q3iydouemgZh3beIY0hnJge83WTzCumpduTbLrePBb7zMmy2docQa9LeYyxD
-# OXM=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM2WjAv
+# BgkqhkiG9w0BCQQxIgQgXiQSPncWaFTsD8ac/9oM+YoUvHbvCy5wzdMIN8Xalx0w
+# DQYJKoZIhvcNAQEBBQAEggIAYnXgjQgW4xwyfWYRzRN+3XvNCfy3vlbV/1wx06OK
+# F9qrwmXM1rXO9195YH50fQ3PQIM5LirAcEdX+wa/ukc4VD3dC0zQUo4YQGVZqO8w
+# dD1zeVurNBi0++vI6ERLxWFcdWGCfEJo6bDx7/hhEz8XB5tJi+VnYMW26CPbg4i9
+# dOnZn7aY+ogogiFDK2MwSTT7Kk5ltd18++m62h7p6jL78DSxjG5KTa4eF6YgtzXW
+# pZCE+jPsfbkP+46PwHoS2aJTvmweQK+8kGoB8Vdfzv59UD/g6b9U/zpOPprTx+2y
+# KOihEdx1Y3/eNRvTHCgLHP4nthw6u6Ce24b7fKfoIYGOJV+UMHVDW8/sBbRYx5Wy
+# ee+V613GzwiIs/ckA4TlmBMQi87p1XXTBpTsJo5JEOPEq2sLEwmEJblTY0Shi1ZK
+# oYtpDFFgNhNAC5rPZWhREBCGWcXnZI69pnwNTRnHo3TAGT5gq2T7v4uzdrOTg+cR
+# q/xk0tR0akiWYkKa5zKFhZdRvYdkvG5hzo1P854jyOUxz+z2UuFXjL8rEzsr7pah
+# KDGvLAK5Se75IZklc6SPzocgaf+I4uRdIv+fw9YNlmjuwVSOcUqm8AQUR4HOR35Q
+# Q9gcn8ienvkTYLBOSsLL29PdsX+PZETYjCWZ6mfj2KIydS2IzXsxQwNpvP2uSe1Q
+# 6cI=
 # SIG # End signature block

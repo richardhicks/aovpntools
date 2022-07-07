@@ -34,15 +34,15 @@
     Configuration settings for an Always On VPN connection are stored in ProfileXML. This PowerShell script can be used to view the existing ProfileXML for a given VPN connection in Windows 10. This script is intended for troubleshooting purposes only. The output XML file cannot be used to provision Always On VPN connections using Microsoft Endpoint Manager or PowerShell.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-VPNClientProfileXML.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.24
+    Version:        1.2.6
     Creation Date:  December 21, 2019
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -133,8 +133,8 @@ Function Get-VPNClientProfileXML {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUmORRMi1SBF92dSXAknfhxIZK
-# dJWgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUT42lJUfODeCoIT1TT4TK6rUg
+# K0igghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -284,31 +284,31 @@ Function Get-VPNClientProfileXML {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTHgdUyft3YyImP71BzIrlliadqwDANBgkq
-# hkiG9w0BAQEFAASCAYDILlHTBHVF+lBzPctQu140tS8dBXclttrdsH3vQ7FvnzhI
-# BjYIsWBC6YBnza5XMyTEXOWMpAk2KhmCLdFE3jlyIQMTeUiTf21WFsaNNv97uq2M
-# HLNzzqWoS/gHsC9I+iZJDqrOWhwOLqpQXFWASYHdfeQA1sAPOBH/0M4iLPl6lcLG
-# ljBymQtrkfiT890umW9MF0O8ai+pTGvc61juABDqzVWalFmnW3oTWSUyS4/cjJvY
-# fQAL0ZtAFCxNvSbIbAK3jQqJGU7l/CtaPzJ8HKfXi6Npc6NoPsZj7xSWQ3kdrr7R
-# SQT07XbxdOTtnmORrPrVpijAAId0pAfbd4bV2bf7BnwdfZVDAjp8gkLezstDvCBr
-# O7kN66DQMFOiEULHa5/ArjU7BYV37vv6x4phwjS3LvsMacQeJYYVt4u2plsZx3/C
-# EZB0eh03Gzq51xN+iit+1xxROJjOpGe6ojx8nQye8fRd1Bf+H10VJuUMIo143uOf
-# VRLWHPrEIcbZvS+G2SWhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTqrjcW+8IssIFi+i0eD5CujbnNOTANBgkq
+# hkiG9w0BAQEFAASCAYBXFs4jy7yODAHa6ItxcC9sWbzkNovRqNul/NA16WPtXAki
+# LULKcSj6JtrpOokLxCf0quA1uI8/zxCcqSRJY4RPcxWK5rsD92tLYswzoF1EEyY1
+# RSG8maCB32EudeBxF1bAGNTtGcf+y7pFeQPIXomsMHzK1qEDDzWCnogl4Tamjkpb
+# mKHiApXG2fWrUWvWUDXK3wwpmIuU108FR6fLyfL83ohnKiQ5RmZLRzjoUhkJODfR
+# tc8CNp8xm1IN1DTmcD3/Sn5GhpONUNpNUp57RYEOxa7P7b4vb11ogBUk8GFtqF4x
+# eddBD9f8YnDfL7ivqoM/F5Lv/l+K68JKRhHuhiwv8Av6sg+W7y/gawedBiUnMcrJ
+# BR8fasUuAFByUEKDgSwMtxtStRscq4BZEJXRjLvkoWjj+IaHsAxciutet2cX+WGW
+# EmD8s0QZi/JBDn61rVj/EB7eWaU28U1z2oD3nHlFps5ZQL1mEXlIqI0DpRLh/0eS
+# qWqmQR6GM7QkHrkHpQahggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUwWjAv
-# BgkqhkiG9w0BCQQxIgQgHvASJOxR2II00uYdFi8G/zpQGb1kZEwAqKiZMznW2nUw
-# DQYJKoZIhvcNAQEBBQAEggIAMYdeflU32837V6+Wk+CNy5f4wwEAluZ63MToB/dy
-# zWKBlP02NGaUwY9UgxocAu5oajWOXcVAXqOwsnBpCmjfuTPQyXJTJht7Z0hQLGiw
-# bZsGR7NCzTLqw5xwROgbJRlQxvE1allOv+tO8IsEAuCsKeh6Ml3DawunS0Xvkw51
-# MTh2LPE1rB/L6Uz+pKqVcvnOLW4oHs/5aaPicLjDxqwIwg8O/H91u+1mfSmYWlLR
-# 9k7yFYH97C6r6dBJ2YeC3M+IlappueHYloEk6aPRvE4i+Ote/w3Kzor+y5J8bIgq
-# AhdrGXST0Vq3zAeLsCwz0yl+V5o+2GuRFGPhrSMPmHrbWywUv2BvCvB1rxEUQsKF
-# JnkdRzhmj2xs3HflK/GjtE0dTY+C0xDHqaQUITlAinya93M201LqW7Wg0bY7S+ub
-# qVGYG9/JGUM4z8WFhOt0Nhk5W7c+YzGSA0OLJGMeGuvrTjP/dlUa8uZZ12jILTv4
-# 4WnN+bxrelL72lNfCsFANBjT2vbEQbMz0qFWNTJR/gGQ8Aa7xddcWiQcTEyQ1lFc
-# nEMj4OsOEtW7bVDrCnrqYeNukYGbrGpLPgZkMLgQiHuKYdUFKEAoKfb2w6GYnuwD
-# u0YxPAc/gffuw2W8ZoyvH2/k3Ag1BAmhKLfIPByQuy6TqXZNlun98q287jgf3FiE
-# pfY=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM1WjAv
+# BgkqhkiG9w0BCQQxIgQgigXD+1yPlxyITdLksBT5AC04tXAaX/OboCs2QgbeXJww
+# DQYJKoZIhvcNAQEBBQAEggIAhrlhg7CaIlH+IGVl46LJ/WRxx2mQmkDCMXjos4KJ
+# JF4K9agFAbcrg/f1RvR5zQSQWy53rw6EntemlV951SMNUdyPHC17n63g02DuVR5e
+# rco9yUYZLrHqLbpIlZ2O4qmC2KunDAcQdyrnhsT/sxO7CS07Q8ND+lI8l93AymUw
+# 0KS4J8bSoTIsSnxMCXA/t/b+J2k4lzpMc0x2btydRjxQ9acxQ1E0L5FadLZ/3riY
+# rrfTFRn/FGgbG7Y55g8iChdfIHIQAZdsN5CYcGEnbVF3KzofEPoVU5/ku7ONZk/v
+# ELw5tctKpqN6VqZ2B3bR1GXL68kWTw0fXTI9FmBgo8IPuZmxw02zfn0Y7b7lKExJ
+# 2nnjv226YC0cdH1ai5lyBQzarLnbpfx9GpUYJ5e6JWU/6sppRqomZ0Ne7iC0Yr8X
+# N3+05ro4ozOeoESaR7LiNjzVg0PVKpx8DAmZp0If2Ia7q8qm8XM8zkf0MRqnJ0xE
+# fvqPSLjHB87mZHPCwgurMBimfGEqHwBTxaIEmz2AFoAmRHZEOfEjIPNz3Cfrp8Qt
+# LEhuRzQLgGt/VgpJJAqzjbb+Wc7XnXK9xekLoLCCoPfiElG926I0FmEkrV71Tx7T
+# vLsCHa/D1W/9sLYjEOSyz6WsCRJbZJIW+Sl3hmKS4O/Y9RRKYlExYfzr1448h67r
+# PWE=
 # SIG # End signature block

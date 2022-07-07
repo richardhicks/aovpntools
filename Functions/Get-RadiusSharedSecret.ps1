@@ -13,15 +13,15 @@
     If an administrator does not have access to the shared secret for an existing Windows Server NPS RADIUS client, the shared secret value is stored in clear text in the configuration export. Run Export-NpsConfiguration to export the NPS configuration to an XML file, then run this script to extract the shared secret values.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-RadiusSharedSecret.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.02
+    Version:        1.0.3
     Creation Date:  February 16, 2022
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -76,8 +76,8 @@ Function Get-RadiusSharedSecret {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyBo2Ze+hlgciGHNhxSmCnRMi
-# lr2gghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNk5C/IReB93+jwhPQabCDe18
+# opygghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -227,31 +227,31 @@ Function Get-RadiusSharedSecret {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTDNRAnHvAgWeuUlLcpot+dQZpPSzANBgkq
-# hkiG9w0BAQEFAASCAYBEGxDKDEuh1c91VDiUgRBKsxKTMhC6gTcJBq+s6I84yfiw
-# PKpxKKLhKTgch/8lTlz2gqe9+FC26DUmqCZD8sCycYjaBzWoLvvLEVO3aIiIFkVK
-# wt/Rv79f+0Pz/WkxKm/sJbq7Y0szNkbz6jPyTjtIju+KsGOBESptEpyK0gYu88OG
-# FsOF2Io7jv139pYcS0gwDgILC+J6G6jwspw6wnhWNzAx+DKpIUwMGgBktjULFg54
-# NlbIde3vSXaRspSYees3UqZoPj3oKrSFmXzyAoF6z9jmUHMMMharzqHMN9dUpEW0
-# EcHvUKkTHWzIvbDH+BZG9mjmBBWhYcV9ABepfwmLFe4itk5o2hh1ustFJY0/Ose5
-# pb53HOKJA4i3OfC2EINq6UHIW9lh53SpvJqDhESPoKmk6G/5kTBqvA/dJp4C3arG
-# mO3qPWdJn2Vzr48HTyJulFuZ2wnwHSUSWEx6Po1PwyCFS8IpBgISsuxMfj1U0Gf+
-# db89ZK7ARaoZ2oM26nWhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTiV3o20zjotuKjxbAUYTXu/fzJvzANBgkq
+# hkiG9w0BAQEFAASCAYDjm+leV/aPb4CqEolQjXetJ01xJ+2MQIuHoh+ohX8GHQS7
+# KCZZ7d6MQhCdFFwpqF4bFpg2hsl7J1KQUlUj/D6saAD1fijysrKFHcZ6OzXdb7/Z
+# 0464H6vdUEUsZCniyhpSylaRN/XyeGEJS7MjFmDOydFPsDU0LpY3yoYihLZdeh5B
+# wJrrjrRO85c7d13dVWWC3Ros5M5CWsDbnCNR6ctX+YSX5Ob2dxyUU/SYqVaVzFC3
+# fwLekwBxEk3W3kbU586ZDuHa15REmd73M+5zd+Rpy+Y7jz2vvdUwp10u7HVwkf3I
+# sFrDIBiH7Ifc1Gx+9yRWBanqajOou6tzTZcRnNF4Se2yDN26pSkmRLB2JEohVgaD
+# NbhYXDFzLTs56B9Hdt0ffs291a3i8lujpVjAXIETATfaZAzAU8d9l8NzLHs50cvh
+# nxvVgEQIxRP4HiTJ6s81d9O+e8fjrKDciQ7seMhwVB7qTQXL2OUqbkki1ruYf9zA
+# j9Q0gjGxKqdYgmXxGsGhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUwWjAv
-# BgkqhkiG9w0BCQQxIgQguf4nkUuUJuBNE6+7honAuF8rwJf5Hfo7AVZNip18Jrsw
-# DQYJKoZIhvcNAQEBBQAEggIAKvq1t5/aEX7wd3a2KScItVGFF4LmVvVNiXYn4q8L
-# TV6BQLi0pfVUdCPZ64gQL2gm0vvV8GHj074vAJdRXedSxwuLGcEiHByZocQKhoVb
-# pJby/+F81Ct4pKEDHzzuT/g/R1oxIwB/TfkkUau6KJt6Y+njry9DwdO8KBKFv0vd
-# GzTWSjI9GwyA9LsffrF7YYmZ9POngKkrZxVyB3rdhPiBVQvMOWdMPGoQiKPHgFAX
-# Pq6l5zeRrQzqy4ZWrFJ0d9pWJsvoBGw43J4H9RcEeo1h0k4eAy4VZTCvBwnxEwuR
-# ib/rnuK+8cg5ek9hh2OsTFXzlVJJp178kh49vlWxSVtLcLD+ywIrpO3bTCbSY9el
-# XLcRPKfJ+Sd7qMqA+dZTfp0zA461jxf4aPqLrAmc4I2N3+ngGPrNuC3XnaQV+JBF
-# DmPW2QXMZGccbG1EQKa7Xga2TsjEYqkm2ZQYS6pb7yJE2cpqMkWAxcvqT3w0Awqv
-# KRhIsTFs9RPZoO8U9r8cMyNzLtw0QbwAkC9XDnANeAo9Lfkao3t3mGzgivZYjDtE
-# cR/UZu0xDv5L+sYzE5GYiiT5BB0b1uAQVwmwn4eO2in7r1iWAnOSEgnIoCydWKZ4
-# hPH5rBCL4QB8CSc9LsjxC15nNnL1kV4c6toIHzgzuH/5r3trDuwKMsme4vHOWX3S
-# W3w=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM0WjAv
+# BgkqhkiG9w0BCQQxIgQgY4Y3DLOgNNhUZsPrqdTRaU8HPMjhGKPBXjxQcxZDzlYw
+# DQYJKoZIhvcNAQEBBQAEggIArCSuvLijJLwkjhQYSZq4ATL2CxOwu1Le+BD/Rxpn
+# lmqgO3lddoY30RKsCoYAeG1nBmQK4jM/TnxzMGgoBXMw8lVRFT61BtPMpkbJ0Lxh
+# jzswj5dP0U9y90VqV3Xqgvnjuj8/0sVLVNWpzAexvUHJUX9O8P+GVIiUS33fnCP9
+# 1hk3xFwjCa4y9d6moIUg/O09x1tN2zeGY/JBzc8s3RslAo9qvu63WLYCM8JR45BF
+# UIDwoXLLF41/X2F9MVqfUTYuWlPx2JQbUwMhHYQ+ItA8CdtzBkGZpdst/sVYszA4
+# nk0Dzwe3GUeJpJXA861NIGIiAiLGJ5qzvb7UfIhPzJG+2tWKjeTmA7U4RRfiPVTP
+# O3cZO59lBeI+wD+jfvpOmvWZFyI498gGuVNa/5mZLwI0JHMbrLfu9443nNiqkzkj
+# eHbllm2Ckp3XMU+TpSPbmHCpFADgt8zVjgpmMRRVRQJy66TqTdpDpuuDnEq3o+A0
+# EzZxlD3Wl9gP+JLYah9zonC1qwjjpBKtQMMchuTnSojpagkMG87SE6jQMWvSI9nA
+# Nx5SAWIi4ygkAvLvdnfhNnrBRHAQSIF1uZwir2GK8XDaPLwAFW3cy89QKItkv5hz
+# i/b5cVwt4i2fLjfeghfQpOfnM/hdCbu9enU+PTrTg+rtTyxktuf0th5pPCrl3BHG
+# rQI=
 # SIG # End signature block

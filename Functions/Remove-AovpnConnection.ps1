@@ -31,19 +31,18 @@
     Removing an Always On VPN device tunnel or user tunnel connection requires more than just removing the connection itself. There are several locations in the registry that contain references to Always On VPN connections that are not removed when using the PowerShell Remove-VpnConnection command. This removes the VPN connection including all associated registry entries.
 
 .LINK
-    https://directaccess.richardhicks.com/2020/08/24/removing-always-on-vpn-connections/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Remove-AovpnConnection.ps1
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://directaccess.richardhicks.com/2020/08/24/removing-always-on-vpn-connections/
 
 .LINK
     https://directaccess.richardhicks.com/
 
-
 .NOTES
-    Version:        2.01
+    Version:        2.0.2
     Creation Date:  August 23, 2020
-    Last Updated:   April 15, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -283,8 +282,8 @@ Function Remove-AovpnConnection {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUYzmpvsCMr/7yZfPfkdlKvcL5
-# uhugghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGQy6XjTMpx/P0hwcJyI5ekqp
+# j9mgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -434,31 +433,31 @@ Function Remove-AovpnConnection {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRgxO/HzXWVMHB14jLnhSW1CdcKQjANBgkq
-# hkiG9w0BAQEFAASCAYBeOoVgPff7KR27Vj7uU4VpNZyG00IU8m3KvYpG3k8XEsoc
-# /uDDS8ItZHz9E4xo/5l3XMxgU3PgQjQmWOmLFnmXUhDaT/R1I9Pfapeqnyp1/hpy
-# rKsaJgaMs9tTygUE1F2ArhXkf54qO5YvCWi7AneD5yT8ydm7p0IObSfrkr32NBtA
-# fe3PiGjvvvxCGOMz1x0jnSkEAduay154gnG1FsmkyaTU6a6ZRfDSI4HuJVV+/ut0
-# TEstyIqbEisEvBBtXSWVfTgNii2en+rmzucs17I6NL0q6vMS4/K3uxHyAAmog5o/
-# 69i2YBtPh1wSj//+nDHX9jPypMcUikOzvkbpiLhzdDVg1tm3LN+2h5sWBwYAJXob
-# acBRufOf+oYtZyBxEAQU0NEqKEg74iMwcneEKE9ZipOFVuNf+qsENeIehimtw/EA
-# cpqDzKTzCnW71zI1uT4r5v+HMJsJ7ML0igsFTbn5A+MNO0d3EtXurNLo0TrEoqbl
-# zGlcEVAuXVq0Z/eHunqhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS6KWXNaCW/gvTJiJ5uxk0TqpPK2DANBgkq
+# hkiG9w0BAQEFAASCAYBMPEP/du4/WvreSnxA0SHBpJEW91Gb7KrasMi9fLvgEvpz
+# H7wWNA4TUpgFPsOY2uvoLuN72wBr+B1w/g467EKv2AAmyZzPpbcB1Qw4pVQFjcXZ
+# JaAaGzL5F3/Y0KAyDNjnPz8pmKkxf/ZzTq0KA/fK1X+S6XpBnxu8w5Cj8ikN9lcN
+# Jqh2+GSBYC1lnE1GmTvSa2KcpheJgOZ7HU0Drs88345Tc5wBcNImsXDBsgARF/oA
+# 3xk7TsgU/eiqhXvBpCjzqLK9NlwfPoXr14uZ71g2nXMgZZSW87cDlUJHgXMYsV63
+# Cg9yAhkC2jS7yNBzn71G1adjq/PuwWp9CmNt3VZlgq3padk+4Ah37qaivrLIh6x7
+# 0DP3bboxo2jqP9fqfk30mz3VL6tvyxPo8wZzoIK08JIyHDgK1ptCvZckZcKJyRAW
+# HIJLpLLa2wn/XGHlE4p1EAhK571jywzJo10XYUwWdKdqCH5M0tpo61u6sKNjcrGD
+# 7FHqH6xeah/W0OIr2fahggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUxWjAv
-# BgkqhkiG9w0BCQQxIgQg1NidXgSu+Wg2w6tVjhUiSJcOKk7VgbAeIINySLs2gbEw
-# DQYJKoZIhvcNAQEBBQAEggIATp6uBzmtp6koFgej9y4UK69QHHjYVklJKsCvjBuE
-# Fy7uWLTlXKrLnvyjQb3hyz1kQtjjNuWZ/U+mbSSQphwqr+U0VGUfeRydJeqnbC/S
-# neGxgnQxSoaECykgovA/YmMZ5LKUpdz6oFeV5LVfZUZ+c2biM4h5MihYApZtHTPB
-# meoXeKBtSOkFkYgjwV6ZzXbGzQhvpsib3rq9meXe7yLIMG+ypsdjzg4zNBB88AqJ
-# LK3RhHGZAYAaWRHa+rGwPIvCpmnupLF4cWu2Aqbo7uURJyE7ltf0ESv12CxO5yLL
-# UrKBeLTAT/6VLX3CiRjQlcnfFrfzgZw8smFKFhUnqbyHfcK4wJvrrjiVHomMu5KY
-# LHNs3Cv9d0a1WjG4P7R7BLc8m9tGvnIt/H4pUhY/Zj6HfdcgChopiwZAlLty2sDb
-# +KDqsZMegBx00w6LQWRoZ8S7XCVrnzLvuVSeweQrvWwfXhEaXcz6/Z+IPlmDsIeD
-# 1iHfZeH5RsFZ/JaMtsyBSlyZ5iEyvFZdnWX1Ajk5LObOv6F6aaliNszvFXF196zp
-# b8EqbfOeZW2++14feR6hQX6vixk4Uhc1hWmk3cOhjraGizS8QEf7LlsVlgBoWQet
-# 8FeRGepSdiY4XrxC3tE6wWzXc/A5KAciuzWj0ZPLJkFWRz/HinsiGjdNGUDMLrZB
-# Y+Y=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM2WjAv
+# BgkqhkiG9w0BCQQxIgQgiNatGO5TZ9Kqnxt/2ynmpbp2MY6/RqOl7QXZFcj0Vqkw
+# DQYJKoZIhvcNAQEBBQAEggIAaXpJq1S1OcsLdmQuiRQ/0A55SdyQ3dUhC4N3aqX+
+# /q+QoARmKYB7HCV8xiLu+UYDY/Wag8jHFwnPLPnuMncOSLRzs6t1JXlmJs+tY6Of
+# OOpID0IxuYCnguS1A8jqiQwfxdeslUAWBFr7pbAyYGg2NND7CZH4gPaRuJjk0m0H
+# rfKncMbovnJPRKYSxfCNg5j22T05HRSwMLIixyyiMMoQBY6pFI+onLqduea07KK+
+# SPFiGCg0zF4dW9YVez7HxSeR1iR6bf6Gqe9sjA7VLLZf9eFd4t6bwYUe3M7DkEvu
+# 10noS3RYW/SWFc4+AMzIp6gVxoHoJCYoHMsmJGTartX014bOmPYyP32LqebKjxJ9
+# GnIM4Fi72v0ncVgfDagveRMQr6ytLpXeTHf2w+zltiSJd4svSik6xb0clgZVz6Kv
+# 4+NrKxhbUQxIsdrl7YL45aZ4HBbIOFOGLJY/m+Jm4A0llYjL2PFY0oxQ7t4Bao7X
+# S0otB5olRemaZMKhQTbYHfrMRXn9kjOcNlkY4neWyfWcxBOzLr98ovbe8159Mijk
+# mvdrQE5A7tUiYdlqwnx/LzGM3aAhNgNUUiuCC5SgWbUunuR2Ubw21gZwC7wzr8UH
+# a9Z7KRQd+jr+1fkOdaUzx4ctQEinbc5DwI+4KiCCk2+z0P75pQko6vnUSxbYRsxx
+# BTU=
 # SIG # End signature block

@@ -34,18 +34,18 @@
     This script will create an Always On VPN user or device tunnel on supported Windows 10 devices.
 
 .LINK
-    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/New-AovpnConnection.ps1
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:            4.13
+    Version:            4.1.4
     Creation Date:      May 28, 2019
-    Last Updated:       March 29, 2022
+    Last Updated:       June 6, 2022
     Special Note:       This script adapted from guidance originally published by Microsoft.
     Original Author:    Microsoft Corporation
     Original Script:    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
@@ -340,8 +340,8 @@ Function New-AovpnConnection {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU12OoVNzJ178EUwPZiTWnn6R9
-# ykOgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUnf+yVm56YnIXRrsDPcjoQf8S
+# uPCgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -491,31 +491,31 @@ Function New-AovpnConnection {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSK9QJEsx/jFqCouWZtqJKvCARs9zANBgkq
-# hkiG9w0BAQEFAASCAYDLOnrf0RosrIgtZ/FG1MUpVI5uLAsQ7EetvRAjf7vwRDKE
-# oFEbsfdvfW9MKZYInZ7j/8yy30rdyO9UVO4RFs1c+3q40VHaonkKnVWC71m+Xt98
-# 91N2MijVpElQnACdKSL4bXJwUBuJ4EXkz6SF0ZunMleJbhRAodXlCqwkFsKSewdc
-# z1v/evDjw5S4IOdnK4T+cLWihgB44NdnHo96xeoUxeQNKG0SCpLFyasHyz902FRI
-# huJwJNTOJ/hRUhgSzI57FL303L9T3UP0Feyovh3vZkZjZenxt2dvFsEz7WxZnTJ6
-# 2z3LVRjE8V3ZS9reldeJIJSili11/q+AiW0gqNmq+ZuVG69UfXRi8iQZyzPyeD+t
-# VlUgrREtOYCvRk+aUDKj7mV5B/KIy18M+i2KBiFYhM/0BTo7amynSORwrmz2uecu
-# CkmV06TPWnO2kpsGNiZLYcP9gx30gaXZFyfVkt48EdmZLWd7iCpC/BrEHjJHvYGY
-# p+0ZwHWMTy8RoIptySOhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSgsTrAgU9ej1BKkhp3g1LveaYw+TANBgkq
+# hkiG9w0BAQEFAASCAYCF0oq4HucXR4nMhM9VeqqjTJHxWiAyp40GCidryGQUoRrJ
+# 4OgEMAKKVhXS4EzvPmtlZMSwSUvDDyfuvX1L81Gy386IrqgSy2CcOZN8aRpSpLr7
+# FwtmyYIdPH8UCyWTW9tdeAogvkR4zWaS8VIYfC84v9uz4mD2JDgOsrUIv+cBd40P
+# 6U7MdvZ9/1F2GvV3NfKZ+WtfC92FoDSghFAKWIF9NvctR+qQGgT6hC/wY568gGNi
+# lLhoJ0+BCgWIigBv/8XgPSGBkGYdb8RQW3n7uduoqFguU865IR96LM2hGTc50+LK
+# 13x2CHmgGSY6gLHnT77ZQBlr4Z8+QDJyTOT5ONsjddH2d+jYJklQyyhil129hciX
+# 5/hND6XWKeWmqDHFvtIXeHJsn+6RkU1mV3hjwP4/Yar4F1WxK5v6XDedsM2V7lfR
+# B881nkDhM3TeYEPz4k5AI1CSPClgoNBCVW0pksu5i7mmJJevPQXb+C983Z0ABwGN
+# ovrdhAylPY9gxD0kLjahggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUxWjAv
-# BgkqhkiG9w0BCQQxIgQg1pczclrO1O7KZVnQTO6CTvUO1egXUgltrLsk8xdPJmcw
-# DQYJKoZIhvcNAQEBBQAEggIAGrC/vEZwbLuTZ2+zOWZohIws/bW7a32PR6KUmGvi
-# enhxHPxLsj/xQQYqUoHhQ/B0M6i+pyCgTVMt00RcPG4QcLEVnUGl0KJAsVqRSnfz
-# Qlvwad+t/cEpUdLQpnEtHUF7K646iB7H5HwscrxvWAlST4/56+RGtwPTim12///x
-# gWZVglPenC3XR5uv9sHxLOlN1KG6sLji54PA7jmOrdE/eIM/b6UPitgVgO8+d0Ry
-# HZYhXqrBlcWSy60n7NhCrCjGfW8niseILeoojckqKLGbz42cVDycMoYllJ+yhZt4
-# taZVmqN17iKpHlrlTUBjhPKKEL0mbkvK5EuzU/H5tShby1ONGJMPkMCpa4wWx9k3
-# NiDxwJO6c0slp3tWVSpJSEWTSjuowKg748LjBP6WyDysPAszCA6aGAxlfDjDgO2T
-# YitJHmOC2R+8tjBPQ9SxOQwZjihVQ40WQUf40MV7e69sIjyRTPmkVuKb+dd7zP72
-# AhelamCdJaKmHeIg2C4afa2XYi7384cVq3FAX6L0y8i9RqgSZ2n6PvjFITvUWRgI
-# BuPnSFGlg0lJo+DkJbHgVqPHv9T8OC8D3gjKWS5D0Ef419Ta8JFADbiUK6YPAP9H
-# QvVrOr53ns0jDQRLel1RViVOSfF8JqLPCqyu282IvaxRf9IZ6Z0VTsYNQAnyZuUQ
-# O+E=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM1WjAv
+# BgkqhkiG9w0BCQQxIgQgVuFI0N9EfOKWfAv0oG/UAlSk1NZ/MQU4CNi+hKbWElow
+# DQYJKoZIhvcNAQEBBQAEggIAYYAromNi3EfSkf3BfqeWg8oanw3AcKEiwQ3ml2to
+# 8skTlLwij7ZpCM1NJne8+p+gPwZMyekgVG3q7epM3vS7gEBKvwxnqdherKbcZLi+
+# qsONNXKh8C9p7zsSczxQ9v96pmx8aqgXK+AaKsFU3ys+E30JGjl56ToRZs8B3btF
+# AlLKuAynAv/TkbGfQoUgirCd+TpCFj25ZqkDeQOkSH6ftj+uRzHI+wiWBe64RluQ
+# bkaVFBz44yJNIezPLNUyVdH+jYcOLDwy6jlVTnvkx80fJzPAZqVfT4uPyQu3zbsZ
+# JGgs9rX6/8IJWG2CCip6o4YrPkqQ6xZysb+/WS8/V1mEi8k6KthoRrRowoRTfqve
+# 81cku7eGeB66VH3MfgqofZQGAC/vmVmbX4A7FuOJgb2EUVknigFhwyzr3RUSX87i
+# 0OXZmFINJi67qkM7DPda14V19dgzqAEEhQGWWNcELt2YfYiWJfy1Dw0SQViPZAoL
+# MdseSZj59xNCG0rY8TZzJzvabUPtnO0lPJR1mJ1IC/Xj1eRcQAXxjjaaN8w2w2yc
+# SE7NU0XgIN+Kunej51dW39bY2T9+phxgpZA3djDQ9E5qliXU3nJDWRcMIYV6kmWj
+# mvjcv8HqvhyQjHJZoMCKdKMjJhrOO8B2dZ7CACshOD8HOROIOeF/6cNmpWGcC602
+# NfM=
 # SIG # End signature block

@@ -15,15 +15,15 @@
     It is common for Windows Server Routing and Remote Access Service (RRAS) servers to maintain VPN connections long after the user has disconnected. This PowerShell script can be used to remove those stale connections.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Remove-VpnServerStaleConnection.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.22
+    Version:        1.2.3
     Creation Date:  April 14, 2020
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -83,8 +83,8 @@ Function Remove-VpnServerStaleConnection {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUnGk+Qu048it8X2Xi3XH2UpmI
-# uCOgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzjzsNdlL3NSSFepopO9OxE1/
+# prigghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -234,31 +234,31 @@ Function Remove-VpnServerStaleConnection {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQizAasKg2wokPIh/vfdeDklwotyzANBgkq
-# hkiG9w0BAQEFAASCAYAoRxSBPu3Ld7aWBBylYBfMpg5/JOlGbb40hHiFk5RCI0Ec
-# Z5DnZxBRnJPynUW1uV8tUhrYHn7bYW1AkcoQqEuBbXLDKqyj9zD+7cNYTmD2hHwj
-# dVlX68L41/GT9BkToBHviH0o2x9j0kvt2mvQo2Vl/rnOVGlp5AoYp+e2ZSMTCnzv
-# qVmRA5e95g7GDpB7gkEd/2es3CRVWcgWBf/loLwh5qTP7+8dGcSj6pxvkNwEdtHo
-# gMgrkuBJRlk8UwQZ0P054WxqkBlItNFNGDfE6RgpWv5LXKt9Q1g4GlohB0U4JK57
-# j70NTcKtS2xgS3z6dRzZIc4bU0jtI32X4O9HG/YVV8jXUg+tEqRTmzgT697dBzEG
-# FnK+TGq3PY+qsv/Xy2qrcm/sE/Newcl8E1OzZxb5jYZUOycIcLS16xMG9AqZha34
-# xxkImi8prwVdHgRqt+rcpvZdHPZUl++106fSYTslUSoCTiL70XfH8y1suaHP7Esc
-# nYCou+QSV1Sj/zXt+A+hggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS6xOmlDnJ1ZHkfCTRmCMsagpna8DANBgkq
+# hkiG9w0BAQEFAASCAYCC24zIZk2qKdyZCjcLgxkKJUz1knftBSpBq/JjNpnnjg67
+# OqrAzA39D/P1ObYwGWwUz2ZumDG7JqW53iZOxB4kKicKr5IDfqlX7mBbGA3VzN/n
+# 6HmXzAcCqu7iH6gVNTARlzUpnSJNUQsB69PcS93XuHGN31qBeXtMj6E+JGePn9K0
+# mYb59wkKPxI/Ra96tDj4wRilFDsdKKl7wcGVWsHTPdiSrC+ZMiIFCVf9zMEd0jbx
+# Sl83aPQzhL7/h0hPVd1qLeJDsbh06RyRZDwDBb7jtuoNlW6iogD+/l1MYMgfuxM0
+# Q/e1TVIthTe7je/62TOGnc+TSZyW7XSYCXgle/4HZJHA/Im6KQHI0/pab3/nLMgd
+# w+3rVKcxVyyap7/uuHIqG0xVxKAz24HOjxV4g3pogfAG2UKXPqACyHdNF9QGeC7X
+# /DOsUsq69zj2tj7dOY5CT0gacxIsAhwNx/ee89IeTywsLA9OkuRSttLlzpofsSrL
+# 9DQUrqk87QZ53IoS+BGhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUxWjAv
-# BgkqhkiG9w0BCQQxIgQgHEjFDAroGT2eI5kvZey3wD26a5o0ODFzOCqya0THT/Iw
-# DQYJKoZIhvcNAQEBBQAEggIAroWXZhssGJXHo3isY9W5ZB/GBFJsYdCSsi3LhYLm
-# cJ/82YeV5iq/u4cid8e95sniZ9hpRw21LOooVJYmdbvJ21Icd/6c7cTqJGjGIN+G
-# 2/J/LXjWD2f2VpinYO/NDfWxx0b8esxFsbgMZpNOzubEKPREuQNyAWf7RD0/Kvif
-# 09fJnHVik8YA5UcYHgS7Yr8i3r9ZlbK5kJBPlewSebP3LGlvWjZiqYybV2U2maU2
-# IyjoLFSJV/KaCFCzVYXEUnkUo20Qma48W3kPNFvR0HlhEf5GnNELlcEd4KNwYG44
-# tNxFZd8mmBcvn8zwlsvAsCsPww5uKGhHjubBq8paTOb7wdc8q6aF8MzjjG/SWp4l
-# 9VrXT2fmbitqR+vMndz5EbSvQ7VE+QiVj8K84VNHj5QpDBvyDYYnVxLpJelZZjvO
-# M655mxuZ6r90WeBdo497+wXvH6RTCN60APhnluNR4/yaLqpLH73s7wdMjUaHkZqN
-# xebBGgu5cbKz1KsfpsLD4Kc/XlVmY9Bo3NxTjj/IEDjOBm5/6aAWujt8c48W4V3a
-# 6ayCGbbKjyF2AlMERtOLXLPP3sLGsrDKUvQeZKHMQbwoZHdX/jP/QK6ux+lM41Sg
-# qo/LTcm/bS3zCTxHomOZ2mhzcRSLIukAl1IsrRyC5nB3o8YJlKjOLRtgneG/YZq3
-# NOA=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM2WjAv
+# BgkqhkiG9w0BCQQxIgQgvBm7sot9tb4HpnP+BuPrzj4lpr3PUWHrRlOePsj0i4cw
+# DQYJKoZIhvcNAQEBBQAEggIAZYjogmtN29DcpDkt3w++dIs6euYhKPsZFht8XeCw
+# y/HFB44QifeoNFitdQ96t7nF0+gP2u+X9MJU5BIOWxurgoOTPEZUXI0VKeFTz4Dg
+# 8zJsEsk5e6RonAusj7wAIn7QYxvpod3u3N22VVK/x/zUidGvwCX8cTt/upj6tFje
+# j0wGbBwC0e8u+LPEqpUz/OG7iUXLnJt6JYfBw0RyfJgi8YmIMC56juWAIoFj3re/
+# neO/cIUxxuZyzjGo+msiVRa3397OKEzCh1pAQxiP4KIa6pKWnIfMgwS1qfLzQxIe
+# TkZ/Aio/5VpZiiiroYw9nrJ+X8VNtNicJ+DMM8gHYRr8UaA3L1MMDqeQ462rN/zb
+# EyBzDG5L5cWL+MeM8Qgc3Db+uiy3ONX3Nop+7ylsoezivTsdd3iRarR5bS0VhkX3
+# qN27jf7JXB0yElW7KI6DGXWtMoP4oN92phxxdHpk4VIZ5cGJgd6PmyG6EUDe1tjA
+# TtOyKiJE7v2wn3d4LEIoH6zReS3eoa/cT7TguVZYe0Nq8bpdK+9cnjbTh1mTB8lx
+# is304qgM5+jZYl6EV3UgNpvzgEUIJkc5nEyfcBPjcT5YnYWlSiMTNW0dr1tUK8lq
+# Q8ZkF+c39oxlJuu88p7w3+bDewTOE/h0osQeTMM8suMb5dyvCN78oVZ+ClsixnEO
+# 8uk=
 # SIG # End signature block

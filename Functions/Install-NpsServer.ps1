@@ -4,7 +4,7 @@
     PowerShell script to install a baseline configuration for Windows Server Network Policy and Access (NPAS) servers.
 
 .EXAMPLE
-    Install-NpsServerBaselineConfiguration
+    Install-NpsServer
 
     Installs the Network Policy Server (NPS) role and installs a workaround for NPS on Windows Server 2019 and later servers.
 
@@ -12,19 +12,19 @@
     Use this PowerShell script to install the minimum requirements for the Network Policy Server (NPS).
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Install-NpsServer.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.0
+    Version:        1.0.2
     Creation Date:  April 25, 2022
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
-    Web Site:       https://www.richardhicks.com/
+    Website:        https://www.richardhicks.com/
 
 #>
 
@@ -77,8 +77,8 @@ Function Install-NpsServer {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwz3QSa/17+IX95SwoWtl27Yh
-# x4Ogghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUgc4k8QP8J0/nYnnJZ2UBkL98
+# 7WCgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -228,31 +228,31 @@ Function Install-NpsServer {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRdnjaBidQTfdSWva0tClg5ON1EVTANBgkq
-# hkiG9w0BAQEFAASCAYAd9K0l5qDDLtjRTKMF1OGOP36f9RPvkzEEWd/NPMPkuuzi
-# T58PO4OPGzzGK7ZdxC97+CYnPGp6MECJqVmZheWnNVXccOuJngtn1TudEONY/Zsx
-# 82kvHBZGqtu5FRhSvJAgF6vV8FJwuoTC8DMUnvTrjQkrZqsfi0nNAMRsELYe48gj
-# G8MqkI3XO3q6kPwyrF63EQ7rsWDefFC6SrJ3H9zuffUPTF3UAEfUNW4yC2KoORLm
-# xXnrcrVcANsdoq0PjJiyZf9v69Fj8aXrxKJTZUF0GW4hZSPQnv7MEnwTytM3+Sl3
-# Yp07dReNJTuvwBt0KngknhgiQHSG/agiAiNtw9jwK7y0HMu7t9VyI0/tjyJrDo5l
-# R/eglQEpQHIkXhdk0FGgk97T54hMtgVAxONUNWE5Pd9CMVpFzx6wg5vu1NnWd/ZL
-# 8Ft/dCvExa05k38bI3uqLFO4fDOiiaFKNsJOQA6pAUAtT6Xic9yYGcY6aeB6n6uV
-# 4oOrRvrQth8m58yQtv6hggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSmtNpUfDGlINVSJfj3ypIXMjlm2jANBgkq
+# hkiG9w0BAQEFAASCAYCexJgM5rrbrZl04cQ9kJZJk52uo3uyvXprUA9ASxjyvT7d
+# Nn1hYGaoY9o9S2t15gRC/Nu9k9aIw6gCtEFW8QVjSrrWkttood9oiK+u5exIoABG
+# cZOozDV5RG5E0op0mOkZFloc+IXlQSbt5WvQCoAGdaIkX09YBBJQypItJXWgAEeJ
+# mZWwSWQ1yETJqbeCAFHOq75k+uC11aFYBWS5m9NIo9f+iVUyRIWLLfO24g7bJrBh
+# b8spwU1C1ly5AY6rzuAmF1Mhj0T2YeA98DclL6VeWlRoPVZRjAE5Lk5iNNIICi0y
+# XUz2zviKGaDgCsSkk2GAgf/T+bf8z2Kz1GXwt+vKWbFzk4VvxpqJCSBKoMQ/fRMI
+# MUy48aWJm5Ij+iQoBzqif+sbGBtyoljthmxCMy8MnCDWAq8CLavYchy+hZOun+jE
+# fBnasfL8tSv5n+rKB/DVYfX5bB0k31G4DrJjUNv40anCLXeNHsIUXEArnBbdCR5I
+# rFXZe3c6N9Z9AsR5WK2hggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUxWjAv
-# BgkqhkiG9w0BCQQxIgQgomFgXCZZZAG3IRCb/z3mDV1AATCLR9HfsU7TfY6wRgIw
-# DQYJKoZIhvcNAQEBBQAEggIACqZXmqIKNj5akZF1BxDjeRF6lv/iUmu22yarlZsq
-# +ijwB5EI312vtYmOiXXi1RZNBWu7ayJcTdaGNimMu3dPgSBvauGV5NAHv4zOk3e3
-# +9/lUFIFa2d3N00f2DsG3sjoqXS7aIwV+Fu2WklzjDi9q9yT9wHeSHFeyue2EhQn
-# nqLLJmrBFXm5g54b7KW30H/0KZeRaUTKNVCZdQ9hdlHCT0Ya6b105+yT3qkG9vbd
-# xnHTSSBoCGTFFa63Ua/tF1FAOX/FILre7q6cMECvR72h9VsMgRs/n+3JcN9bsQPq
-# 7uRwpCp33ztCENBdT3sd8bGmm2z5IX8Q10Iljpu9ZcX6tO5/xVLqrVfEH+yOks+4
-# a3WZo52WNpaVqc3y87wGWI3qSWcPF4+BCRR37aVk0tLL3mllOHP4CW3GQ9jANA0e
-# 1hxZ0dONEStSgSlMVRe4numHYtXlKMy7PpJRhXuDQLXpUdWkvXFjgtt+zcRtw2Sg
-# +YLIa1h9SM//YfZCE3noGCeKranDOgE1HmF+Yc8DRXPtEtpZqRX+7A/ZwHbWypnK
-# vnRbhBGby4BhGhTs4ylL1fkG1y+lhTXnpCZm4ZmipXj7xPzrsGakY8garpOS5hQ3
-# wjSMMcWreNP5r1Q+HcYPrSpd3AtK42/UnbmXn5ci+NUh7dUi6PyAWzwgQr8xXo/s
-# hcA=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM1WjAv
+# BgkqhkiG9w0BCQQxIgQgoDAtpolV0Ko4FDhWzU6u6sZbhSAVZEfPP870e8Ghqpsw
+# DQYJKoZIhvcNAQEBBQAEggIAASmOkP+k+ObcLRk7jRVtMb+2WA7J2k2k4u/WSil1
+# rXmRIv8o/maaHPcanNr/ghLUEi1hXxqr0vxJKcqe/lWGTpwpuYvxYHVXEySNG3fG
+# QbxeFW9VZNsdc5cEXvNqeBZbd2y625BJAc58WplTYm1Tn+oVk8nDjpptXpPAEz03
+# 3zvSZv+giPXgPWM8+3dU4vDtzUJ13A1Vg8WJqZ7uEo0crJwtIItYpYTGtv1LqPWk
+# EfgdTixCH1GVjf/mhIX1AyrV7vJMCW4HVzG2mbfJ0vpsKupK+925SJBh+BHoIzwt
+# 7JJuM0Z/OfveQ09jB4OC1KhqVzTRIxM68pAFr2goSqHR5uOpORXslUFyWL2Ymu6q
+# ZP9Qksii9om+9ldjYDlwXins8RaFuuxYNRe6LM3W+NZ89x/KcXERcFgZBZuoczL4
+# l7+XpWxUEE0+j8upfcxVHCHFLvHDWqnJDcTQ2nQPXDyqDmMbgrcjQqNsHUQ/Mygs
+# MhS/lzfx9wBO2VvKfx5WASOZF+wgXjaFVVGJd9WapyfrdL0i+k3+Fu6GAFIPy4Py
+# wGLyahYF85vZk5fRFUxRQRfUECSaiEvRTIEqYjdXzQTZsc3yDvlGE0s+Uo4Y0y1Z
+# qiUvV3lqt78HQ+fco5gf3eq+xwZyETe6eYM3gVPjwSUQc8kgaBZ4uE5ctX96LMu4
+# 5jA=
 # SIG # End signature block

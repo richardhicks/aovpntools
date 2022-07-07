@@ -22,18 +22,18 @@
     Administrators can configure Windows Server RRAS SSTP to support TLS offload with an external load balancer, firewall, or other network devices. The VPN client and server validate the TLS certificate used to establish SSTP VPN connections to detect and prevent interception and maintain privacy. The thumbprint for the TLS certificate used for SSTP must be added to the registry on the VPN server if the certificate is not present. This PowerShell script enables TLS offload for SSTP and adds the SHA-2 hash of the TLS certificate to the registry as required.
 
 .LINK
-    https://directaccess.richardhicks.com/2019/02/18/always-on-vpn-sstp-load-balancing-and-ssl-offload/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Enable-SstpOffload.ps1
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://directaccess.richardhicks.com/2019/02/18/always-on-vpn-sstp-load-balancing-and-ssl-offload/
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.11
+    Version:        1.1.2
     Creation Date:  May 14, 2019
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -355,8 +355,8 @@ Function Enable-SstpOffload {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUmBGrXXqvmM2pKzUm1B10Txic
-# vAqgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUAOHyvD9jxknsZy5ae7QJhUI0
+# jpygghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -506,31 +506,31 @@ Function Enable-SstpOffload {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSwvVn/4q4/Pg1ASvcPJsd8mqJemjANBgkq
-# hkiG9w0BAQEFAASCAYAXUaLMcLUpreXSMe+Mcz0zlxAmLj+lFolIid9bGMuNFyOj
-# YS5lgjPy77qS2Na29SVgj1Eep8J9ALNFCtQ3EU+6D5n7GATxweIokd23FfAsjO89
-# FjXRTCGpifLcefuZW7etY40xb8n0gN5zv02OyWFyXF16YCQ0Gs1Q6QfURvFcUdHY
-# 8gLu+oWeIhk4Tpwj/3ZOmrtA4BsagKgq6yCCqTi3luYH5GEh1XZ9iL4x5lWjAGeh
-# QiQbw1f/BHAg6erAZJE8hg1NVfyx4+alcAfAg7PWIZnK3SdfR3szazYArDQZc0K5
-# mE2lxTr1Cmr7qr+VrA/fnZ/lru8p/E02PZeq/UrOTZ9KnlNm7C25DkfMWI+N+ZDt
-# nQskTuTeB0fmkvcvOhGq4xSCR2XeYqC9Hg43SucBgYTku8bGosSK/wvgYeqF7Tnk
-# Kwx2hqTvxx/Ze2ghNKDop7wIAAqT6uH2uCPiz/39uLrcYj8Gt79mpKsV3EXdNvWZ
-# awpMt3jAdt43MDybbvChggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSl++m7+TPcA0N8Dd2LBjLTNL02VzANBgkq
+# hkiG9w0BAQEFAASCAYBQhPaQR44jGQcxpHyrIdKdE4X0NRB/raiJy7PZJa9MJIbo
+# riY/Pd7bW5SkrjSxlzuoqBu6aU6EhCvZmirN8soEu5IpojLSr+3bapaUNYhZk1Ck
+# FtqXKfqLXTVrXuM62+uOqpsqVwXI0ACGq9tkPGZGKqr2eQFM6IDps6rn3hEAkzOw
+# 99CE8uTqWYbbnAtFhiJj32r13qX/YMV94ImYBwtf4Y14gG1iCo8Li0haVZgDppop
+# w8rQFiMRuZq+hsIFAh/CuOijYONoUointfecyxG++lMC4tS1msvrcT8lqenPpPt3
+# C/oWYbtKBNKpa9+N0SlkP+4y9vWp48uGPDSCOzs+EZXbXf7eNo2AUATZrH419WlX
+# D6xa7DVKqJR68Ltm6vjRd982PNMUOdRkO1UXNw+OBjMNcRpm8ZiQJ2ST0dE16BbO
+# jfJHcuYsSC3p+8r/HOTt8+Px7aoYRgooFEpjSHaqaEL4YDDSxcSidZ1Zqx8B7ff+
+# TfrOo3bcTAtT5eYwxpqhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjQ5WjAv
-# BgkqhkiG9w0BCQQxIgQgFCsunIPpdpHuJUMrSnmnDeyOzPh2JdqR88MC2eYIkNAw
-# DQYJKoZIhvcNAQEBBQAEggIAoIaywmG/T7mq/u7Hj8KD1XQmL+kcFFX5stOqWBRd
-# OFSljUnP81tv4R6LFL/kueUYffN4qBLcEb/BfaEfZ7+qeUORztM0AtRAujYwUEvF
-# wjGp4wRMEjLRWwUPov1C69yjUa97hSMe/iatjEUmD908pMTVGk/iiZK6H9MAf5/9
-# bfizKcOnMhtjkJ1J3Q/xvj9QwfYwF3RslFoGqy/FlkcGWpJw0y3eutsHqUJfGZtE
-# el+/9C1RMUVCkHlWrwj6ncGHzht1K00Cl+QBG5D+cknx8ENKcdyNz9oSa2R3qdwP
-# DdbF8VarI7NybonXP0nsg1aZzU2ZYh5ZEg5K3a23x02vrRyZfVgoBlaigmGe45Vp
-# nDYBhHc01wrM0EGlPkj6pDZOjhY1CFvb5Se0mL4GrGYOCKaCih/ANupHmfsO9sm5
-# 2qDWfSrtaMRqS3gCj2veum54WSn+TT5ORhUr7luAj1Elix3EDdyYMWwhXV3UuSDc
-# +vkg0mRisgRksTPshZF3xcnXvmTB6RUZcU4hwaTOiNg4XDDtDj4y5IhTTEBI/+GR
-# osDSB6N+QQvksyNzFkehyhwh5Q1RaYLH7Ht9WUnMVTIB8xvmVSUsjbCsnamsnzdU
-# lDwMwIiPZqelViUYY6CCU7pUhvsKZGBY7ueSo4rpcd21fP3vkjokPbxvraXnxJHN
-# TsQ=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzMzWjAv
+# BgkqhkiG9w0BCQQxIgQgmJgE3LbM+hkC6vtFoRE4M4P2G6Qm1cLL5RMGdE1tKNYw
+# DQYJKoZIhvcNAQEBBQAEggIANBiR0aEjNEMNcyeoVEJSDpSgRHcCXg/4N0dfV13c
+# K/e6CheHvY0/Kz2u+VdDmvZ+7rcPzGBRvtnV2d3/yMFy4HjhLI6UvHB73hs17Scx
+# tGmvW3jltqrUUJO1IEVvXeZMgEge/I9z9n29aIHLp6yaYQDlYeSwT0tPRDJvCI8R
+# fGoiPED0PFb7wtbL69EmL6k+BDytAh+dA0af1Pdm/MoSeNxIWQbSbdB1BnFTfvvI
+# WUDTvV1jPshTb8mbxdmNUXUmCMRpkJloinMfk91Iwtxs04I61cIDelD3SIXUAl+L
+# 8CVDxyWQJHEEoIo37YbjU5Lp0a22UqiyQeVqUU75Jbx2L16aNJ65yFteOvUnGjQ2
+# iP6JHePOkEkk2/mFpBRbu3JF2LaH48AwwM1PG5wyqSZIbWvPqHyFoXK0dSH0IJEH
+# BjJ/2Coi/v5K8oyr1BbFM/dTmmmx9sTvuwB7B+Msl7OHoE3Qk5y23tlSzVmxJjNo
+# mGmR2m2liMwaKH1fSoknOmc7eScQyz4HvSmyP6RO5qKOiRdpZhNVOSYaIudz10A0
+# RTqKUvA6LOv5hrhMC/9oKAEVzu6iJVkbfpM8KGJlBiDx7f1ejh134/fPI1WYCkbZ
+# /dPH/PNVil/aQf/bI6tdTkVXAqhRCbnfioQ/nd/CnLSbhETtNMgoGsGEnxTxwMq+
+# aeI=
 # SIG # End signature block

@@ -36,15 +36,15 @@
     Knowing a client's public IP address can be helpful for troubleshooting. Running this command provides this information to the administrator.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-PublicIPAddress.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.44
+    Version:        1.4.5
     Creation Date:  January 20, 2020
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -108,8 +108,8 @@ Function Get-PublicIPAddress {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUa1jvs8a/DcfcMrJHSe7oHkGx
-# Glqgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPpj1TrB0Vgl0MajfpwVZThX+
+# 0Ymgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -259,31 +259,31 @@ Function Get-PublicIPAddress {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTvGpLlENuNFC1Pmvb1PFIbsB7tPzANBgkq
-# hkiG9w0BAQEFAASCAYB8OAOBUUyE8+RAMEWg7BRaD0/vJIsd5IqGHXfsvoTdN6CM
-# 1Xeu8wUHYLYGQ/og9jExKvssQJHBRWVEKigP74memoFPmO6Zc+f4J5/vLwoGZsiP
-# pXDzx5ACV8BtOtNlO20kh6c6nRhVWDqOzxz+SmDn5MMw7t9t2pHX9oNO2F+TUB26
-# /oZSVYF8iZoAoqRNYt4HGZR5Cs86N5ZavIzGpyrvaWpA8VjIZF+j7ZtUr36abl9u
-# oSsyYutCtHjoefElcqMhrH1oIyKbiSyrSpy15/9GQm7jnNZEmMTwANKB9limO+17
-# JTLld2wqN/nP1V2uXtwCy4De2vx4zAOkgEQTCSHfafwJVBAEtY+j9nEWDoc8Nonw
-# RMTU22UKIILQAu+755ytPdkSevjGY4cO9RyH1mEwA+L8W3yy5uVK51P2iOIcj6uW
-# Pa64u3CK6C54/HKBT2u9xKQdiD9vugSPldaZmhJFO1A3nkw4YsmhYJ/6aFLEmFgf
-# pVHYQkXxXSXTIwmQzByhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQd89iUCn6e8SRK7E0YpWpbfxEjszANBgkq
+# hkiG9w0BAQEFAASCAYDlHutOgq+OMCbdg8tyYDhniEgH7h4q9qMjMqAJupfEf7U4
+# vGuaAJg1zy08oNgKBF12ayTGkCnCPmwMg+XazXKQXiB2wvnazJ1lULy1hh7vRJxd
+# rNwFd9rqzQ9qV6TazCqhbkjOwYv6GTrK2bqnPhsyk2qjgy5fgdO4Cdkqz264x0Bq
+# 1I4YaHy2bck7mLj4gs6a9m1HqRO1dHbJu/OoDo6F50pqezLmJjl9IsyIHcslD3jK
+# jiSXiv5jBjkjgyJms+JzHxaoHw+/yeci5YAj+nCSReDD5XsUFMG+6sglzz3lF4GM
+# DpRLaUIc1rj4+KUbvVsICEZOytrwAIj4UCCZ8ecSBoWHMETfFDDMt1uWvrvncXnH
+# MZUhaUvKVbqy6LjWd0axFvrdVTQmIcaaWoVStJNBr4y64fw3F6S+vwTaw1vpM0Ls
+# HVN7fdPeL97XNo4Ms7f/zgwjn86JQ5oMEcNsaFlhhH9jOaClLk0lDR+TbHY2ize/
+# YCJs2RPc1evTPguCB2ahggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUwWjAv
-# BgkqhkiG9w0BCQQxIgQg4SvbsrMTk4LY30wqz+Z02TTiq6fPfuC4JgBXxg85mLMw
-# DQYJKoZIhvcNAQEBBQAEggIAaALQmAwp6IOXozvw5XXed1hUah2ZipqOPcXrKBuY
-# JGUrju5DRXiRMfioAm5yqKD+ckVSM6tvZ6f4ClswHlk+NE2EMC70NnMSz0wIvBa8
-# l8j75nrPMkvskfIEUj6kNLXZqsQQrd/hdRg7BReDsn3T7+7B59mPpl5TU5jgnsxW
-# r3PM5/PXzVu8RmdwCKjPqb2t85mdaNtU9lF+Fm4lTCWetaCnahWm/Esu3FyOrX66
-# q0knGYKzN7UYhXxXDvid50N9ZGhcrKbJ0tqLpOzbfTILpsF2tW3fxsjiU1QdWPFE
-# DRkYqtqGbkMdvwyQEDk58UMRnuixbkPoHGEFWEEEnl3kWfn5uTXnWjQCl9nBKrF3
-# j3pCmrnvKJZJ+EUv5nfpKXva2eDgdJ2FTo6iBcasO7ZDMd6xIVAET/ySFvW3lZrB
-# tBPTGcBbbo9lmSMH/wTwbvQfZRR6DOih7eQq1FXNy5+uDPOBiD1731/WpaqqAraB
-# YZHumoftBmafOJ2D0uwyYGzeJWc9KD7gUx7FzaUOsSN0JSLIedH3CBwv0oeEzYAy
-# RZ5CoM1I9Q6T5uAfUT6vygEXy79nf4dvljLJ9X+hLvvQ+ysyiIWASZ+aSp5H+Lpm
-# 9FTtRFPRD8KqPstSWtlaEAvpK1TLYTY3ytt8ketsoKXrRv7+nS8ym+2BaLWVr1ek
-# 2Do=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM0WjAv
+# BgkqhkiG9w0BCQQxIgQghGz6/kXU5UhA2cNbitCvObG2Fs7MFInP2dCLXBPbFS8w
+# DQYJKoZIhvcNAQEBBQAEggIABa2UhNEF+7v50hgeRT5firOpOc3fZgZB1+0wALfq
+# g2d1vfkTlPRD7YA2mYScnVI9iD/Tkm/W6g8n1eRd36KmRG87dpqZx2uunvTifao0
+# toACXJeZ42CdjUAwT+EfOPFUBkOeCjIuhMe+joEJ51dPWoMMBgCRJXz7GE5f+gDt
+# kCNDbWjRn1sQfePjwaB9GsAeNy6+6AbCmgcDiwwuc4hJyrIPmqQA+LEgupp1wWvj
+# 3H9pe0OUkdFbhYF33J/VDSVslgEWm9Qnd6hpsY9bWRZTRMnQPYQh1hbM/GiDclyk
+# RvJsQWj3PtzP+99xTv6ij1eLPFqrTbCXpAoLdDY+C8qNg0bketVXvzXNUAfMO/Hb
+# +j6w2Ui7yyK+w7IHtKd+T1a/bJ8zragjKJWIqG4G2gPMJRX3F8bWHWgRMubQv3Br
+# BSU6LWtkGZsBq6xCXDnh+xzTSJKvvym+uG+ns2DPrRoM7oa1/XAh5uDQ4ASfSs/q
+# ELN194/+ZpGjy0uNmpP3lny/xj6Grw4uxOiOsEBPUSDO/iPIXt01gpPiRPgJRLlh
+# Bb+2pbNv/RrpBDgug45N1MWjS4AGLv1VMqdHoUwTUBFD/hq+VmnSPZ/LGbgDEP5f
+# hbvw/rSju+ww/B2VdFExxEMLzaBGYyzWf8ECktENGxp3THL4H62wcYgBGXB6VVQ/
+# mF8=
 # SIG # End signature block

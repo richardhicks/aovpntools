@@ -4,27 +4,27 @@
     PowerShell script to install a baseline configuration for Windows Server Routing and Remote Access Service (RRAS) servers.
 
 .EXAMPLE
-    Install-VpnServerBaselineConfiguration
+    Install-VpnServer
 
-    Installs the DirectAccess-VPN role and configure remote access to support VPN connections.
+    Installs the DirectAccess-VPN role and configures remote access to support VPN connections.
 
 .DESCRIPTION
     Use this PowerShell script to install the minimum requirements to support client-based VPN on a Windows Server RRAS server.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Install-VpnServer.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.0
+    Version:        1.1.2
     Creation Date:  April 25, 2022
-    Last Updated:   April 25, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
-    Web Site:       https://www.richardhicks.com/
+    Website:        https://www.richardhicks.com/
 
 #>
 
@@ -38,7 +38,7 @@ Function Install-VpnServer {
 
     # // Install the DirectAccess-VPN role
     Write-Verbose 'Installing DirectAccess-VPN role...'
-    Install-WindowsFeature DirectAccess-VPN -IncludeManagementTools | Out-Null
+    Install-WindowsFeature -Name DirectAccess-VPN -IncludeManagementTools | Out-Null
 
     # // Configure client-based VPN support
     Write-Verbose 'Configuring VPN services...'
@@ -50,15 +50,23 @@ Function Install-VpnServer {
 
     # // Set authentication settings
     Set-VpnAuthProtocol -UserAuthProtocolAccepted @('EAP', 'Certificate') | Out-Null
-    Restart-Service RemoteAccess
+    Restart-Service -Name RemoteAccess
+
+    # // Enable RADIUS authentication and accounting
+    Invoke-Command -ScriptBlock { netsh.exe ras aaaa set authentication provider = radius }
+    Invoke-Command -Scriptblock { netsh.exe ras aaaa set accounting provider = radius }
+
+    # // Disable IIS default document and delete default files
+    Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter 'system.webServer/defaultDocument' -Name 'Enabled' -Value 'False'
+    Remove-Item -Path C:\Inetpub\wwwroot\iisstart.*
 
 }
 
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUsNpSWNacWmbMxDh4yA2zVwAK
-# xGigghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHMU/LWpLW12RmcVsPetrbVpR
+# jgSgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -208,31 +216,31 @@ Function Install-VpnServer {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT/hnnFHbYCZpPa1ogz4Xsb0HbaEzANBgkq
-# hkiG9w0BAQEFAASCAYBdA2u1nhJl7TszNKZjm/owAK91mG9Ly+2pDZ3MvMLz7d+R
-# N+HBdNRlQS1cdGAb1KLVpGpqu1JTJM/0PWrsKG1fcqVnfY2rpvyIb07SPBY4xXfn
-# NA3+eCQuCDoq++oSXHOYKuVr0PDgXWUSubxoVeGX3nZQnwNOYKjekq2bVEK9oOT5
-# J44BiLMnU059ii7yVjfFWw4ZroeuUTcTbn6m0ad50VUHJBq6kztKeYo2zvgSOgOR
-# fa7dzQ/dZk4TTNc1v8LJhGpjnjaKhF9/uaXUHCcwCUe3/R8dg2iDpv60ku3lOOLQ
-# Npqb87CCk4ks1G5N62r3gw3IJn+tKRH3/6xUxzir+WiPeMsvv4/G58Q3ljad7zkM
-# 2ifhsyuOQvmJXvpk4F8Kj6QL84mmsc87+1kXhGnBkbZVh9JpAukS3RnOQA5+1Hed
-# uZez2lLEDEHYomyLI5qkjoUwT94CYlv8yaTU9poPcRtca5wgnmIQ59H0C/Rw23h0
-# UcyqRXJ+rzoTdkBzeyehggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQrIQScWsmtbVowt445fRCMDNPqBjANBgkq
+# hkiG9w0BAQEFAASCAYCH99tN/6FgjM6oN+Fl35QkADqpt5lI6t4DwnUFLA1YJ05n
+# v84GCr0Tgt/ps3Y6dy4PN0xzoGf5BkTGsPwM+RbMJB7AXJ3oJ4SuGlEe87JgkC3j
+# zegxf+aVZxZ08KHLx4MxYrlF3jrAMwUUS36eG08vNKTV66Qo0BuF5rqz49ktvuX3
+# bo/vSfeUYyPKpPLwR0ago1XPxTg5Ppo8wCkMFB3vEXqLYKnqMST7Jg+pQ4qAxZvc
+# NAN6+8KeAIy8dgr6XwpvgC0czrN6sXz2WCKnkX/pYK3BNH363/xvmliybyahAt4t
+# KtPfXlZP6Op6sZDmJTBUqEkecgbwPb0PfHWMxuoDh8hbmCkLxMuWeUrULGzQP9ym
+# 9L1V5sVU2XwacasGoF6491TtudP1y1RK+cpG1/H7jwcyCEtMUfxai7EFXs4Tat75
+# TqkYYanIeBlfAlgwZMRqkb+iLeYcLIEIOajOCuL4W0sR6GS9le0n+IGzZ/4P4Pvy
+# Kql6HRuE5HWylXmz1fKhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUxWjAv
-# BgkqhkiG9w0BCQQxIgQg6++h9Xf/3NAGlpNKGhrxDYek6ilNC2witx2Byz/a7hcw
-# DQYJKoZIhvcNAQEBBQAEggIArxn+ep53qgFX/5KIpGbsiWRleBNdK5mXAqlT8jBe
-# hi1dpCL39ptM/Ku//PUj57AZVgTwZ0Wr2AyF9D9wfPPymxKZNLqI2KMIPnfA29v2
-# 6pKnYUK3DY/1r7G3b+y6alvfiht69TVhjqSt0h2JXHa1C6Pq6kIO2JGfa/vQFGKL
-# n9ASiUdX/aEkql5ceC9eF3rGjp8c2mJrRRJ/Y2S3cIXFlojGTjpo9+MHf5IveMtg
-# rmqeWe8k9B2muHmYgJKLrwbo7ajRdJEmU9BII35FDggup04MMtW+a6KViBZlgWMQ
-# EL+w+PBO+4pD5so7GlGqtLO19O8iQzLM6KcI+VTy2pJche7M0CWgtQi+//0BRZPF
-# +qzi/vFfFIRRSRxWiHZPCBTHEB1aeIOcba+E02A4pBGDbK1hC4tdwSOr4ou6+jZ3
-# dxtSTSnm66+0m7bA3cu8Xg3NF9yznAZko1Nq2dV1QDApeVYcxB/UOjsHnRD4FKSj
-# +JvscxPI61m66ZBkRO9knhiHo5o/daPgnZkystGg+Ct+X2q/Jm0Jzx/8FWDicfq1
-# zMwOW6o7t3iCB1B2y7Xa53XFiOJBZvHgzF5JQG63K9DNpabVuvr3ecjmclM1x3Ti
-# QdIHx1PT2efOkTbKqejZacmxuZqpb6jPYtqCg8tHCiFWJp3EOCOKnhhUQQdHW6yR
-# tQw=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM1WjAv
+# BgkqhkiG9w0BCQQxIgQgbKQULeYLUt0u9a68K1wPcQ7ug1cINshlrcvJAedZy0Iw
+# DQYJKoZIhvcNAQEBBQAEggIAKcDWdwkBlHgLZMuvCuNpR04Csey6PTEFe0tLW2fw
+# mgdIkotkIeO/2dznUPZMcaFehmHbVNVzEPzl9dKQwddYOXLBM8CjI9Ewny6TCFbE
+# vloSoRghxJ19Ul6QHY9YRDg9o9BmstaAl3xDov+2Rz0068GH1rBe7wPJkFugs/Rr
+# DhTp2uLUK6aoBgiaVqHmTxkM6ty4Ur14VDmYTiRmYKPtZ6lPWsmioBEyMKX/FpuY
+# micavc8kGqEKz4lSb5W2xoPBehVDjgxvUkIp1CbpGAS2A1ncEZk56gYTgaArxHqZ
+# 92s+RCraIP7rW86Ga7vvWdnP8JHcZiNziMNgoVBKwlOzZ/rE2PJU3fs8hxJyeyrT
+# +CEUzVFhNP4srm9T2rfHzsTvNVvBwfhvUFSUD9pkZRLTRM6Uwmu0N9+LAXCkjov6
+# mPJVseCUOFW+sfNzDFkiZKxs6Zqmik7XPxxAFk2655wdWcVzIdAnGciRtBupq6+W
+# HHsEz5Ebp/y1Nq9sV0KFStOTATjpEbthwRaTLQsKZsHv+NXnP7bg4T5PLwcGN4JR
+# 7Y3BjtrBq2f3b37MlY+qD5l9gPELVBekIsYTXJh2cZ5ANTu+lRfZcZfpQXmMhaR4
+# rIwUFJW3NumJ8+sD3eRANx8jqQlCBkcL7jjoKMOu+OfJ3YNIrn3VFmmYjiovtqjE
+# Qas=
 # SIG # End signature block

@@ -44,18 +44,18 @@
     The default IPsec policy settings for Windows Server RRAS IKEv2 VPN connections are considered weak and should be updated. This script implements current minimum security best practices for IPsec.
 
 .LINK
-    https://directaccess.richardhicks.com/2018/12/10/always-on-vpn-ikev2-security-configuration/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Set-IKEv2VpnSecurityBaseline.ps1
 
 .LINK
-    https://github.com/richardhicks/aovpntools/
+    https://directaccess.richardhicks.com/2018/12/10/always-on-vpn-ikev2-security-configuration/
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.44
+    Version:        1.4.5
     Creation Date:  July 26, 2019
-    Last Updated:   April 5, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -67,7 +67,7 @@ Function Set-IKEv2VpnSecurityBaseline {
 
     [CmdletBinding(SupportsShouldProcess)]
 
-    Param(
+    Param (
 
         [Alias('EnforceCrlCheck')]
         [switch]$EnforceIKEv2CrlCheck,
@@ -209,8 +209,8 @@ Function Set-IKEv2VpnSecurityBaseline {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMpW2I+JK5j4FD3+QYX5Y7CYB
-# HN6gghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJpCeKf5XnC7Z31lTX9ch9yF4
+# zkugghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -360,31 +360,31 @@ Function Set-IKEv2VpnSecurityBaseline {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRsBhYDPdvyx/kEROo9uQTGZrru6TANBgkq
-# hkiG9w0BAQEFAASCAYC6Q/tF5j/Zgn4/UPJD0vqOBWs4UnJOBno1DIJ45RykBI6E
-# Le87hEs5cl1h485qf9lIw8tefNDoLgKV3q3O4CpH/BgP1ooslUJQHSse+csZhFzo
-# P9huUM0ibASFvgPFJ9KqiA2fyerJps1STjJ9IGODy+6ByBlhiGEVHCyueYIsnFEw
-# S1coAlfVum/ONboCsI1CUUanQlH4G6r1SAhLlsTnJM3a+icM6vEVIov2YLEYg511
-# YmzFFCSxg9McwzSfisH9NqwKoItaekqExmEk1tj4ykJWO6EgTC4LzYWoeCLKyTSd
-# 3FLIut8HO9SPtVr8kJFlra8RnjCNaR9VtJNbXwEFIt37n/3EZAcjQVT8pX07Az0l
-# wIQSjM78MNR9EgVZfBX85O7Mk1gBO8O1scAhBur7PuLOj2/8M2atpf/X+sgHF30M
-# xvxs92bTekRoqCbld9EGk7kKWV7gTXJSj0S7ElwWTlFMZy12vlYe3PzdKwRhsAaR
-# LTtnfMXjhkhYax4dw3WhggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRM8R/7mRmMvP/u6ErzdC0GBHYukjANBgkq
+# hkiG9w0BAQEFAASCAYAdqkEKW3qOg8MnlNMBg1mCSJCRu/Kx5/A+RPswzrJCyu+Y
+# Ch0YDY5ef5jdrd/WxSt8AIY5TxLe0OdW7JRbj4DNNF12wWnW0J8W+KQojHBjXShI
+# y2PKsW+p8Oqw7iewwFi0eZQTF7naKHGPBPd0HfdWNrpJQMl2GHiG+ChbjTkt0tMI
+# T3xThUSKS48IFVNJTYYg7Rf5NatJvmBaKIa+ZWK4GBDLq+hJwJ5mz3H2FmL1a7kc
+# w5ybcx3suCHHyylE3y5lzvnBmvfMELD8+Ws6BgXlCxGBtLtfz6jho37iipKEgZP9
+# 16tZMSddmGigF4bMuo/Y0fxdAJMJNORDIbMEbNt7J1tPhlXj+axWQQ/X1Qa9NkgA
+# lRh6TI5bWuenWxO3yxAoH2KtcylTOL4qhAgKQobb52lj7JnL6a9AcABMIM0S6joq
+# nHNVm6VF0aegrjY3Sj7Cqzmwb+TeEhQIRXOiextCJdSfQh0xP1ODCmo9+WGfUavG
+# 3nhBI/1u9XPdPen/G+ChggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjUyWjAv
-# BgkqhkiG9w0BCQQxIgQgIeL2Su5rcXwXXwf7blx++7/lLLG8jyLifq6r0wqB8lAw
-# DQYJKoZIhvcNAQEBBQAEggIAlpkdoL3GgY3gCFMtgo3zeeiaVVakyzaBnCEJ1ZN0
-# gJzVUS+2ZOMbDtK0e9GyXehVoqeSs85TTEEPURPkIBXSYILrRda3IVySBiHNGiDT
-# 5VgobJMbioiGOxb+LE830sKBUXVBCZoTSqzBUwsC3i2yMtjb5SGflhG3OtQzNjTR
-# qB1eRUs4jXhFpaJoRyNxq+xPWInDCfYWs+vAwQPsWduYPljyRdclY5KccgUeQXq2
-# XHQ9Blo4l5z9bXpNwTfky3xGKZbq0TscqIocXLmGi+3zbtmb+DErFxnZ1cTjtrfh
-# HQk7bSx1Q8QzPWYJMzpyVADhQAZ8re6RQDZEZGjkuTmm+tkJunKUJY08afsIhl8G
-# VYgXNm98xkC94mTiToXXA/2Fks0d0cNO6LKk/IULpHepaGNhpeJpQ41mJRastqT2
-# J1NxWcZNwCVC4bVVRsCG/isdNRopTIbz0XHni6oVRh7vjK574UvVT5uGdMHhIDoL
-# ajm7F6RXPZOHX7ZlVd1K2lC0D9K+9epLP6OXVKzKmT5LONAooRSXWsubmMxh1k9M
-# S98aN2jXkm55FQ22ERtR112foCgWp5W1miISM1FN4iEY8scgrWD/9Su9ULaF714B
-# ShLPQCqnMZTthVkLtIrpNz/MZpYIv/QvfdpP8Mm2Ox+reaS27RTyT/xl8FiHSJRe
-# KO8=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM2WjAv
+# BgkqhkiG9w0BCQQxIgQgLXt6H1KIvID0B3uyG/Iw6nXeVg2v12YXHtZ1FOTMDKEw
+# DQYJKoZIhvcNAQEBBQAEggIAQHJQRJFMvlSiTniSf8scnZiKFLRZqwBeeq9WXLES
+# W+ByDL8lQDk2FOtBG7wuRxpqgElo9E5onEB1bGunNobYxprljOKNLE7dY2xD7jaC
+# 63YHkqq1ksnXUk9gTif3zi3+Lg/+515lltypzvrcLc2aTS0iGvWKjflg4rngL2JV
+# MfbDiS9idjUTiTakTP4XNKYwylXnyZNFFiX5Gfiv1yleYPOe41xaGN8dosoxsAAw
+# wM8Hr24vBFJH3EThqA98xUvBaeqUAkwCwvDRQIVcATS/YbVBtBJ+Qt0gDrwzN+BR
+# zHKZ+S0Ogc62LDgzLp55N/l0yGWg+1AYq6pjsfG5HBAYFO9+xIXJmkOm76IUIFE4
+# rn2eqRY7vK9UlND8wzMkxstQeGzjvj1N+Nsr8ZHi4o2PZXN/DgL3IZhP1VIAXO/5
+# rMjAcHQcLp6KPI+JHSr2HDdJ/FfuziBO5P9oVGYkQSWwUbuy/euL4krDRsEg2u2Y
+# G3FZXcF19HNWwcezwKtMLu1QWdZZKyriy5jFUaKfQ4FACH22V45AM+l9rl7NVuPA
+# vR6RFhs5nGRNCyXqI98yBAvziHxlPae/GQMuJ6EiLAuMAeNFPNtSEjPrCc0Tg8v/
+# QU95Z9k6o6OE+VtmrX8L9j8CAHn8z72SAYK4KxF3lmshVzPFm4PAUDKp7fGvzRye
+# bmo=
 # SIG # End signature block

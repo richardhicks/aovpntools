@@ -26,21 +26,18 @@
     It is recommended that host routes for all domain controllers in the enterprise be defined in ProfileXML for the Always On VPN device tunnel. This script enumerates all domain controllers in the forest and outputs their IP address in XML format. Optionally, a list of IP addresses can be provided. When using the Discover option, this script must be run on a domain controller or administrator workstation with the Active Directory PowerShell module installed. Contents of the output file can be copied/pasted in to ProfileXML.
 
 .LINK
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Export-ProfileXMLRoute.ps1
+
+.LINK
     https://directaccess.richardhicks.com/2019/03/25/always-on-vpn-device-tunnel-configuration-using-intune/
-
-.LINK
-    https://directaccess.richardhicks.com/2017/12/11/always-on-vpn-windows-10-device-tunnel-step-by-step-configuration-using-powershell/
-
-.LINK
-    https://github.com/richardhicks/aovpntools/
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.22
+    Version:        1.2.3
     Creation Date:  May 25, 2019
-    Last Updated:   March 29, 2022
+    Last Updated:   June 6, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -180,8 +177,8 @@ Function Export-ProfileXMLRoute {
 # SIG # Begin signature block
 # MIIhjgYJKoZIhvcNAQcCoIIhfzCCIXsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHIE46v8QTQjxqnX0CRy5jL49
-# AOOgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyETgv0dd90VmdHoU6UqPO72B
+# flCgghs2MIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0B
 # AQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVk
 # IFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYD
@@ -331,31 +328,31 @@ Function Export-ProfileXMLRoute {
 # Q29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLq
 # eeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkG
 # CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
-# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSd4Tlkwnsg077Tx3ojyMmYF4SJUjANBgkq
-# hkiG9w0BAQEFAASCAYBE3oU5TbD1yIgjUJFkmwlAAPeyDx9qp8geWiEHhOYBmvaA
-# Ud+QJp2KAFvLArESt+G+9wEIDJjlRhh6jCgDQ1k1RTl1lw8r0ziayeBel0G0Tw2l
-# ovvQErWk3WVUmTeXGuR9JwxEwxfQKzMxH+CLU95oxVZw/LhJcy5L3zhbFiD4+shc
-# b4jIvhyDlhi/CJ/CY20RTn0KtkZYMKzDMlT5Q2NQqgclpHNHVOE14JMpMOqTkCOX
-# pqy8IX0nWr6ktztUytD6lgoxu0ktX8zrGdt2FAiWJGhRFgKQq1oyetniz+pExrwr
-# xbG7YK2w70GZXbSS68FZfXb3WfMh4S/+TefXJEiaHlknPHYtIxqGqw3BDXBL+tCo
-# YSMDwXcby0odEPWYR4hrf7rLoRFlOpT00eJOXZSn4ZnoHRZEO0JHENcglqDAfFZD
-# PubO4pF0PjSm/OwTCEW1iskmiqsrgN8i0vthLWxd5SAw3Fd14JqQT3W3e5vKW9Kf
-# BrYD+o82FvAm0VWJngihggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
+# AYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSa64KvQsrPYFYZQHdHPzE5GnrE+jANBgkq
+# hkiG9w0BAQEFAASCAYDC5nN1OHC+q96iyyQuXn8RhUsRGCQnh6EwXiQA7y1V+y3W
+# vIaz+zUx4o2p1+dPC0L++eIucKuVizEpHtyndeGaiBvG8LZ/WBIxKXiE0b+LwZjn
+# KoGSZ7OV5Ll03De5BxnOmRklLP//HvPGxqKaSWIlojdvL5HG3y2rsgt8gNzFqZyr
+# io3AmjONMgZzpiXsRFbeCGOgRRltPUFsqs0DCvP/yjfmdAD4R7ebG3efmaUfGgxa
+# G6XOpb9sPwOjh3bCgbYnd3Ozh7z9QIdzzefVaoH1ZpJlfWrIXRO7IOpt/G2UrRSl
+# 0cleorjWpA/x1bzkDZ7zp3p3r1ujDNXAf8KcjJyIhA9ZueMDo2/yevXJ3kob6KdI
+# j29v/PHztVXv+8a2Q+tedxjmXdobwptvHWkyjjag8+w/f4r4eVupFj25h8PNGfX1
+# OLiABUKM/0h8/Iizjidk5WriYoOOg5DX9V5TA1O1OPa6UutSQ/xretUdTAjmAUhI
+# 1Y9iKKynU+BLkp6DdK6hggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBj
 # MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
 # MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
 # IENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNDI1MTkxNjQ5WjAv
-# BgkqhkiG9w0BCQQxIgQgCu6w0EpbsgKXj8ZG20EQ+gpGVJP0/+RE9R3tTUTfye0w
-# DQYJKoZIhvcNAQEBBQAEggIAStt9tY3KqN1awbwqP9FKPQ9z/7Cnlhi0CBp+ehhf
-# Q8RBm0VK2azp8L9bvWQJ8LMCpgjDKnd+Iq+Cy5wijjbW5NXG+DPyMJhxNYu5UDIt
-# nX2D+Qr81Mkm09dgNeTPmifvG98z5mXZIEmiwpmWVePpKU8LHkyVUG8oom6qGGln
-# MjHLHjvSneSb+TQ/3g6XeAYtluRM7VuRnfOq4X6wNnTma2/exsPhHmE07kfoomLO
-# 1JKDE10nS1B6AmZPvUAx4GuzdA/R+sdGR/BKQzxp8deYWV5rl+9L/9qrzdnvrBYf
-# ARDiJLgVIx65yAaYvObhtiSTu8kqlfnJb35IzFcqBTAb3qIukOw0vwYmFhwUR2BT
-# sG+h1gmUCUhrL2dik21wxb4Iz/mJZ4SG2dw2hC5fsLldvaOie9Q1jaEcanjWPcb2
-# l1nsAQqhDhZ876ZkrGcF/fNWX/Uy7uPhfdRDEIfMvYpjx6K880QAkQKkZVLkc6nn
-# 5gPmryREbUT62KdODw5DiJLZ9S+QCB4H4HKeImd98QQujGFNRSwBMD7Vq09nw395
-# I1J/gbAML2k22le8YmYLXTPgnYpe9J1ObdwWmmCu+Hmy4rZszO8bYmJT30DAAFHi
-# G9VMK321qFAfVvI8JkzDvbFCznyZAmPJNvM/lo7nI5HvUcwkO9s4K6IaW7E+jmkU
-# iww=
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIwNjA2MjIwMzM0WjAv
+# BgkqhkiG9w0BCQQxIgQgV7EIKg6v4ZE1d7S9T3bGK5pUN1ZpB2gcsWe7MRz9Neow
+# DQYJKoZIhvcNAQEBBQAEggIADdD6QeELsXNv5G6HCRte3PxXi64x6N4bmoFNiI0S
+# QmYf+rWuJrsmMfio1cFwwIpe5zca4U8Ofo3iBs2Ex9HfaKxKAfkluM6vorIGCH50
+# OaZHOaaeXbQ4q08PrLPHvcaaxvrnkY3+/gfca+lbTl/UfPWCy7k9fZPa4edYE9Dz
+# L3XYTgazpiY/X8xyb2ggItdeyg/6dAWaHFEJixwbXqeumVZTfjvfusNKMZ7pVynH
+# 5KrfnmqPhb9b/xfVS0ZHp5dRRQtkw5WEONvxB52Zbebp35NPpo0pqzX5/IRNO+Rn
+# ghbbWLF0PndDLMnnqR7olAcuLdNGSIbzsvJqrngBR3N1hfEb1a7Tt+IdKmcc2IEA
+# pKY2VyVe76zXQg41bVzBjRDRTnd5cdy5B9GZS9BDvEe3Lhp+UJvI5KJc8kStBSqT
+# WXN/+HVxgMEMSfipOmWC1ImEiMIvc2gRADMhqRzrAZGRynVPtxWmY2LSc36NFBJQ
+# tF22FBIeFEA6ewtRJMy92uT43hrMrxucGTDpahvwjOhPy+Aydgg5kGv3VqBYEM1g
+# lRCtwBrBIP0GIFmVCND+yonilp62NzdPLyjCjCjsobNQHKzpJnAIOgsBmWFIIFjN
+# LnBSa9i0zA4C5+abmN2wvpnjGxDH3d4v9zfooIJ7M4PHeU5y9bD5bl4tEhg4FyeF
+# mss=
 # SIG # End signature block
