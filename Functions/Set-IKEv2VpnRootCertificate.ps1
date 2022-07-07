@@ -48,9 +48,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.4.4
+    Version:        1.4.5
     Creation Date:  August 2, 2019
-    Last Updated:   June 28, 2022
+    Last Updated:   July 7, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -118,6 +118,7 @@ Function Set-IKEv2VpnRootCertificate {
     }
 
     # // Assign root CA certificate
+    $Thumbprint = $Thumbprint.Replace(' ', '')
     $RootCACert = (Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Thumbprint -eq $Thumbprint } | Select-Object -First 1)
 
     # // Create user authentication protocol array
@@ -152,7 +153,6 @@ Function Set-IKEv2VpnRootCertificate {
     }
 
     # // Validate correct root CA certificate configured
-
     $ConfiguredThumbprint = (Get-VpnAuthProtocol | Select-Object -ExpandProperty RootCertificateNameToAccept).Thumbprint
 
     If ($ConfiguredThumbprint -ne $Thumbprint) {
@@ -179,8 +179,8 @@ Function Set-IKEv2VpnRootCertificate {
 # SIG # Begin signature block
 # MIInQwYJKoZIhvcNAQcCoIInNDCCJzACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZD+FLg+myBLt9j+pP52kPe1c
-# qZSggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUApYxpjRAfgP/vJMwyB1lMPjW
+# 0oyggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwNjA5MDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -360,31 +360,31 @@ Function Set-IKEv2VpnRootCertificate {
 # OERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0
 # IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTpWk/Q
-# vrGSRQl/ps9Ys0xejtinYjANBgkqhkiG9w0BAQEFAASCAYArKYAPwoEtIqEuGUWs
-# enS5CKkrABXIT1Np3I44Lof1YBm5lpLJbxnJnXDKZCvs+Xs9LGXaSy+QbGNX4rBT
-# AmON2Y/TrxsQ0GAccUiYojxrpTqYj8RfG573vpJQzo0Mb1Bi5dWnGYTef1U64cAN
-# rOf+vdy0ZMEagmRMfwPqWgR/J2DClhzjSvTlegz3iJ/erN9hhwGGklk6/tSvX907
-# Ow1jKIs1cUOEUSBUtRH4zlXdoqa/0Kc3lXoH84+nNcEF/2NESNg0XERH++04KX4i
-# 3ShqujKWdNmfTB2YPc3yJOIKWJHkfB6Y6GcS1lS8eA0d3a33I54zOrgdYeEduWDP
-# 8jUUT+BraDdsGokiXuGUhEscZuWb2CsCf/Oxa6t3WkKOgj6Br6321bKcyyOm6HlD
-# Wb4IG3+XGu2/vQds93gry8WrrfN9iWbD30Q6XnKbeXM3aeSPAHT2W83ufqArUIHe
-# dmaeB+M1BIUSlPkFY4+h5AVppcjExUatUWM+QtfStbQH38mhggMgMIIDHAYJKoZI
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRIiWo/
+# D67onkPHknSgGyIWB0ELoTANBgkqhkiG9w0BAQEFAASCAYCKugHE6BLBeP3aOMD9
+# N2nv/vaXjbZoOA2r2EM6hnKh0EHwIcMkPMQG/es0vrCymH1C481+f7CekEwxBZOg
+# kQipLPid8vkhjuPONPs49b7MGF5p0Wf46R7DyG6PG3mU1PnZ8jQfGnYYnEg83MRi
+# SKo7a1c4cvZ/MP9BW0f8mdpMirlRbDJwqF0o+G5ZlLcFBcCS3A0PhLXKAR874O+R
+# 6yizw0E6l/GA+JbSFJ/1JE7bzcLPH30I9yAKITZA5JvXrzlfMQEqiJaXvrs7etqR
+# y+M/qw/K6+CfkfFq/u5bbjjtdzgF1PPx12ZCgEX4sPCpOnnwS6Zk22l1u8G3Nvrd
+# /xvgPgBhhGk2QA3Tx7lCYO+oOyDUo0cxQl6F+H3Mc+bs7FjAcnF1Pym/L+yvLPOm
+# dUhGKVsDxxG60n4U18PdWI3fyWecIyauPPQfQkRgfzpNKjb7HQ9nyZVa0a7oKlOC
+# XROAb2hog+lY14Cw/ulrvX6xJTNwevhMnFXbb5xGmJe4ACuhggMgMIIDHAYJKoZI
 # hvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGln
 # aUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5
 # NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCG
 # SAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0B
-# CQUxDxcNMjIwNjI4MTU1ODE5WjAvBgkqhkiG9w0BCQQxIgQgV2shqoQVVwIrT6TR
-# cQnEVh3U+oJbBtMNWpdllleCeJAwDQYJKoZIhvcNAQEBBQAEggIAfAEZ8/TRvCvI
-# lwyTvd39VvLAWdJuRReKpaxJ+q+hQKv+V9qlNcRzoHogxqysj4Eckzyp4FA7cOn6
-# 6UoDGjerNmznx1HsxYLVlDqqiHiZMlIqbLYoS3lZkcvDHnpijtgNXTOvzpt6LztT
-# QmG2wrwrE/Dj57R3EKfMyXF2vPNUMfTL9R/dKlMmJg/Jcu3VIC6hMaxnmQUtWJfE
-# BJkbhH04D0z1WAd3V4djF4OuP7sycreHNEMHBPeFGJ6oT/o0VAkfGSscZx5gGDCi
-# zttr/z3/gx6F2LnIGRy9HOPjZBrfD0Ws9bKq3ZdZbrtHO7dBldlKHB6Lg5oZCez7
-# S6P4IFntvxRwWljuCh7aguT60vhXdYtqguG52itAvZsPcDFv+qsJxx67loPLjAly
-# qollP+1gECoQVtJG5DIkcTvCQxfP91ooykfmFhhH4bDD97xT+/sfLnT2T1Vy37qH
-# 25kTZbwvgHl4QWdUf6DVJzscXm6CkTNRbVaUdkyib+zGFZmVVeIf1UThEznyWQpV
-# yjg9kLseRvjqFVhx6MKEn3tMQl4C+jkv1Xm9vORnj5BZVDO2203ickDoc+2L6W1p
-# tGXb2jSpwIbYZ9liK2p6pckEtcHBXG1sr8CQUB+3wN7QyT/HB68s1WINj8nuY54C
-# VKWNHK6GMqOAWi1gc4dWPDtoymcBsdc=
+# CQUxDxcNMjIwNzA3MTcxNDA1WjAvBgkqhkiG9w0BCQQxIgQg3aUPq4NXstaEqzXy
+# EC0aS/Bg9Xcb4zL3lBY/w6orr2swDQYJKoZIhvcNAQEBBQAEggIAYaV0MWaejtVm
+# zR+a6E5L0vxDS5U9gWQsqQBysnthv6pgbknhznJfi8WwrDOMxQq3yY5ScQM7Uu0y
+# ds6hAhFZDEY0qJIGQhnIoCn3QSNnGSTTdDtbLgZv0ydGr3h1XD5pKhp3FPPT/j2t
+# +Dk/d0VviYPUtqjMTqbuzxr/ijZfvQjN+9f5WmrYprZUhg2gDW0JyRKzj5bslR1v
+# 6EUJrTnMfeImawSheQ22iuuhsUl5K7B/I6JFDFcdNH2x4Os+p9UNAuklqnA+eLVa
+# NFp62Q2BdiAq71e/42txupXWZxRhJ9BXyf2a6+3J/sEPMdf5QY+9RRlP1iaYsu0r
+# TgD5+qxLW9lXCmQglT/V8Ox50M3cSa/gm1aRygFKyWKgqw8jF/sGcFJ3GEAxRMVF
+# iIMBdkRB9EXSU5E0PiGkfWG0Z+fZUeh+Zzp6T0DjJJGIPMVagh7sQXdmFeEdNBJu
+# 8nsdOYzD6kgyBQ/rahQmBVS3Azj/OCQuzuFlF2s0vs5H96/G/YsOp9BHU7Lz8wTQ
+# fQf5p1hsRtpqtnml7GUyq5FICbagKw2ezkfc2NApuKDrQy/T9bubZA/P+aMTzLR4
+# nlmo/gUQTl4UXKsd5q4L5M/Zqi7ZCZEoPzFgfHDCiyrtdTO4XsV2hWW4FMSmbZl5
+# UTIwW8HRDswqLca1wZCeOL8yVH8TVlU=
 # SIG # End signature block
