@@ -4,7 +4,7 @@
     PowerShell function to generate a Certificate Signing Request (CSR) for use with Windows Server Routing and Remote Access Service (RRAS) servers.
 
 .PARAMETER Hostname
-    The public hostname in fully-qualified domain name (FQDN) format of the VPN server.
+    The public hostname in fully qualified domain name (FQDN) format of the VPN server.
 
 .PARAMETER EC
     This function generates a 2048-bit RSA key pair by default. Using this parameter will create a key pair using Elliptic Curve (EC) cryptography.
@@ -14,6 +14,12 @@
 
 .PARAMETER InfOnly
     Creates the INF file only and does not generate the CSR.
+
+.PARAMETER Online
+    Submits the CSR to an online enterprise issuing CA.
+
+.PARAMETER TemplateName
+    The name of the certificate template to use for online requests.
 
 .EXAMPLE
     New-CSR -Hostname vpn.example.net
@@ -35,16 +41,21 @@
 
     Creates an INF file only.
 
+.EXAMPLE
+    New-CSR -Hostname vpn.example.net -Online -TemplateName VpnServers
+
+    Generates a CSR with the public hostname vpn.example.net and submits the CSR to an online enterprise issuing CA using the certificate template named VpnServers. Use this option only if the certificate can be issued without CA manager approval.
+
 .DESCRIPTION
-    Automates the process of creating an INF file and generating a CSR on Windows Server RRAS servers.
+    Automates the process of creating an INF file and generating a CSR on Windows Server RRAS servers. Also includes the option to submit the CSR to an online enterprise issuing CA for domain joined servers.
 
 .LINK
     https://github.com/richardhicks/aovpntools/blob/main/Functions/New-Csr.ps1
 
 .NOTES
-    Version:        1.0.1
+    Version:        2.0
     Creation Date:  June 6, 2022
-    Last Updated:   July 11, 2022
+    Last Updated:   July 13, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -54,7 +65,7 @@
 
 Function New-Csr {
 
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
 
     Param (
 
@@ -62,13 +73,16 @@ Function New-Csr {
         [string]$Hostname,
         [switch]$EC,
         [switch]$Exportable,
-        [switch]$InfOnly
+        [switch]$InfOnly,
+        [switch]$Online,
+        [string]$TemplateName
 
     )
 
     # // Define file locations
     $InfPath = ".\$env:computername.inf"
     $CsrPath = ".\$env:computername.csr"
+    $CerPath = ".\$env:computername.cer"
 
     Write-Verbose "Subject name is $Hostname."
 
@@ -113,14 +127,24 @@ Function New-Csr {
 
     Write-Verbose "Writing INF file to $InfPath..."
     $Inf | Out-File $InfPath
-    Write-Output "INF file saved to $InfPath."
 
     If (!$InfOnly) {
 
         # // Create CSR
-        Write-Verbose 'Generating CSR...'
+        Write-Verbose "Writing CSR file to $CsrPath..."
         Invoke-Command -ScriptBlock { certreq.exe -new $InfPath $CsrPath } | Out-Null
-        Write-Output "CSR saved to $CsrPath."
+
+    }
+
+    If ($Online) {
+
+        # // Submit CSR to online enterprise issuing CA
+        Write-Verbose "Submitting CSR to issuing CA using $TemplateName certificate template..."
+        Invoke-Command -ScriptBlock { certreq.exe -submit -attrib `"CertificateTemplate:$TemplateName`" $CsrPath $CerPath } | Out-Null
+
+        # // Import certificate
+        Write-Verbose 'Importing certificate...'
+        Import-Certificate -FilePath $CerPath -CertStoreLocation Cert:\LocalMachine\My | Out-Null
 
     }
 
@@ -129,8 +153,8 @@ Function New-Csr {
 # SIG # Begin signature block
 # MIInQwYJKoZIhvcNAQcCoIInNDCCJzACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU1iyeEfcPrWUpO4oJ+sGsuOHB
-# DyCggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUT7MNxSfOIhrHTBhvy809YP58
+# nSCggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwNjA5MDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -310,31 +334,31 @@ Function New-Csr {
 # OERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0
 # IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBROyiMz
-# F1yZPBrsP1ylLB2tPI/vIzANBgkqhkiG9w0BAQEFAASCAYC9YTf18w27QN+QbD9i
-# gOoO07U2oX7/hRunm1eUOmVkSxg5iQZatOlKiLAXac3ye3lohj7mwY8b6gB9bOkF
-# 4PzQTUH2ehrdmV1gK7IILmz/Jmnb2JCa+7DqPvbbaJ78wINmnprKpDNxIahx4kNb
-# CXuf8CV+w1ERSTsMzCO7CM6zmVfcCvezvg6cTV+OSu8gRm2jszUzcZRl0L0qQlDh
-# rncHLxajdS6Y7TJ3c+kgyX/7Sg4AXV/6Okc1vBZTj8xyfhQPa6rF3PmdXYQHZurW
-# LdYxdHc5Qvbg06KPNYZG0SrNpIjw3HE1UB2HsgVn1mORGxWONk3bKgzFCeGvX3bY
-# BTQZdD4gwtSQDuXXHDd67xz053t23UQ5W6LOIMnpYAR1Zwuqq2aDh78JkbCV0ldV
-# KL3sWElwQuUrr93hKbQgzRsVCocOcSDd6/cQUSG6ltSptA3Vw4svymnfcOoEYlzB
-# jsFCNiqYZmeobJV5F0zLW9fPWGH+YFItsIVcp/EPmL1mpamhggMgMIIDHAYJKoZI
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTY3Ep1
+# lSZfOMi9dB0p79Ax7NEJTzANBgkqhkiG9w0BAQEFAASCAYCGADJP0s61lNDFYB3j
+# eexc2JcsbQO2eGsOMEfeZ1iSgfmyuIF3zJvB5UL7fDr8Fl1U9kcinqxl0b4AZJz0
+# xIvZSuWwS5JqQ/exXqW2Xge1cKp9iGYPMgcWVymPOtmH3JTBrGguITv6z//NIeqj
+# HxOznC9nWVyXf6kVcYRb3EJ8rsj2ZwL8jsq0gFukPrx78PG+mseZdy2XtLA8wDjP
+# 96SdF5XHoIw/zq8PF8jMQzI5LGHhUrB+hyWk3pw9Le7sTZBPL3wGsTwNLjaI4TpA
+# Sh1egtGZ8jFm05MTNH7gp9kmJ0zGkg8qG0XuorJf0rfGLYOhu0QnOf7JST47u+CZ
+# +zAONJttLo1jIIqPW7WO+4pKR9Ovp/lSyfNgWWecY6aT+IQgSH0mLVm1yG8e19E3
+# 8q4dVhDxBG/u+cuIeF4j54xh90f4IGl0I6HRQiAbDFL5Du3nH9Q9TyeMuR4ZrAVN
+# MuzcneoGhzSOWRGsVSDqoLr0xzcbM3//WaybWwhw4LkGT36hggMgMIIDHAYJKoZI
 # hvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGln
 # aUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5
 # NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCG
 # SAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0B
-# CQUxDxcNMjIwNzExMTc0MzQzWjAvBgkqhkiG9w0BCQQxIgQgPsfcWR60QSuos+NX
-# D8HCjJmHxtoNDNynlyQJGLgYwMswDQYJKoZIhvcNAQEBBQAEggIAS80uQyVDIbeB
-# BvzJpQ5nM50G3OH3+ld/GI/go+HundJZ6ATbswYz5Kzx+sQHG3KbEv5Q8i8wbO09
-# ytNGiheiVVAIejcKkn4eXezN8FpHPCVh80k8za/fFOzk4lo2/JvCFDayef05UD0r
-# kKrL/mCZ8IaBTMW4CQYDoGKsYtvn3+DYeV312gUysCB8QmQvFmWkyLs8elH2sAxY
-# 1PuSGEjdoCWQmvZABi2CEDPZw1K50wCLF4x18tZCnoppKe7XJldSVI6GAlEh+CsN
-# 3v/JEwOooXNL/Fb7y2Tb2gGiSnKqirvVFIgx5E32AbYopjrx6vIAPKZlpXP3YJr3
-# liwiKzTnOIThE8JwotxVsR3LriBPlfXuvzIQRH9tcVdOGTYuDu9ejtBPvH2lNJ/L
-# IqdSf8fjmh/B6NjWjQnuDZw/AzSY2GefCsf1+BHsa7l79ZcgZsoJRtgaybbrqtmJ
-# MqEQdR41TaWx5zNLlO4Fcsc1QLRiH/QkCy7cUNA3pqR+TrOaV4N8/j8n7P8EAfHv
-# 18c/dPo959zaPj9WLGAKs16EELLEAu9rdQLsyj1szIUkQhuhPU7QcYWPMoKgRzAX
-# Ufqna24EmZGexb93InWeimsaPuavC8B8T/45/JcAIrsENMMRD8waYWrUxYx2R4HG
-# bgGZhQb+95WCQlo1XV8isYGEX5CU5FY=
+# CQUxDxcNMjIwNzEzMjEzNTIxWjAvBgkqhkiG9w0BCQQxIgQgfFPiTmMyrlRL9n+M
+# /zWNbrjpVe6rW/PQsAHa4jWoRigwDQYJKoZIhvcNAQEBBQAEggIAChS29NJ+sWDb
+# sYLYlB/993vUva/+bvws9/NhUYyna9gWqWSlXMQBe+FGIEBXCl2Lz4duRKyvS6Ts
+# W+9QvmtF7PuQIpzGJKryVjVbzefMPTYazJxDlHm5C6NNgGkX9L+/Hve/aPnwNnRu
+# BkJW5exu2iuy0grArqoEBvDA3C3FPpaIsBQLC3iICZzpzJ9M70pcUDZw2fx1mirV
+# OZLlnZICYOZiu/ei85VSuYnE9LJFWuoPcP97/facY6rNncBD8Rst4qn2HXJJyNI+
+# WU9tFHfEPhR5YP3PM/TnEIw7KRnA70ZBzLBtTAClaa5znycoYTPQ16xEykwO43dI
+# wvAZWx/sAasBPYETURM3KhO9k+gjdDgP3NnKLovPk7M4Vkn9F4d3nRxHGyjecJQR
+# 5RRI83jjejCD7ODR+PJ0sXovZWv8+iQz2dDNzMA2oOZMjtMgxKbeLPJgILaAAAmE
+# oWB+4gqwZx61/aJa+Gt0b7jC4vJ8O9JUnSWsh9oraV+pKhUhgdzjL1FQoYjSqyrk
+# vBVJSspLqfXR06bfvaGsQmi+bpRKv3r2a2p4ExrIv6q+/aFQ/H/FeF8qJ22yJRGY
+# RDflUyewZl5cOM9aB5ubICozZ/Q4g1fWcoDHLHrCuJFbfWigb0IyV7grwyhpjQ1O
+# aMJNB1vfW7LMgXHPPdKrMmNLIe9VjPA=
 # SIG # End signature block
