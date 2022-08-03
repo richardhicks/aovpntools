@@ -29,9 +29,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.3
+    Version:        2.0
     Creation Date:  January 8, 2020
-    Last Updated:   July 11, 2022
+    Last Updated:   August 3, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -47,6 +47,7 @@ Function Import-VpnServerConfiguration {
 
         [Parameter(Mandatory, HelpMessage = 'Enter the full path and filename of the RRAS configuration file.')]
         [string]$FilePath,
+        [string]$Ikev2Configuration,
         [switch]$Restart
 
     )
@@ -55,20 +56,43 @@ Function Import-VpnServerConfiguration {
     Write-Verbose "Validating RRAS backup file $FilePath..."
     If (!(Test-Path $FilePath)) {
 
-        Write-Warning "RRAS backup file ""$FilePath"" does not exist."
+        Write-Warning "RRAS backup file does not exist."
+        Return
+
+    }
+
+    Write-Verbose "Validating IKEv2 backup file $Ikev2Configuration..."
+    If (!(Test-Path $Ikev2Configuration)) {
+
+        Write-Warning "IKEv2 configuration backup file does not exist."
         Return
 
     }
 
     # // Import VPN server configuration
-    Write-Verbose "Importing VPN server configuration from ""$FilePath""..."
+    Write-Verbose "Importing VPN server configuration from $FilePath..."
     Invoke-Command -ScriptBlock { netsh.exe exec $FilePath | Out-Null }
 
-    # // Restart RemoteAccess service
+    # // Import IKEv2 configuration
+    Write-Verbose "Importing IKEv2 configuration from $Ikev2Configuration..."
+    Invoke-Command -ScriptBlock { reg.exe import $Ikev2Configuration | Out-Null }
+
+    # // Reset WAN ports
+    Write-Verbose 'Configuring WAN ports...'
+    $Configuration = Get-Content $FilePath
+    $Sstp = $Configuration | Select-String -SimpleMatch 'WAN Miniport (SSTP)'
+    $Ikev2 = $Configuration | Select-String -SimpleMatch 'WAN Miniport (IKEv2)'
+
+    $SstpPorts = [RegEx]::Matches($Sstp, "\d+(?!.*\d+)").Value
+    $Ikev2Ports = [RegEx]::Matches($Ikev2, "\d+(?!.*\d+)").Value
+
+    Set-VpnServerConfiguration -SstpPorts $SstpPorts -Ikev2Ports $Ikev2Ports
+
+    # // Restart RasMan service
     If ($Restart) {
 
         Write-Verbose 'Restarting the RasMan and RemoteAccess services...'
-        Restart-Service RasMan -Force -PassThru
+        Restart-Service RasMan -Force
 
     }
 
@@ -85,8 +109,8 @@ Function Import-VpnServerConfiguration {
 # SIG # Begin signature block
 # MIInQwYJKoZIhvcNAQcCoIInNDCCJzACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUYGCD9KV3BH54bL6lAk4/oZjF
-# X4SggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUv19R1Ecb0ybaJly7PSiqSazK
+# iciggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwNjA5MDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -266,31 +290,31 @@ Function Import-VpnServerConfiguration {
 # OERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0
 # IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSDQYL7
-# Iu3OCUiwdtAq8snSXCGeMjANBgkqhkiG9w0BAQEFAASCAYBhoQO6fsEdYYaXE6Ee
-# ywviVReLoCUfFcer2ERb9/O1UNGNP/zvq2BnGdsyzcy2XzYK243AE9FIrZhrEAJf
-# 3KO/MdJ5qbDJtJufJN2LZ9m9zCFXSWJN/qRl2sO7fkXGbicFYRUt+anLOJ4eRDKY
-# 0txhDOpiMVcT88OE39EaSa8VXE+AaxNWxo5cGfnsnjEp2rxJZfN3gjs263QPtlFs
-# tdLDpWktDVW9xBeLAIX/QA9+BOqZe60NQYCR1s9Wg1XRrnagNOSSooi+sBuXAqRA
-# 6O/9QtV9Dp9NsWV2UEu8To2Jhphwn6MZF6E2VNX9C5XvDkvkxomMWMgWiaKl3CoP
-# SVk32I6JZffNU2vyKil+YLS6A9EtX6e9EtPSj17ymNnH8nRaUCU48wFYvyw1flch
-# qMgIRiZA7nP2kfPSsDoI+gij1IFzJTIwiF1Dbl52mOn31Ub/sb4l+nmyownbJY1A
-# aEvlFLDOo/QLXppnvu/yKSNO2WjsPKGsEFgUtzpM+AlqtK+hggMgMIIDHAYJKoZI
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQGyNQe
+# nOfEIJm4LEoq/Cs5PGGu5zANBgkqhkiG9w0BAQEFAASCAYCOcCO/nuNr9t1D7Th6
+# drn8AZ5OfBrFWCggem1BUKAXtCAvPQjp7IX7bBXTzO8x2UdKL7JzuaWtw4oGoPzL
+# Z+J9X8TvrUcTp/CG2MWIyKYwUjm9J9RbqjxIu/B7MKJbAqbyyoNqDILFUcS6MDls
+# UABtZQPfLRiFZGvZ2DWAUkTxEnuo5J2qe0S/Xbub73Bf306Po1nThs4EQy94Tddu
+# yqQY6H1JK4QEd4wYV+eb2C5gx06igPDbToRHC0E30Q6ixQkCN6m1Jwg1Hq7wUYH1
+# 16tKgOY5Jpa9qsfStCnhMKAJSPLokxoVhvyDPV32FK9fPVpjOFRSn3FSRBPzvTIW
+# +XK6S6YsVNcYQfVxOGxIDqSBBljRi28MyETHSZfNXeQv2+AExCQdCfojdGpTRtJf
+# UwHHcfWXUZvp9evseM9GwOh5XTw3GH4JYUMImP/oY0F1eYPSplIt08cvYiZw4ac1
+# U6kQu8iHthJit/W3YW1t39sItE3QHKF9WV/QWwO+VybHv/KhggMgMIIDHAYJKoZI
 # hvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGln
 # aUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5
 # NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCG
 # SAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0B
-# CQUxDxcNMjIwNzExMTc0NDA1WjAvBgkqhkiG9w0BCQQxIgQglIdKWjsUbwr1hZX7
-# A8h2OKrwwtHCmjDKvQuDRyrES9wwDQYJKoZIhvcNAQEBBQAEggIAJgr7wtrHs8uH
-# EB7svOEMZP2UjSXo2EzXOYDK4wCf3j8AthivGMvr/8NsVUbB6svGeeRPZnVWDw/j
-# XCKR0lSIyHnxpvgQHVxs1jTPFWzwEDJmYokkpdco9muMK/s317oY7pn16PPj6Chx
-# 3qnroBg2lfSwyhTHMCmN9ET+qfnmbcceUjSPYO3pfDEOfH45DfHIWSvrFvMqO7R7
-# DAxCmeTgcVKuBMLX4qFUWyC9OFBo7fPbFmKKQopVR++pb3VAd7zPhzAPyzgoPHVn
-# FIBFw7yL30BOgmRjovMyL+sTEiMRoeLHRW6zic6nEdfN+biDMl3Kx3nFRV2RatMz
-# CzdD9af6AW/KE59c23X/qLwk0n7hNShNcTBKp/gZvCkgtK/XJlP0YFYGvngtPLsC
-# WXEaMpNIlk/UwWNV81xNhWmZJYEd3m7wsXCrzkM/sMF118tgLG5c1LcMaWPy/lLD
-# BLbRuMET1NLrY+ZwOmG5op0dJc2BNszlpj1Il0J2EvOxZxt9sp+Vz6OcblR9gB00
-# ZDWwphNSYcwJnUSuqdJtFV+mNO7qlcKrDmNXzekxa1jADLEo0VcSNTfGBXnf4bLw
-# kauM4gxu/jlf5MR5MFCnWOOwWqew0OdZPzL7osbP/HxPV2LWNro5dH4Ge+lKAE0L
-# JRtPi/cdaHMShyqOh++dQoVDQl5mIR8=
+# CQUxDxcNMjIwODAzMjIyOTU3WjAvBgkqhkiG9w0BCQQxIgQgZNqwjhy/3A/cHz8c
+# OH1CUONHT0HwNneizG3pcdPYWCcwDQYJKoZIhvcNAQEBBQAEggIAUTJuQJry+Hyg
+# sxPo/7sf+aldUIlhzM4MP7VbYd3JYgBNR/t606STC+MydomMqCRyW/4DfD/klSqc
+# txL787wcZ0oz0FvHaaWbxsmAiEJf2+7pvXNudzwB8oI+ldRYXl2B0ynTChBQGtH4
+# RWIIzQCh9Q3ltJ/bICAajW7XbByarYC+67tQ03ZfEII0ggALIUHQ/z8RUbTw4DNr
+# E8hs9mJ8pCmKBDIw4N8xQZm4NsbSCCwSNRySbFIR2sDFMOBEmUmtcH5LjH5jQHu2
+# zDOBMC9SIJYpfTz6HF5ITIkpR+rj/H6vy10HQnIqF2XE55Tp9RgkLJwGXX0cGcTE
+# x0s7hOkmG31GU/pbM9M0gdHG56a8oV0AeYwWUQ2DohLC8Nt8EsKLv8qlWftxDZGD
+# Iis5wD5aenNdKsyG7QfNCqBdh0jAtctMAAKD580q9fhLHDpyGiPqkg00JriJ9Sq2
+# c7OJOglBL1vV0wFa8YK4o7qNxzzzCHN+D/fpn2I0BeC0NRY3N0tfpmBSekIWWeVO
+# hmSFrqetgRSDDtOxwJYShKWCBY0vyU63HEstvnKrpJWHiw2bDbl1ijez9A0OSOYZ
+# x0YGJZtggqMQgHWr5mWBNeE1tZQg84kt8+re/m5BFXIBehmskvDBXRv3eRd2B00L
+# 1pn7bniOK6GIzNJKf9m3POfY0o59OAY=
 # SIG # End signature block

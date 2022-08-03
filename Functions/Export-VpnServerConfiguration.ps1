@@ -6,11 +6,14 @@
 .PARAMETER FilePath
     File name and path for the RRAS configuration export file. The file is placed in the current directory by default.
 
+.PARAMETER Ikev2Configuration
+    File name and path for the IKEv2 configuration export file. The file is placed in the current directory by default.
+
 .EXAMPLE
-    Export-VPNServerConfiguration -FilePath C:\Backup\rasconfig.txt
+    Export-VPNServerConfiguration -FilePath C:\Backup\rasconfig.txt -Ikev2Configuration C:\Backup\ikev2config.reg
 
 .DESCRIPTION
-    This function will export the Windows Server RRAS configuration to text file.
+    This function will export the Windows Server RRAS configuration and IKEv2 settings to text files.
 
 .LINK
     https://github.com/richardhicks/aovpntools/blob/main/Functions/Export-VpnServerConfiguration.ps1
@@ -19,9 +22,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.3
+    Version:        2.0
     Creation Date:  January 8, 2020
-    Last Updated:   July 11, 2022
+    Last Updated:   August 3, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -35,7 +38,8 @@ Function Export-VpnServerConfiguration {
 
     Param (
 
-        [string]$FilePath = ".\$env:computername.txt"
+        [string]$FilePath = ".\$env:computername" + '_rasconfig.txt',
+        [string]$Ikev2Configuration = ".\$env:computername" + '_ikev2config.reg'
 
     )
 
@@ -43,33 +47,37 @@ Function Export-VpnServerConfiguration {
     Write-Verbose 'Checking for existing RRAS configuration backup file...'
     If (Test-Path $FilePath) {
 
-        Write-Verbose "Deleting existing RRAS configuration backup file ""$FilePath""."
+        Write-Verbose 'Deleting existing RRAS configuration backup file...'
         Remove-Item $FilePath
 
     }
 
-    $Parameters = @{
+    If (Test-Path $Ikev2Configuration) {
 
-        ScriptBlock = { netsh.exe ras dump }
+        Write-Verbose 'Deleting existing IKEv2 configuration backup file...'
+        Remove-Item $Ikev2Configuration
 
     }
 
     # // Export RRAS configuration to text file
-    Write-Verbose "Exporting VPN server configuration to ""$FilePath""..."
-    Invoke-Command @Parameters | Out-File $FilePath.ToLower() -Encoding ASCII
-    Write-Output "VPN server configuration saved to $FilePath."
+    Write-Verbose "Exporting VPN server configuration to $Filepath..."
+    Invoke-Command -ScriptBlock { netsh.exe ras dump | Out-File $FilePath.ToLower() -Encoding ASCII }
+
+    # // Export IKEv2 configuration to text file
+    Write-Verbose "Exporting IKEv2 settings to $Ikev2Configuration..."
+    Invoke-Command -ScriptBlock { reg.exe export HKLM\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\IKEV2\ $Ikev2Configuration | Out-Null }
 
     # // Remind administrator about missing NPS shared secret and TLS certificate binding for SSTP
     Write-Warning 'The RRAS configuration backup does NOT include RADIUS shared secrets or SSTP certificate binding information. Those must be configured manually after import.'
-    Write-Verbose "RRAS configuration saved to ""$FilePath""."
+    Write-Verbose "RRAS configuration saved to $FilePath."
 
 }
 
 # SIG # Begin signature block
 # MIInQwYJKoZIhvcNAQcCoIInNDCCJzACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU/1s1GucXcg7HWQ/BG6n+ASJc
-# NIiggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVlDBc3b5dnX+8pBNR10j/keT
+# W5aggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwNjA5MDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -249,31 +257,31 @@ Function Export-VpnServerConfiguration {
 # OERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0
 # IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSotXXf
-# XzyHYdmBOCia79FD2i+RODANBgkqhkiG9w0BAQEFAASCAYCGFg9Pvv0byGJXvl6H
-# +dfyBbFoskDzLUsTIRtuknG73EBtVnFs3e8fDC6U1eSbqaPj/MbnndF4aK/IeKcb
-# 0VXMPI7ZVHDmvQCC1O08AQ8tuqDWSmUrjvHHtCALi1zxnGja8ofmwRwLF8TSHSHM
-# frpDTjDMU2FzP7YsPsKzbZJKKMFr+hLCoC7sc9VHAoQrEHzSqTiD1mPoLb/HmYgf
-# QZT02d0zgPovGpnz35h9omBPT8mtsB8Xg77kY0M2n4GPryPTz/GkKs7nLQkWCGlr
-# KY8jJW5D3BLbgbm08IuTX6gX//F4CfZAs7pP+t4CcI0oLe+F0M5nxQY5isp2gYXM
-# MRB0maTuDezUm9nFbXN9JNnu0VkbVrZ9WOxpjqBLQJape/Pze0jTOSvh9XPOYRck
-# EZZRAbGDSthjbg/eJyVp2pIzpvM3vu0lTLXqagY3oOfDizV2kF4Z7hDRH7hyYjEz
-# WGHHElz/rLNxnBkqWQLSAtSI47jO931lQfNbLWlaeW5yAKWhggMgMIIDHAYJKoZI
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSU4Biv
+# kjIm3zToVk14EgF73fgxtTANBgkqhkiG9w0BAQEFAASCAYDJTGsmoETrM1JWGaTd
+# Q/EqXeCOLumYJ2rZDhHuZT73N1Rpf3PH4zOW6OiLh8+C6GwnmB/a+uifRL7DhTVw
+# UkITcRCnFkrK97m3EKqQw7kLQrZ/ZRA8d/K7S1LZu2quwZBSU9SElHiv4WL3rwoI
+# Xz+ixymcN0f9QP1NI6cULaKnawIa67dwFKsw27J/Zkd/bXdx8AA9hyeC0/v0hO5L
+# dERfxLUdo0zgleuLuOjnYBQuPgTd+k6oi/PIVuhQWM4GhqJz2DjNjGUQZSnzAWsF
+# G9/ppeoRZc2zpLnhvMENBDRZJXy7BIn9l9hGRBZZG9BSxa1Hmh1VKECAJjpq7wol
+# WDL3mS36o6I0HxcJKM6+YuhnAYkDSODbSLR8t0phukhVM60gE0beYKJob6nQAxIW
+# ysuyuHl8bh81kfNyRe/pPU+I3tgczdTjq1eYtzx8KyRb5c6Dr53IldEhCEbPfKUx
+# zFJOj6Gct1bZq/iQ/unN/v60UGyciYITkUUHAfhTrbOXn7WhggMgMIIDHAYJKoZI
 # hvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGln
 # aUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5
 # NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCG
 # SAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0B
-# CQUxDxcNMjIwNzExMTc0NDAwWjAvBgkqhkiG9w0BCQQxIgQgKMUfLi0v4zrrvDju
-# LqNWZjve+RSOjN8QkqYmuVfifWYwDQYJKoZIhvcNAQEBBQAEggIAWg2aRukn9Ou3
-# Qx6drUgmzPkVJn+lRYgIbgpzSzknRLKZGEuQkLnoSLLhcAgvjyKQmGyiZHS/0h5a
-# eE2Gpmuc/8e/CbgXimw+ttu1KJiPumgaSQy6HfO9nA9ZmIo5SnKBFFND6yUsujwp
-# NIwK2WNNikRP0mCnCEK5ZHcigjHjVyE7jQdIIJCs2UsHeYSdsIDEXztCIa3jjDyS
-# iBNkGm9reEd3JTx4vTw+aCTUKsoauHUMO+tKqBTLouyieo+atq4Sh80FQD76S8c7
-# 94SS8N3G5KxLfXLNFlPbCU2fKaI+o17Ji8GBjQkKe1C12VUIYKu/Hk1jofSw5IOs
-# Ke0Ryf8meeiR5Tu9MiL9kQcNKcmGpJOT0gLDf/xHyV+Ww0ko7KHjE3OFXjn0xdLb
-# 6TnyghAapo62aI3ddptdWxAPVB/rhFXGVCqKCHG8q/Huquxtz/caYau+YxxT4ZS8
-# h8r2F64X/VkQQnA0g/bWkD819cj71Hadr08W35b8nZCXkUd4hoHMpjHEdX157Bda
-# HE9t9G7e0qJOumMJfvhY4+oN2a1ImHBAtkdi+OhuRH1k5KlBehsxoM6dezgCpfou
-# NkCTrDaJZNnSqBo1OYw+iAjAWLCcl4jmflM+RVSmeeyw7R1jdjUA3o/Xzjwu54nD
-# yv4rW7y2Qi1F+X0kNOvUUXp411+/SI0=
+# CQUxDxcNMjIwODAzMjIzNDU5WjAvBgkqhkiG9w0BCQQxIgQgrRTjozkpfRBeykuR
+# GUaDfrOLCCZpIqGpuEh1BX3v+EIwDQYJKoZIhvcNAQEBBQAEggIAJWaZt06LrUfC
+# 4Vh9NgRKVjnn2cTjfkDaASq9UcudEbSNXHxhIhEsXFAqqZtfopixuwqNxRrmx61w
+# EYEDg4sQxfDw8hiNtMxvM1Zh8zMzIJFDL2u9wv0O9PJ2PMP0+9NfGQekZ62iifI/
+# T8gDjQjamsE1tejxo9oUPxUaaczED1Jw2nCmuv3gtxdQfjsJcJuyG/+T6tnAgCyv
+# jS7E6Y8jZeE1Y3eI9SFvYo+gEqzYB76KJy6F0IrCsdoS3vzYojr/e9VgNvNUNypN
+# QoXBNq2OrcLtSC1AtuZr1hZHzPHqNmPvwzOTGFxXuMQ+YXxDVC/iTJoO06sdPaw/
+# SpySbYiTxNgJybZ9DFjRZJI6GfUtHR2eNlQjpuVVLJ4oGdxgojV2Q7PUUsGuZPFb
+# jSy0fhkzEDnnOmS81uwkW/Jfukl5FBnvOp/cxeI/F6RWtYM1e5s9PNCq/n9q9TPa
+# wwXjfAgn2ziQwE4WCMegkgOtarCAWN1eTz0P7J8IZxK0Tkp65p6R2rW6Fp+nofgn
+# A1a78NZ9qYHWT3m8A5enNAI3RQUVLQa+Kgm4nVhEi1Z19YAfx7L8FKzrvdPt00f3
+# EcukhmFbtX+wIHHTGiHqtxzVc8kzETuJGagSzbFpskMIzgbPR5Ssv3TGjUqS0f92
+# q3K0cGfHBLPzP4j0dRhlAPol0jkNL8Y=
 # SIG # End signature block
