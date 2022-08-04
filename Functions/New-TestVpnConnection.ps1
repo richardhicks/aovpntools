@@ -37,7 +37,7 @@
     Initiates the test VPN connection.
 
 .EXAMPLE
-    New-TestVpnConnection -ConnectionName 'Always On VPN Test' -ServerAddress 'test.example.net' -VpnProtocol 'SSTP' -DnsSuffix 'corp.example.net' -TunnelMode Split -Routes '10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16' -NpsServers 'nps1.corp.example.net, nps2,corp.example.net' -RootCaThumbprint 'CDD4EEAE6000AC7F40C3802C171E30148030C072'
+    New-TestVpnConnection -ConnectionName 'Always On VPN Test' -ServerAddress test.example.net -VpnProtocol SSTP -DnsSuffix corp.example.net -TunnelMode Split -Routes 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 -NpsServers nps1.corp.example.net, nps2.corp.example.net -RootCaThumbprint CDD4EEAE6000AC7F40C3802C171E30148030C072
 
     Creates a new test VPN connection.
 
@@ -47,10 +47,13 @@
 .LINK
     https://github.com/richardhicks/aovpntools/blob/main/Functions/New-TestVpnConnection.ps1
 
+.LINK
+    https://directaccess.richardhicks.com/
+
 .NOTES
-    Version:        1.0
+    Version:        1.1
     Creation Date:  July 11, 2022
-    Last Updated:   July 10, 2022
+    Last Updated:   August 3, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -64,22 +67,22 @@ Function New-TestVpnConnection {
 
     Param (
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, HelpMessage = 'Enter a name for the VPN connection.')]
         [string]$ConnectionName,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, HelpMessage = "Enter the VPN server's public hostname in FQDN format.")]
         [string]$ServerAddress,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, HelpMessage = 'Specify a VPN protocol for the connection - SSTP, IKEv2, or Automatic.')]
         [ValidateSet('IKEv2', 'SSTP', 'Automatic')]
         [string]$VpnProtocol,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, HelpMessage = 'Enter a DNS suffix for the VPN connection.')]
         [string]$DnsSuffix,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, HelpMessage = 'Select a tunneling method - split or forced.')]
         [ValidateSet('Split', 'Force')]
         [string]$TunnelMode,
         [string[]]$Routes,
-        [Parameter(Mandatory)]
-        [string]$NpsServers,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, HelpMessage = 'Enter the names of NPS servers trusted for this VPN connection.')]
+        [string[]]$NpsServers,
+        [Parameter(Mandatory, HelpMessage = "Enter the thumbprint of the root CA server's certificate.")]
         [string]$RootCaThumbprint,
         [string]$EkuName,
         [string]$EkuOID,
@@ -97,11 +100,11 @@ Function New-TestVpnConnection {
 
     }
 
-    # // Remove spaces between NPS server entries
-    $NpsServers = $NpsServers.Replace(' ', '')
+    # // Convert NPS servers array to semi-colon separated string
+    $NpsServers = [System.String]::Join(";", $NpsServers)
 
     # // Remove spaces in root CA certificate thumbprint
-    $RootCaThumbprint = $RootCaThumbprint.Replace(' ','')
+    $RootCaThumbprint = $RootCaThumbprint.Replace(' ', '')
 
     # // Select XML template
     If ($EkuOID) {
@@ -174,8 +177,8 @@ Function New-TestVpnConnection {
 # SIG # Begin signature block
 # MIInQwYJKoZIhvcNAQcCoIInNDCCJzACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMzrsohzJRH0Y2ougr28cck7q
-# Q2WggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjdO6EmWITdex2Q9gLr4RA5Op
+# qpOggiDrMIIFsTCCBJmgAwIBAgIQASQK+x44C4oW8UtxnfTTwDANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwNjA5MDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -355,31 +358,31 @@ Function New-TestVpnConnection {
 # OERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0
 # IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRe2kQ9
-# kHAG3KHSSM0Ywp95Zg331jANBgkqhkiG9w0BAQEFAASCAYC4jAB8Z9Vv8F3UgbDu
-# gzQs0IYjZPqrWWRYv2H2hxoNZr/WTzkFAI8jBBh/8Wul7pGCzLQOjrEYLNoA+OtO
-# SoPfjavkRFSESAaUwEnC80WAtc+E55LEVZrx47CgRq3yMoKSsJ6T6STu42Vw+2A8
-# GClIwn7HqSxTI6Wg/gbOfRQ6JdnNbiY3BHcH/h9m6V6oppgfYGZ7QgRGrUlvnpW4
-# Zq+R72xLx16DssnfgEC8ALbaBviwu5ZdGKYHu/W1bJ32IBTUSgeiQ008IyMCmfU3
-# qYTVbHqH21Id6xBtLRtcEbSnFi/Hfd4snBb7e8kV451eM5zBGXPIIS86ZwAODQ3k
-# MSYbhnMgU0pLpXHnRi8nSf3lleqzQNgITRv7SZUzAmRoGb0aCts4fxeZhDgh+cKq
-# pN4Xwb28TCU68ucyVz2zOU0WCSGcznJgKyg4kFxYoX9LmcNt17C2xqbfqNJzL555
-# 5i7VUg4UBB2zaeMhcwF9silzQ7I0Qp5ufTAmerrDKbcCNYuhggMgMIIDHAYJKoZI
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS9jFex
+# Rl+R6m2mNe4Kk8D5YoLP5zANBgkqhkiG9w0BAQEFAASCAYDnv8+WhZLHzGYEne55
+# 4pXAXZBmBfkB/WQHXWaHpPLxuJYwm7GBkyO8JiTz+qu3ZUUiW82BbojeM7Unc0oG
+# 8Y73DpCLDNpkGOTr1NoJgR6mPUjP7f8jV3SBGWYdeEyT1pnIQUZFnv0M6Bkssw+n
+# nSX01eARI4XClkgmqoxibpe7E+MAsw2Vf4XOcoaBrnvmTyJUCg4/2cRjDJtNn+LT
+# jwSuCf8GwOoXl+Mz7yJtKxvOF/VW7j9Ycoyms7D0ZfboCa4JHOzzMsUuwQm+SsW+
+# VojQkTWQmjrUGpMtEBOOIji0gpWIlrGQsfYZsgfIBAu3dTWJgUVaBgrO0G7XRsKT
+# e4xIsrUaFWk75TCN0DvzvXDhPFISTQ/Bm+K7tUAaTL6m0GtvjC5ZH3Ta+0R2y8DI
+# UonQGkmRMljqEtLI5KB81x/Go3XoGNhmfMEDhrMPq1ZeakXO33+pZEDpvoS5iYxD
+# OiFSGs27bAMt3asFpLbIwSh5fRxGZfrz4giLKCR98W9qSVuhggMgMIIDHAYJKoZI
 # hvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGln
 # aUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5
 # NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCG
 # SAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0B
-# CQUxDxcNMjIwNzExMjM0OTMzWjAvBgkqhkiG9w0BCQQxIgQgBF3QRISBHkIebJlN
-# ytfWqycF6hrwmPW4g7Ff3hYqUyEwDQYJKoZIhvcNAQEBBQAEggIABYQCPkEaPyqE
-# eI0m/fICo7TQsEJY4erAJy0qWjsHAiIK3z/7GHlz/jAkbo1tg6NW3ydU5pXYKyBC
-# k/U2NbnSbSOmDATL+dwRbotgrqa4YfSurPrMhiWcQGrn2aPELzapq0/Ibmv4SJnp
-# BoQk+MmNlC/Pp5+CkE0hVH6/lBHMM3qtzBT1RjsNKc25Nz/ogY+J+xZzytnVG7xR
-# 3jQJFOt1NnPnu9aMWydXFQLMBIIkQ5VsV0PsWr+jnIpf7+S25USiRGv+dA3WriPT
-# Qdj93IWH4pfbWpIK94PrvdbmH5AW4z1IR0pG2zDhPaB2t4zzFLXyBUblVeAntFx6
-# SYAFBVpcL/Akf1dT5F3/t6n1JJZxGJs+pgOXlLzEY6JRvYC/HGHQGRdee/3U44F7
-# w/NATMs+ykR8Fem2hxktpFaINZvga7T+883M+FbsER0UbKFnoBWBdpAPXJ7pSkfd
-# 5sxgpbu0/So2vfmSUIMMT5stPyZy7ZWclL05lxAIVDennKUdusPVXRRZx5SRTrRk
-# iqO06YUGtPjP4admeNCskSeh4RQTIccpcG3zqnvHl8j/bMT7MW8AHOoWoE0p9OHB
-# BfSh3fOKYa/PcNXMd8yind6t5gFsjL3Fr6/Er1pqv4c953WCRk744yff/hmYFx+B
-# JevrrqYqgWuR17KodAHoBC+HF0k5j5A=
+# CQUxDxcNMjIwODA0MDA1NzEwWjAvBgkqhkiG9w0BCQQxIgQgYSzyY2ecCRck6yYG
+# +nKc/6r5J28FtweraNRqBIbuTOEwDQYJKoZIhvcNAQEBBQAEggIAZ6uUHold8kW/
+# BaXTdFLl25Ss++Bldm3ISy+hTB67FSBkgDBho2+w3iRPgxqW/45am4+Fsde67mQW
+# a7nTzus46ed+T6QsL/CgdCAo0KilOCPwDk7+5X2L6yc2fpHboeq2mO9lYSUbmTc4
+# FPRN9K+dwF9KDVsPiQuJtOSeOGM2tP2woOBNiluSZQpoI3uQ8q/+cEh2fClXJ3tB
+# d6KKpjOH4rcVvQ36Al/gPwhnaBs0Kg01hOlJ9FwLO2xw9K4n50me0vwlvVszilqF
+# mAFOZ5uE0N0CrHSXKI6TyzGiNjpO0cub9AQgOLwvQ9wd5JiUJRhN1yPE2kXsCWPo
+# 4nG8m5QoSgHBlRyODU+H0nfxP4TgKXdID9cSIKrlDjLZwvSt0P4DULMxXjPARffP
+# 6r31f6bFAu6vTjjU0XzvfZgujAcPcpVUIoccNXiaX6JHhESsitZjgoa9w8tMTaA7
+# LexsZBaFAUpWT7zKC9LZyVtf/JGPKtEBQNw6bQZAKHDJ2I8HdlTHUNF7sVxZrn0x
+# xUodNqDm2mm+uYF3BPLx5mt5UadsRvvt6+uw/cB0quwB5koTe4e8RtYDTGadPDet
+# +5TKo0QarAlFOjyKYQp3/0NXU+/SJ7q2k0kPEuXYgLi7X6Z5jK/HQgb/uqrOPIxH
+# +O4TfACJt6wbRdSsZYHHS+ovCM6APr0=
 # SIG # End signature block
