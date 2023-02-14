@@ -37,9 +37,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.1
+    Version:        2.1.1
     Creation Date:  January 8, 2020
-    Last Updated:   November 3, 2022
+    Last Updated:   December 11, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -109,7 +109,7 @@ Function Import-VpnServerConfiguration {
     If ($Restart) {
 
         Write-Verbose 'Restarting the RasMan and RemoteAccess services...'
-        Restart-Service RasMan -Force
+        Restart-Service -Name RasMan -Force -PassThru
 
     }
 
@@ -126,8 +126,8 @@ Function Import-VpnServerConfiguration {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUvzoOzzN8ITqogL/1hRCseq5x
-# MmuggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPACLzB+rhUQgmF/wf4x9K0YU
+# I9mggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -307,30 +307,30 @@ Function Import-VpnServerConfiguration {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBQjjfntiQUfoypLCSs6pA32IGCR7DANBgkqhkiG9w0BAQEFAASCAYAn5VG8pP28
-# Gppqv7DEXFYKy1vZM36FVs2tRB3tc1vernvJLukJXSkc9QoctZcAiilR7dGoqLJr
-# gGYeilWT/9bfsL/ovS47x8+QzyZSQF1uM2H8ryYXwXS39p6muQN/yxCVUMnMsDyQ
-# GD2EVQIBye6OBBnhvUc3mIN0JhyK1cOUoLK5h8icsoVB7cWcRjvqDHs0OpXZO972
-# MN/poA3ExaLGGzeAfiAfedpIQg/+uOYAhtY13L05ZP1ir/fUR3w+I7JsFjlT0wzv
-# W52Kba+0E1Eb/IHCOnWggvQyWtHt//PucyQi51CmDHaI/8Q7zFYanjDjXO+qKvmA
-# GUk3K90iaUc30emKXE0506wL0jLSLo0j6jK3ahsm/J8mc2c7A6xGekgYQU10HlXP
-# UUgWFErZTo5XQ/O+/jcsimApUIWyhhR8Pgn/kTHktaanVaZ6ZQDbqifrHNprEzD8
-# 2i/SCkJuG+JTOXQBDEeRCzvLyFnXGjmMXAbAZWf2ODM4OgeC8agOSzGhggMgMIID
+# BBTaBLeUzBnEYB+KvUGTNpRR+VJ44zANBgkqhkiG9w0BAQEFAASCAYBQCIe2j9F1
+# loPbBzh0/Dx14uR493dgOwXs88DuQf3t5AkYQyyOOfPaboEQvk7/39C8DiWT8fz/
+# DmcanJpRUDykus5m/C8dJ4fWtFtxB/oxsQ2tV5FxNPHx/sD7QF8LvLSzHzaFjpDe
+# RwUgsExBvkbAmWkhEF2zcwTblgg3LiMnbrme91+qSg7+OBQocy8XbokbDoR5ArOB
+# 2uepbsqmXb2SPq5m1SgfOxbLTSgVSUqwN6yDa/pSujl1bTUTBsIx681Ry8HEh96X
+# oXr/2eR56RtnTv7Fm+v/KW2ehiiK2f7Rk9Z5CP9xTX4iDoYJYUUdhUZeVHF1kfn5
+# aoKle/UNo3QwGRs2LlSche9f+eOrmKACXforJzO8xhc/j7SxDwmXeuFTyhM9J0ps
+# CJGaJnSDLUg7AKp/apNwpag8Qj/H7S12wnS5zB8PUCg7GB/XSqyHOFbn0D15Va2W
+# 95aR0khzYoeqs52rf58e9V2TN6rhPGeI+cngyMxOrPNUUNdroie7swihggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjIxMTAzMjMxNzE3WjAvBgkqhkiG9w0BCQQxIgQgCXIQ6Vn+
-# hm79J034FBTS0KF5aqPnLl5KcVzCJW33DRQwDQYJKoZIhvcNAQEBBQAEggIAu9C+
-# 4GaTCkg9g9cyGmjGxfJdr3oSHYWUiZeq/8pwW5nYrIgkKt1Vdae9/v18hAZO7dLT
-# crl3a9xw4VoHC0tvv9+m/rrJ0uvdiRsIAW2kp++meu2g/s14TGZi85IhdWBSKsSB
-# IpNKFvcdIzP1016zdijjYgqgrsGKik1gbCfHnXV/QHEHEwNr2nu1hxHuTTk0CvGj
-# KO0qUTFajqkp6mDGtUCxlSQgiM08XDvqeabhHal4NXIXC0dQupSIsHSsHmVIQxKo
-# qzNR5WZFLD0PswPlHDWXrMNfSiR21wX/BmQdKXMHJTpC70z7kA7i8e40YdUwZC+R
-# cAEqMtlQduHlIG55r0himPU5PxUPHtvt6FvAKkkZpBnaKatlBjTcfowTmYEpgXNt
-# SqNNZhEUbtMT8JXJGOFkZiZiOIvSOtxNikcPdzkBZP0HAyN8WtVofSPaLxOn8BJF
-# gBYVE72X8ns2ygh0d3BIjGUGMeWtDhSBsQ382ELHsBXSHn2jzUogLqZEhAx1P9jf
-# WCW4j7zHnE8qQz91+OeBf9XCqmQvLZObty5IiF62zNGyIypWjYN8O8Hw6xhOaFZ9
-# 2SZVAc0capyUTFhTwz7D2N1IrypWqSpLP4mWh8XYK6R4hyT/p2dld32hwA+vwS7G
-# ZIkM9u9bvlunHLqTJlWqVnIgEAM6G5RFUnWzVpY=
+# hkiG9w0BCQUxDxcNMjIxMjExMTgxNzQ5WjAvBgkqhkiG9w0BCQQxIgQgbdRGXBfU
+# kP9cfvz/DdRDoApaK+YhO+J1305IEaS4wV0wDQYJKoZIhvcNAQEBBQAEggIAyDY5
+# ZwRYQGMRE2Lw8DIvFknhNSs6OIQFAiumRD0vf1WZThkSTFCsj+2pKfN9eW67Cny2
+# MvZGsopPWL5ZxV4pjCP3auQf4fR9BviJZv6Mmzbjcn8d7bEwoBbKDqo0qkbPLBra
+# Is5TxOvsL/av+8G/EssCIVYUJq7tha3ovK7SJiY1CyEaY3pEE/QkSY3wHlgEyh2n
+# QLrWa2J0HaliHsgGsP71NpKp57iN69+KZNl/T/QM/vCIlDBlLwbHnSyfKloPsUo1
+# lBCO4lAqnX6Cz07AYshbm0+ky94tTNjSAOWWxoLaiFnyfqL7L2HezSiad58qDZ0S
+# JXSg/zDkrUpOswJliXszbJnXFrDa+E5cjQu45d/gHPIX9n+swqJG2bGv1NvqvBnt
+# t9XV3h8KVdewg7wHU5ZUpQSZHjEfvclkz+zTYLXs0N3CADrXQvt0cLx+iW+/Ra2A
+# ed4bFpRm1b0sQGPneMDF3twnKluSPCBngBMVbl7DlK6qDyAAYa06bNUVXbahkyT3
+# a0SY2XAXqFj3qxEaDMW7X9C/l7cK6m4IGTrygBx6IBBm/gctsannXwgZxCJkR2Hg
+# yjC7O/pcXXHRWMJb4Vw3bIEMXDsxXWRLrUnGxlFR1xJvW9KBc0EXt3NPPMtF/bZI
+# J5vKOXf57Ll9/4HjFKMsyChohevO5zs6LRm6HZA=
 # SIG # End signature block

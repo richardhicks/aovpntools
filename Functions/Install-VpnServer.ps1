@@ -18,9 +18,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.3
+    Version:        1.3.1
     Creation Date:  April 25, 2022
-    Last Updated:   November 3, 2022
+    Last Updated:   December 11, 2022
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -107,12 +107,16 @@ Function Install-VpnServer {
     Set-VpnAuthProtocol -UserAuthProtocolAccepted @('EAP', 'Certificate') | Out-Null
 
     Write-Verbose 'Restarting the RemoteAccess service...'
-    Restart-Service -Name RemoteAccess
+    Restart-Service -Name RemoteAccess -PassThru
 
     # // Enable RADIUS authentication and accounting
     Write-Verbose 'Enabling RADIUS authentication...'
     Invoke-Command -ScriptBlock { netsh.exe ras aaaa set authentication provider = radius }
     Invoke-Command -Scriptblock { netsh.exe ras aaaa set accounting provider = radius }
+
+    # // Optimize inbox accounting database
+    Write-Verbose 'Optimizing inbox accounting database...'
+    Optimize-InboxAccountingDatabase
 
     # // Disable IIS default document, delete default files, and disable default HTTP binding
     Write-Verbose 'Disabling IIS default document, deleting default files, and removing HTTP web binding... '
@@ -125,8 +129,8 @@ Function Install-VpnServer {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUgCikXGWSdbUVVF7MQAreV6k5
-# 85uggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJnUn1APoa0gnWBkTw6GvQo5O
+# 7JaggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -306,30 +310,30 @@ Function Install-VpnServer {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBTy1J7W3vtD9f9rWnMsiIkGqGXDtzANBgkqhkiG9w0BAQEFAASCAYBZswgj6bja
-# qSCbXFg4yec1oxzQ4jYm6Um9MxcyRpTBNF4E4rOngOAMld5/qGcG5IyF6qKpvh7/
-# DZF+6zJo5rjqeqRgjrTjLe/qHNvyKWnjyqQmRIJQbd2Gdpllzpc6xks7d8wEzc8f
-# Ta0/uAZ+wA6lyxQ+6Cq4a7gLGPyRO7wvuGV5c/wQTiYbdKzzbHwPCvBunRT2pM9g
-# jNMvQ3lAK/pNGr9WrOLFzV+FkunFjhqN+IQQJa/pI7jznKIZkSLnwPf/xd04nFNR
-# YpgOBk3ttEC6crh2H43SJLVsHu+WsR4PzxWZSzPSe67hEjeFlVcgs4vX84yVFljN
-# kql75Wph0dBsKUIzlhhLmh5/c6f6fozDkmp+oibGyEPKlTPMSsQg4zpnQGn/5vx4
-# Hnzs6NvY+1qoO9vPnjY0Z2bmlJdtxEiVeHcgF54LBBBO+v+lDY4LCXobWeY9ALJD
-# qK2MoXLYTqOVm6yoU8jgYcWyAggGQ5v4da47vZA9loU+jXZkQRzwYaehggMgMIID
+# BBRJcAIbEgFS0vWtEfW+QMOaETS5qjANBgkqhkiG9w0BAQEFAASCAYDEel+TEQAR
+# EwQ/R87jwfSgzUKtEBLfA8GASQAqrn1V4GQ+tw/tVo5jKyVUfsB0q5t5uFDbvMi3
+# QtxRBUyVunpjgKtjsZlgs3R6tV2pL6H4iHl476L3yahRb9kjWJcLRnzmVW9VQkBa
+# la728p6+vCxWi8PQff7uEcIVvQLM9pGreep5FiB0K2GbR5LTrGOi5KDl1Od+kcIn
+# ROzse2R3WUEOdOeWz/fiwnCGfPY98KoVZgFFfH+Chxz5bCVvSxJYmU5+jSOMieAz
+# Yd9rlDZZc+ijK5OzgAInfZmbL/SHwzKT/TXcftSd/NtFYIxOI09yuZ/Wd290c67K
+# bwBAAa8bB6W/RNBJEqgbYrHFDB05RwbudpBvlhFHdUXPZ2VEqLNUiP9Tnt9aJmJ2
+# E1O7X6LSEfbrVaZ191HfzKyHMmPHmUtfNZwUHoUWtKFPlONB+ypmdAYUdd0ETpxg
+# 75IOdIYd+uLa3rin84ECDu5MBrZFUmEwsF54HDLajKVQu2nsvJuJNpehggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjIxMTAzMTQ0ODEyWjAvBgkqhkiG9w0BCQQxIgQgVAtzZHgW
-# 2pShIwthi/GnCrNWckyLV1IDqc95mPtZyDswDQYJKoZIhvcNAQEBBQAEggIAAmui
-# V88Sk8avxtYE5x2E8r4WwL3tUxVtx5trdsVq54buJUCYj8G6FIzKSKdGQmivxx+w
-# jeoiqpT3cWECF5oyfC1MeB9LZvvLX3fWo8TiBQKnn8y5Dyv5sj9qBsLf1LVD/mzs
-# NZN1kbnwRMMmNpVZ/0ecYUJtiumPUwu946HljztfT4sBlj89BdCcNKENqIY9n3Mg
-# SqZoE0Ke+on93u5b19qLmWD4KPde3AOM4Uw9rJgPFAopN5A0r1DnZ2ggeZ8r5/wr
-# V1p2b0SdTQ5zwQTVIqEzqW4HLu3Fm8rxkNHM2b5jbHS8+qcr7PZQ585ViolJSaFZ
-# qN0hggtb0IoyeC0rKoyG3tUATIM2o5L/0YnbJoEg5szLCXjbSznP+tNrSa7uY3ku
-# FHnjWLqZX4qGeCqVnuLnOGyUaaRu1557Gm5gA7/b80L0AunpxJvpvbLdF81bMvO4
-# FlGjePOoBYgoPF4nOedeLewAMdEPioX/Eg05u+adKrQshg4U50HypZVlJN1ij0em
-# Ej0HRH2JHpRlEljJv/A4S53V3uk+bmGVtaZQpcXONZCCdxdbPrbjdITpFd7HxQSd
-# yAOMutCCDJxbYNipFh0KuZUlR7yyyvxNxG8Fw1VdEfTy0wHNZ6dWL5/9IjeQQIhj
-# YqRc7btT5MCKoFThGlNhV0KayuFc+jWFJw+s/qs=
+# hkiG9w0BCQUxDxcNMjMwMjE0MDAyMTQzWjAvBgkqhkiG9w0BCQQxIgQgkm5UE+uc
+# xtVWHuClqcMXVlQDUtl+1JD9EYsHYTX0lYIwDQYJKoZIhvcNAQEBBQAEggIATl/E
+# NsI3PrFezeReq4Nc66hplGj2H4/un7qdMNDN9bsLhVe4uO830DL2+R8VX6HlhiCI
+# 3WUq6eTkdliY6EbBjRlnoYVz739jwG16xojF18KSK1qc7Fzfr5SoouZHrxBBOW9e
+# weRMUyJ1CWvqUM3c0n/gHHWVgiiyYl1FnIh6c4Eqsa82STDB2XAhYjWtGWxVqGCE
+# 9kvehNa/FQzSzvgZhbxbk9iRSKITq3AA3RT9YElN01tsOKVD6NIsFuv7alwFj4lD
+# UVyriaT1yNTELApPhfuijpeoE35NXIjprCn7JMPbmLf18aYCs6SKo8KTQutrsQe0
+# XrtJs/2VyUto9YeaYqPq0HS4xzFGdQrpHiTJayV7xoK8gFMnmG6xaLyAGvZIHIFL
+# 5fW1wSWFcWyXxrezVJFhgpV3xg4yCeZwQmJtekdz8H/rW1lIZy89cR4ppxqAjBJD
+# BXJ/ELBolPgxFtQ9dgsSvVMx85BGXYYAPhFjVEgy4qJceXcyHmBN2bRJ5Euq2mF0
+# 6fv3IdNSa9QrTTeFnidsudGarDCNxVVjJ5NV2RY5O11D4xRcFXnl9U0HbsdRhYd7
+# ZEd7t1bC1TcHTmQmjkHAvOXC14c9sI+4Go316pt5+NKwwmuckA2BYoYLEw4ObxQD
+# lJAnKabjmw3WmXXJbspcPjDaTE6cZcc8i+J4/xE=
 # SIG # End signature block
