@@ -6,7 +6,7 @@
 .EXAMPLE
     Install-NpsServer
 
-    Installs the Network Policy Server (NPS) role on Windows Server 2012R2 and later servers. Also installs a workaround for NPS on Windows Server 2019 servers.
+    Installs the Network Policy Server (NPS) role on Windows Server 2012 R2 and later servers. Also installs a workaround for NPS on Windows Server 2019 servers.
 
 .DESCRIPTION
     Use this PowerShell script to install the minimum requirements for the Network Policy Server (NPS).
@@ -18,9 +18,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.1
+    Version:        1.1.1
     Creation Date:  April 25, 2022
-    Last Updated:   February 13, 2023
+    Last Updated:   February 20, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -53,7 +53,7 @@ Function Install-NpsServer {
     Write-Verbose 'Validating NPS auditing settings...'
     $Validate = auditpol.exe /get /subcategory:"Network Policy Server" | Select-String 'Success and Failure'
 
-    If ($null -eq $Validate) {
+    If ($Null -eq $Validate) {
 
         Write-Warning 'NPS auditing disabled after group policy update. Check group policy settings and confirm.'
 
@@ -82,7 +82,6 @@ Function Install-NpsServer {
 
         }
 
-
     }
 
 }
@@ -90,8 +89,8 @@ Function Install-NpsServer {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUkvAuMa8MjyYwxdQoC1k/3ulx
-# tO2ggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUBGjgAYSdVBipL37J6V+dhfPd
+# oMKggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -271,30 +270,30 @@ Function Install-NpsServer {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBSKSRfn9ojsnrdVmOYoz9TQbfvAWDANBgkqhkiG9w0BAQEFAASCAYA+R/HLHcep
-# 5uyEUo2xykRX/ugXdO/f+yWFAGzJZXaOebhvtFNGDp1qkhK/eBevzL+s7S8oQNZN
-# zbnS07+5B/I2BruTLGTO/omvGIZYCf1RHnnfY8YOoTVbBlCShwXBgM4A9GMk2wlT
-# b+SotogyVe0vrDWPFq6Mhse4XO00+gf0DZrsU07WKaVkCL+dEqErC4cTEJDXpqQc
-# NXfbTL3EureGt+Yake5VsgdYgmc2KwV5q7ny19ZWar1tOm02ytcEXLBvBdcGW5k9
-# yKJ9YYVcmbzIXRTg1oZLBs8WnwUru7ge9DvQONWt4a3g3lSTyYgx043jdaUBGzrW
-# Jq7EJh7a7gsg6TdvHBnIB7tyrefdJMoTkp/rIO8ZNmwx+0JoSn+KBopo0DTGiFnb
-# Pk/5frEV3ByYiX2cnYaVaLfyzNplbkyGnn6+TIET56hKv/nwIfxG9IfjPP17Bp2a
-# Eak8nneq1PsdPYagpHelc++GEDJ4VdtO4AdwdsS3DEib8T7cB1WM7k2hggMgMIID
+# BBTkSCIKsobOypbnijJtwc4B0DhmeDANBgkqhkiG9w0BAQEFAASCAYAQu25vIKjv
+# 9pd7A0E1PEoSyrK0oyF8dY2Dll6+VyGdoEfGNYJGrE8lcUPGhQosQPi0ekkJh079
+# lDyBwi1R8YRglbxlNyOWRv66/fczuhU/qyApaZurpYpw2BenRBTmEAa7kVcSqzv/
+# HLPgtu2tDB45+sBbVzN43ifD8eo7kqqjfshWFwTTujlRhSrAevPLFgyZdTbTuO/W
+# ksVfAICKPUaPFHTCfsYSwiLb9JyGx0hvmQuZePWWQ0Z2nqTIF7b/bonDWVVhocZf
+# Uae2d8accK1E39zZfZTVh6HmucawsX9T+jIQ0fk2jWUM1eZIDFsBTPxnCC5I/0yz
+# jqHg+2RDxoiLyG2KUKMkbyE6wihAcUaxS2IcuHohZoOv/2G4iUoD9d8dSjTpEkOm
+# EkowAPLOjC7p9RlIiviYjQj4p0i/stHammiFSGnRBVtkdAbwO2cDS38Hbup9+vS6
+# nLTzyDFSBbWfileTrRNqBuOsF8gbk89GE66emX/Ce9KnVNGxkSR4dTqhggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwMjE0MDAxNTUxWjAvBgkqhkiG9w0BCQQxIgQg4e6Fj/06
-# ghjCsLp1TBKYCS+MThA9KJ97QGf9KhxJL+cwDQYJKoZIhvcNAQEBBQAEggIAySrv
-# YZWPOTqqFUGgF6sNpsn9BE8rypBTc+NkUmvRSGxlSreS8l131/pPsg/sfbPPxAsb
-# mtTr7NdcSBtc7KnhDxhuq/23w9qtDPdBdfMs7u7qwwTDlcVJ/suGG75EV54tAkRx
-# asK5QevfAuVaDVdULZXdgYpR8amWi5z83WnsOaM2ZyUZHCvJuBH+XC8RVlxb+Lf9
-# Pyy8VVmR2nTkRc4eS6NtD60X7FimjUrrt0lvp3H0Ka72ohQdT4svrACe8CNif/K2
-# j3AqAJMTLPCiKzzMmKPfiFLOmQseT0azxNdoZ3Of93NRAR4JZ/eGq3oGDFCaz1b0
-# jOhvoLT+30nrUDc24Q2P3phIz1pBOc4bUrjmmCtsceJ9d/ffezdQ1HOBNJO8djxT
-# +yLsH+PavbHmRhZk+5IeTin3SK7tWTlIw+3SgGZUTxE6bUjHYG2SMoKuLNF0dgBq
-# BXa4Dnww7zTiur6bXXYc7teYTSoT7/UP4TJZYYBXeiN2x8tKTVj8QwwQ0GKEndeZ
-# Xf54AepYQIhHGMmqyGMedixQIYEuFnIDQofQmfT0KmNfR6Bp5o1HNdywRRp/Usxj
-# Qvv52j3q2VjAL1Lj3jbUuCSYj/u4sw4Ej0oT9D1fhY1f3r01W3kixS/+jy/pX91P
-# E0Wi9FO9xg6vTUQLannFksC8LxK7mD0p6FU3/8g=
+# hkiG9w0BCQUxDxcNMjMwMjIwMTYzMDQwWjAvBgkqhkiG9w0BCQQxIgQgQ1Vt/5uU
+# 4E12TLAdZ87TRKD2WafI95TOLsM+s3p4cmwwDQYJKoZIhvcNAQEBBQAEggIAYvGA
+# RlkXHv3S/+qzigwRFhNqTj11te9mqZX/Kkd1oJpS7gxPVb+2wsOwuwAKrpyJM+Ay
+# li73l53a/nLsQdjjKJXL8HBkjG7GVwPYjn2LpQtBr2QKg5oL+pfeJ/dWli4CPwm5
+# BaNNMwoWlrsJUcCqVmqiwDq95RR74W0DlPtd1jpSop6DpgZIj5Z6Vz+9HNP4dGea
+# XiDL3urtMlBUiuY78gQ/6QAbljrGSMR/Q0h4P9q4L1IGsgKLxmwHnR8iKbqTVR48
+# 5dZF4v44qOqQ/Exd9lm+6EfaEXZPXpFVeS1kCtmcKd0WTbW2OFkfQq7HvUgMqzWF
+# kAi4shJPxPPW43pAojK9eqHw+mSycYKRDyEUiqSLb/HB279MFnZZG+Eg8vK6NJfC
+# AesfutAKlCP8/yr2FrhUrYEBZt1paHgEMKHz16oIQsHtWrLqHS76y5yG01zualBX
+# mPKdZ6KrFAQP3NW+6Z0u13ZL2IzN7KMHsDDuSo3kKaGT4ff/4yeHysijCBrVkCbU
+# yvqfRbcb3ekrliMI3Pp6DNZy+r1XEP1M6Waw7rNtyTnaUbGivGKQzXgiSxLhcP+x
+# GL5rmAbLqN019QLAAPuzZvCCnasKhSP+3fMAAjZ4Pp9glQUPXIUmzIc3Zxa9Jzhk
+# ufwvwqnzpC1OVyhju0E7JD6VgL2AtkHr6ZbHo60=
 # SIG # End signature block
