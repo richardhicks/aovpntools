@@ -1,16 +1,13 @@
 <#
 
 .SYNOPSIS
-    PowerShell function to export Windows Server Routing and Remote Access Service (RRAS) configuration to text file.
+    PowerShell function to export Windows Server Routing and Remote Access Service (RRAS) configuration.
 
-.PARAMETER FilePath
-    File name and path for the RRAS configuration export file. The file is placed in the current directory by default.
-
-.PARAMETER Ikev2Configuration
-    File name and path for the IKEv2 configuration export file. The file is placed in the current directory by default.
+.PARAMETER Path
+    The path for the RRAS configuration export file. The files are placed in the current directory by default.
 
 .EXAMPLE
-    Export-VPNServerConfiguration -FilePath C:\Backup\rasconfig.txt -Ikev2Configuration C:\Backup\ikev2config.reg
+    Export-VPNServerConfiguration -Path C:\Backup
 
 .DESCRIPTION
     This function will export the Windows Server RRAS configuration and IKEv2 settings to text files.
@@ -22,9 +19,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.0.2
+    Version:        2.1
     Creation Date:  January 8, 2020
-    Last Updated:   January 21, 2023
+    Last Updated:   March 14, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -38,12 +35,22 @@ Function Export-VpnServerConfiguration {
 
     Param (
 
+        [string]$Path = '.\'
+
     )
+
+    If (-Not (Test-Path -Path $Path)) {
+
+        # // Create folder if it doesn't exist
+        Write-Verbose "$Path doesn't exist. Creating it..."
+        New-Item -ItemType Directory -Path $Path | Out-Null
+
+    }
 
     # // Define file locations
     $Hostname = $env:computername.ToLower()
-    $FilePath = ".\$hostname" + '_rasconfig.txt'
-    $Ikev2Configuration = ".\$hostname" + '_ikev2config.reg'
+    $FilePath = Join-Path $Path -ChildPath "${Hostname}_rasconfig.txt"
+    $Ikev2Configuration = Join-Path $Path -ChildPath "${Hostname}_ikev2config.reg"
 
     # // Check for existing RRAS configuration backup file. Delete if it exists
     Write-Verbose 'Checking for existing RRAS configuration backup file...'
@@ -78,8 +85,8 @@ Function Export-VpnServerConfiguration {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUpemwcFy4BaSWT9k+JFpYa/gb
-# qOKggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUKBjf/IQKa7/jI9Mb/suoHrvo
+# 7UWggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -259,30 +266,30 @@ Function Export-VpnServerConfiguration {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBTjWyz/ZUKBQmBCatCjyKQOtXtn/zANBgkqhkiG9w0BAQEFAASCAYDMGZqtriL/
-# FAkdXyd2Gw7GJYp/+xyHHslulwezqLCq3SkgMBXhBM1sdomP8AWDoQ6yfaxxqrvC
-# k9O0d8M6cIXVVNBrZnmqYRP/74DY8I+RR7GqyP4jPZXEWBn0T3ZTZULLTVBysk7+
-# YAcmd0ZuqUCYtUYr/rmFpBUw2E3xc63mdF6Yzsk81tIUPEDAsMt41fYtIoCBC7UO
-# phZlZ62AnbGYexk4f1WTE41oq+i+DGckvRWU+4ET7lNwEAxsmK64nA+y3LR/T1+T
-# GgSHgY1l0FBEhvd2Y52yBOndkW9bJg2erIx4AQuVfP62lcfK1MoBcQWNdyDrx3b2
-# BlAWE8KQXkG+K5YzMU3ZNEA6IkKA7aLW4LzSZDG91w3kUAxREshslb2ECZKkF59I
-# t24dNGYNgK0Lu2I4qrqpubzHXtV6gifkKh5dRaKmT4Cr+Zn9Pv8YjB8SflquVej4
-# KHOUk3Ka3FThKiF1f1MtbKMmvP6vU5MeLDbCaDDR9S2UqqsZIMJM4dmhggMgMIID
+# BBRk/U9zOzofzY6Bx4UdUbv29T65eTANBgkqhkiG9w0BAQEFAASCAYChGycAJgiB
+# EcZP2ehKsCG7w2kDWepvIRck66QXbEtyu5kRMy/7i3Lxmvpr+mp1DIfXODtid+SV
+# x0qrKUSyoV4Nwj8nYS842nu/y3HSZn9i7G2tr/F7hBEqQnyOIsGM43rn1LkP6/OZ
+# RUHqXmON2VVO5l9PbWTP5J3hPAxDwF0kqt4IV89g4Ka8QtdWCBqo41DEpCWSEjq2
+# sFhKZP2cu8pOxKNKFr1wga+gw4oEaYTj9VpjXwQ5W/SS1rRSyt4DrkwmHK4zo9Fp
+# 2RlOKJ0fe7PdkwZaVIUfKdX3duEH+RvRfUcBMxDwQufsTsVMAEQN2nAGVWVK1pLS
+# auav3WfMc6tWKFGPCh0MnqQ3Qp2b7yHoDVeijubjuvwn47fXhtImllSfE3F0G/YM
+# RYoeNQMMav+QLs7QvMSwzHy9r7qSxRhAJ5JKpygrTqS+TyYest8rKf4QuRzhQlvu
+# 6019dCMDJk44qhLR9VfnzL9Q8xtb+pQ5vCbbKzx+PDruXRQIbAMrMmyhggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwMTIxMjMxOTM0WjAvBgkqhkiG9w0BCQQxIgQgUiSnNcef
-# 4aUf+GJdMoTenuNa9mVeh8zeBv0S6IKcaccwDQYJKoZIhvcNAQEBBQAEggIArGiH
-# YDnaHQBXkQJ6Y5x44uggbJGhbXcOHdU97tUWgNBhvQ4xEQIBeIAC8kYVJEF4YjXN
-# sO7pO97U1HFuoIfWKaLH0dE3a7UPUg2b4DX3/oK36LyEKYwt4smg+gmjGYg2/CTI
-# wiMz0RqlihU0BFRRO308LKTE6p5r9Ce2VbewdZEAoP64mH7UgyoOZfEk5okNJOcd
-# GdKsQ862FcwlJeqU7VkCc1qnaWcnrxK+a5gwaQVgE9xofTySNMFcrmg6BD2zqA/L
-# p4bU+XDtgFEG8NHlskhIotPo8vQENIjuoFEDfF2wX16kAvrOWVUGCViU5qmUxoJL
-# 5cL6sbp1fHcB4hcBnWyBfZAKmbIyKYPGEL+FDTct9Qg8vyJFz7n8qh00TtSTjli4
-# 58rBeYVpMZ0L93X45TSZCc+K9U7g/mYrELLti581fLjIArHcAhCmEyuu6V1GJb3b
-# /5bTC6+NH6v6RLPbbQ4tA8KvL0pWdD+btDvVRULApT1FhdN7/FS09FBaQiePCb+d
-# 56AFDGtLqdZLzgpqh2bAIif7+TOggaqe1NGlSsfmKYrv0EvzEaFTVyD573B0XA7O
-# +eyETArg/khDZscURVqbs4JL4J3tOILxjcQ5eyetEx+FZ4wOKfyq6Z/2XCs4Gi2A
-# QsviVHR5wl6jt//KYahHkJviX9ezKVDDdFBdSqs=
+# hkiG9w0BCQUxDxcNMjMwMzE1MDAyOTQzWjAvBgkqhkiG9w0BCQQxIgQgJkCNVMt+
+# SNyLBqfrohIGzTA9pb4EwAVJJaTN6/djPcEwDQYJKoZIhvcNAQEBBQAEggIAtZH6
+# lTswQrZ7lX/9QxEPAirKfZ6Jx0yISg2uS+7S+Mckgg1wMPHJYCK/EUiDRqEHLHqk
+# 6VmxjNowT7eafqM/JeUz3ZAScKLIpCDNK26rKQMibJNSLW2oy5G1LVHszl77Dyjz
+# crMvYE3IcuzIIVxPt8xO350tYjRO5oyCG5llsSk/zUEKwMDD6hxhvM9mABAWPRI8
+# YdMauChsarXoLZPuCfy+7JwWBuAO1NaaOlgUyRNXoe+39ejG+tagJ23soZbgzbiH
+# FBNju8MB5rBzIiqbSEZtShw9IbKj7rSBAA8mMAaucc76adcpCgLt6rzDjP6B9o9M
+# Et1gloaVrUqlfShsXJbmnYl93+NYuXGA9dLOv9lhwq99Sn3suvi8Q93JFNcoL6RX
+# N777kmg4AW0HnRdIm75gqtUheFFkqTUOyHH3iNVTZ7+5ZqP0c8o+wRnNAwOgLauQ
+# Seinh19wN49YqSPf1UTvLpOwX0tNDlQt+arA6X3JbN+K1/S4zVmnVShdPneOltmV
+# YkPlm2CAE2ssFkXMD1TSkRblRKmw5GHgMaGbhhD38xltQqTpULmcGLd7Ooipz2kJ
+# mmqlcDER+rWgJ8TvJ5HWoBZC0MiAz7G3rX/+nfgIthIMSmcmo6WXCXdgMaLfOUkN
+# PIGcO7Q9BmrXxlSZ0NzrATjXJLCz3gW7xqZ1NJs=
 # SIG # End signature block

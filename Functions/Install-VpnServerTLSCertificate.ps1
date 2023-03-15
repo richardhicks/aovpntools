@@ -24,9 +24,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.0
+    Version:        1.0.1
     Creation Date:  March 6, 2023
-    Last Updated:   March 6, 2023
+    Last Updated:   March 14, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -41,10 +41,18 @@ Function Install-VpnServerTLSCertificate {
     Param (
 
         [Parameter(Mandatory, HelpMessage = 'Enter the thumbprint of the TLS certificate used for SSTP.')]
+        [ValidateNotNullOrEmpty()]
         [string]$Thumbprint,
         [switch]$Restart
 
     )
+
+    If ($Thumbprint.Length -ne '40') {
+
+        Write-Warning "Certificate thumbprint ""$Thumbprint"" is invalid."
+        Return
+
+    }
 
     # // Find certificate
     Write-Verbose "Validating TLS certificate with thumbprint $Thumbprint..."
@@ -73,8 +81,8 @@ Function Install-VpnServerTLSCertificate {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzmUJ1+qd8DUMxxWmy3QnHN3O
-# nQSggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSWcy6u4jEOoLYQ4SOKCcwGY+
+# 4TaggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -254,30 +262,30 @@ Function Install-VpnServerTLSCertificate {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBSw5p0yJUzsLNphns0zF4DIHS6+hzANBgkqhkiG9w0BAQEFAASCAYDUB1k450XH
-# FaGtXIRH6XnKCdbnVhudgmiqBiVWqZjrP8wiXkMorrZRSi7uKHX0XUykfU2g+0eb
-# A8jIeAJt5tF/MrYFdmc9RHQB3LzDaxp1yH7g5nxOES+5RUL8SbOs+kzNjRDZyqbo
-# pV+MEfozx5gozoV3KunMsliGtXyFhlsqwi8Vlj5IdxHBB/JtptgvovcuI2OMP9NU
-# DQZrdFlAdhNkp259bcLBMLXuyWON6naU59e1pRk4bZYRXCFym/cfbDNmMt7nAwMs
-# lobj4NjIBDktixCtMQx90TFNCMzVGIJENa85nAvBGRvdGN1EJsIXXCRnlMhY3iSJ
-# cx8xa+PH2KmaaQzj+YASGZbBKf+t2IYFp5KODJZomlTLuBlbePu9QPrdK3lFkgAR
-# 4P689QDQ7wtX00Hy8Hb0LaGmDnN3Hubzde2ayEdfovxgnUAtzcRfBlwZY0MUETqt
-# Ndl/K5JBW2+wQoTyU4wB4NmMURpUeabLx4RrigOZlLD+QGBMToTeuMWhggMgMIID
+# BBQHHe+FP2Q7LsAllZlmVdHdHDl0MDANBgkqhkiG9w0BAQEFAASCAYA3pbw7vRBD
+# 857poI9awD1HA/ShQ2N7HpIeGnUx1dFyvJEU48YjsCJahCJsIN+6vJNMcjPyAcz5
+# GgGrIziBDaQf8FCihw5F/IPnIYcHsqtd6BdOf5hwPClXmFH4uRDDrs3y3zbMWwiz
+# zEL+7PKAJV7QA7aj+vPXVXkVtNWsKX4E65968LfwKgxeRmXVqHI5/BUEwx/JTRg1
+# dL0XUSf5X9YL/fVZglLmS29Oa3NwwMgWFoLnblXFpYhdnFa25ZDcSNzGmpnsS52E
+# b6nU+p+k91lpXRG7q60lmpa66r6zNIMeZ1OjwBqZHbKdNKsK+6idqUuUIbTi2xID
+# fXvSLvvO9w/VGBHAc29fLLrJHvfX6fAA9lZqhDh/FvPhh0sk32laFaA+l4gZcH67
+# PzQ9OrxEIB8EA0bCLnR+NY5PH0TyJ6bvvIWgPbrwgWWtJGZM+iEpAYgLVMennmtD
+# yRN5C1iJTCV3K1LdVX4jmypkuJ4bzeyRrVIBaaMP4ZSPxuQYFokE5wWhggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwMzA3MDA1ODMwWjAvBgkqhkiG9w0BCQQxIgQgU9rooD90
-# +LpyzeGfm31U+RVPmtu0RkTU3/13dBfMtXYwDQYJKoZIhvcNAQEBBQAEggIAzKkI
-# UqSMMkSrcv0HVLp24wrsg6SoCr0pZqFQ2k6QwCjDD97i1CJdkXBHpSCHla5nuJf0
-# bweayyod9BDqpD98O/9EUp08whwrl4HFbzw3CFNU70jxp+baJgAZE5rDh49dYh5E
-# xH46OLBIxMkLZXnlqOMaXDhQE5ANdyx2oPv3fST1DHTMVVIp4CcYXZk1+936yeQv
-# v87tGsTQtjB2fN9RVJc8xTKaHxXOz/B4HB5EQ4q32Wl3wTC4G5CQ4seY0R0Ppva2
-# Mtn6l15ZzcIBi+YwTfghcspJBTte09i+XbBbgdh5DqhKgpBwXIP6DFrd2cpVsBlJ
-# muyngFWAr+Dw6I6dscWQFHMEUS0/z+P1MAIVr1kBqDiUB9q8gKuH6spnP3WZ0J5K
-# N8vuvx9xLZ4XqQ1FhZ5hZt/dPc7lbNx4l93XYvszCmUey8UTNq/ZryugZ9dvGQLj
-# IoEHgvgSRVYP9db2gQ4/gUcOp5Ea0A5nztTOvzAQDqcu3fFv8zr7uFJL/h3IYHOI
-# CRQO4OVf2Jq5eUiaDEDgdvRWHfaXnCEQUjp9SaQWul9QTPjPikK6zSKEpnVBTAcb
-# OpLhmL4RxCZI1Hf4sTA9XPQiZqDP3tZ7bHkoIc6CWQGGm2oYPO2XBppzULplfAa7
-# humdGG5ajaFzvorgL6FzwbMHQZR9AGZI4yv2osc=
+# hkiG9w0BCQUxDxcNMjMwMzE0MjMzODQ0WjAvBgkqhkiG9w0BCQQxIgQgYD2cTzGt
+# RIIsj7xWKx90WQXR0f9vXnL7optDvqWVtXcwDQYJKoZIhvcNAQEBBQAEggIAChew
+# MwDJuO0hWl4FjiUVRMFO/ValARyrtLEbI8eKzRiJSZryKfqH9LUvSr7dAYQ24i+p
+# f0z1dwujkvo0rjhK0lc5P1BlLDm9BePSm8puZHFn0s2AB9uUKRmuIPuRTMo3I1cd
+# G/f4Be7bkuddPD+hPSVBKpJ+pVsZ+Fz+HQecYBUzcXwZMQ4vSmqpKiUdTMlh2x4O
+# ei7BRDbWqbWV/GGTOZbmKs3v+Fnam4+5LmF17/j4axlGSriL0sASyesu2emqUhhh
+# /4ajL1oZTYteE9Ef7J3Qk/x1yTMfn3b+rtydkLrWKp0fhhjzs85zZVj0UW8rTHym
+# yXuUAuIRAyCk7ZxGwRj0hMIbIzj3fVi44b9olbXRXbGt6c6tWkIodxPrfi6BtWWq
+# vHl/izI+iKZItfWK88PKiEamtxJK5MeGLgvK4C8kNwuH8GTj2dlbH/wAr5NjiJrn
+# RPc8SrSkdnDpJfWZEbNg1ZlG6hJEwGFNlzoLSZfM5Jbejf5Nc2ynBk8H3nK/De9C
+# DaHIgvE+2Jfu+aTaEZTAh1GYRO7khnjmI5nHBPbIShw2OnPoJY9B5a80KvEbGJub
+# FsuVr2CXE+K5AaNVYqxXOWcwvdjXaeTx5opeeVSMFZz77XVRldVspuHKFLFk7TJk
+# 8vO6KfKvp72b8dsm79r+fbZ0FfWYVR2lHqWyRTo=
 # SIG # End signature block
