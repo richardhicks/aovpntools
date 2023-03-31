@@ -43,9 +43,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:            4.1.5
+    Version:            5.0
     Creation Date:      May 28, 2019
-    Last Updated:       November 2, 2022
+    Last Updated:       March 25, 2023
     Special Note:       This script adapted from guidance originally published by Microsoft.
     Original Author:    Microsoft Corporation
     Original Script:    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
@@ -96,7 +96,7 @@ Function New-AovpnConnection {
         # // Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM.
         $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 
-        If ($CurrentPrincipal.Identities.IsSystem -ne $true) {
+        If ($CurrentPrincipal.Identities.IsSystem -ne $True) {
 
             Write-Warning 'This script is not running in the SYSTEM context, as required.'
             Return
@@ -153,10 +153,10 @@ Function New-AovpnConnection {
     $ProfileXML = Get-Content $xmlFilePath
 
     # // Escape spaces in profile name
-    $ProfileNameEscaped = $ProfileName -replace ' ', '%20'
-    $ProfileXML = $ProfileXML -replace '<', '&lt;'
-    $ProfileXML = $ProfileXML -replace '>', '&gt;'
-    $ProfileXML = $ProfileXML -replace '"', '&quot;'
+    $ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
+    $ProfileXML = $ProfileXML -Replace '<', '&lt;'
+    $ProfileXML = $ProfileXML -Replace '>', '&gt;'
+    $ProfileXML = $ProfileXML -Replace '"', '&quot;'
 
     # // OMA URI information
     $NodeCSPURI = './Vendor/MSFT/VPNv2'
@@ -213,7 +213,7 @@ Function New-AovpnConnection {
 
     # // Remove registry artifacts from NetworkList\Profiles
     $Path = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles\'
-    Write-Verbose "Searching $path for VPN profile ""$ProfileName""..."
+    Write-Verbose "Searching $Path for VPN profile ""$ProfileName""..."
     $Key = Get-Childitem -Path $Path | Where-Object { (Get-ItemPropertyValue $_.PsPath -Name Description) -eq $ProfileName }
 
     If ($Key) {
@@ -279,18 +279,14 @@ Function New-AovpnConnection {
         Try {
 
             # // Identify current user
-            $UserName = Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object UserName
-            $User = New-Object System.Security.Principal.NTAccount($UserName.UserName)
-            $Sid = $User.Translate([System.Security.Principal.SecurityIdentifier])
-            $SidValue = $Sid.Value
-            Write-Verbose "User SID is $SidValue."
+            $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+            Write-Verbose "User SID is $Sid."
 
         }
 
-        Catch [Exception] {
+        Catch {
 
-            Write-Warning "$_"
-            Write-Warning "Unable to get user SID. User may be logged on over Remote Desktop."
+            Write-Warning $_.Exception.Message
             Return
 
         }
@@ -302,7 +298,7 @@ Function New-AovpnConnection {
     Try {
 
         $NewInstance = New-Object Microsoft.Management.Infrastructure.CimInstance $ClassName, $NamespaceName
-        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ParentID', "$nodeCSPURI", 'String', 'Key')
+        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ParentID', "$NodeCSPURI", 'String', 'Key')
         $NewInstance.CimInstanceProperties.Add($Property)
         $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('InstanceID', "$ProfileNameEscaped", 'String', 'Key')
         $NewInstance.CimInstanceProperties.Add($Property)
@@ -313,7 +309,7 @@ Function New-AovpnConnection {
 
             $Options = New-Object Microsoft.Management.Infrastructure.Options.CimOperationOptions
             $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Type', 'PolicyPlatform_UserContext', $False)
-            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$SidValue", $False)
+            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$Sid", $False)
             $Session.CreateInstance($NamespaceName, $NewInstance, $Options)
 
         }
@@ -328,7 +324,7 @@ Function New-AovpnConnection {
 
     }
 
-    Catch [Exception] {
+    Catch {
 
         Write-Output "Unable to create ""$ProfileName"" profile: $_"
         Return
@@ -340,8 +336,8 @@ Function New-AovpnConnection {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUX7+Zt3jK/MS4SoqQULvdETyK
-# W92ggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU8f1PngxyqnoH1Up1lulUq3d6
+# /iSggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -521,30 +517,30 @@ Function New-AovpnConnection {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBSsV3O5grh19QLkjaqlFZTJy/vnhjANBgkqhkiG9w0BAQEFAASCAYBQK7SobrmU
-# yL8qMWjCUhImGp7ED+eHGtiWWWSd7OZCsJKIH/3t6Y7pJw1kt8ycV+HVrrwMIBRV
-# 0BKbG/iHAyGIrvaDXaE1PJHSRJgDshWNBpcd8l4E85CX4bO9UKxNPA57oPptEJdJ
-# ZJvmmbtohhL06Xy9gFHvDCOqX4X0mx9+SFiSjAFr7yB4VKkpeU0yjUgUjhpliSKn
-# j476yCEcQxIim8ZePltlqV9UCxAeJ+o30hWjfaKeYkFvQVhp3mqmKDYbP6620ShM
-# GnNjAqDv4lF5nwIMa3d0MtxL0dzPVPdqdCXu0kIz/ea8aTYnqL82U0NK2SomyC3E
-# hrK1JPMkUgsK/vQeo0ZCM6o3aSN+UNkNKNePXjDUGMPy7Ibp1llJRwooJ7izPp7G
-# 6blsLuWR9QqgwVyiEqDYDh5ysLCaY5UrmZ29rQ+Rr+eAcF+FMJWZOaj0hzELspTM
-# hvQqnbzU5ouAxArt/At0m0jUckQ+El2VbMkT9OOOlbroVZO4PKRPyWGhggMgMIID
+# BBSnNh9vNVBFtcswgmsV6cr54uElLTANBgkqhkiG9w0BAQEFAASCAYAybBQZOxB3
+# JHOSCqEQQgidf133c+o7aDmx9XHy842rT/j1VZLbbhCaDDmpeiZ6k0ZEtpUjCWL8
+# NVY8+XTpBIQZ+7SIv8BtXZ2Fvihb49EjlxNgwkIanaB29KlbKpa1aP3uE4SYU9Hi
+# gehknG7JAIBHOJ9o8g5SUcz04f7QmrzuZoySkC7LxGx5OeLONk1tGIlo4CPpXyHb
+# JPsMibE5SRg5+xsIErXg4A7D9mHoUmmjFGkPCJCDx3cNB8M53HthNo3IR/Z1c2j3
+# nDW/tiSNVtChbaaqHaoDVYOQYUhOHNSL1+YuQyLi+B3rNjUih/vsFY7Nq1ho1YPc
+# JLwauY4ux6Dga9cp1A0VWa7I6VqYTsYGXsHX8H27KSb8AUNKsatFeT19eeNIqxGl
+# IpZHqa5ntwffB6dKS7p7iBOWBrQM3IOXieX/Hezjco4HrjpFn3Wd0Bcwaw+q7ysr
+# vn4eA2ViRq2iDq5KhZQopOHLdtSumy5ObNNXKM+dWtNEUp+gCYP+Vz6hggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjIxMjExMTgxNzQ5WjAvBgkqhkiG9w0BCQQxIgQgXrgLFtuq
-# wFr79xK3pY8f4VWDFq4HvdDevxSxNg7Q1cIwDQYJKoZIhvcNAQEBBQAEggIAw9YZ
-# 72vIR8hfbmRqCACRLlxY6rS2M5sxgzUI3txFucjHPgB+hwYym3R8JnQm7Dzqqf/+
-# krVtfTjpgE6fTSH7D0+TkPd47AtJvJhRZt+bSZwL3hf7b/ePEa/7Vi1MMIf3Q9hC
-# gX+G6zU4vBkT2RKgVXt2geWYm/iL/8URAFo2lpLETdri+x9vkVwM1V6cG7rZITAr
-# apeDNxhdFcDgwmGtOnKMyUQqk8s0Snv5/MVI9IpgyWRb0nSSeoDHmvvnqbgjX3qK
-# EDsw9BtarVlirhUK5HjjTY8K16+vSRzRWLLci97EKT2grwTpHhoqPfNhR890dy1P
-# 7iM1beym655zXx5ktXU4APj8dQ8A5r9Z2zvMT6g7Px4U4bkFUFfpi6nejJ/XCf61
-# q1JThz5uo+QIpgxhqj589eSsQ9ocWh0HC7p3JtF7QHEl1NbJxM0KvN8Y1jTGfNpo
-# FZM3fUGlUeWxW6UvYbhP4iPruS3QLqxspOfEJBS1LvA8WQjLtCuUusZ9JxRrohSL
-# yXAwBzOkT/4VtobrkDUlWOxZidv2VlYctBoClVW0Tf6Y//xC+2C7qA1ICALBc6ln
-# USLjmnVSCb4oKDPkkDsynjqyW80ZKuTuYHdl54s2VDZYItd37dZQhDuFj0IB0taF
-# GHxiW73sYBxBT/gZMYso2pETZUfnEjknmRXhN3E=
+# hkiG9w0BCQUxDxcNMjMwMzI1MjEzNTU1WjAvBgkqhkiG9w0BCQQxIgQgWeor3byF
+# noyih2xpzcOfIXKWEK6E+PrMP7M59JTIz4swDQYJKoZIhvcNAQEBBQAEggIAIxyq
+# i/IEZdsZJeSvCbQfvZT9FqteSqTAUB9QzpCMFRd8yvz+biFSDpeeHClE+X89pX7r
+# bBDgsIwIDkwiK+U26n3Dszvy4XX0tsbwr3Ari/uj+SfKxVVpjQInz3e5/J0B0aIL
+# A/grVmDbUEsrrmdF+ZF9FL7M9Y20QVQN/p+0uOgapWnUms4ji6MWkOe1pQ+tJSFr
+# qo3xuWLWF2QWQYqnh0mymp9Z6JTZQ4AwvuynyBpp4ZPG8vsaXl/efKrp3nS8A/Bf
+# wgqKCajmijH89ljkqs7cemswFvOyf8fDmKcBK3CLYQj93gta0CIjk4EODg9YXQJW
+# 8Fi81t0ApngOnbVLXvpIPC+6N/vCYWvkNBZxPm/Tlq5ps0b6FtX7eB99Kltoqqpm
+# lin3BcFhC/06Bg1BY642o4dgIgpuRd67CgWgadfy8l17VHG6pdyh3CmPkk2DyosY
+# QIHgF8x9Y+ZuT/6iN4JGSTomWfQV+CeSOOiiU6jxiWPYZK+qdzzgxb+yUdd2kAch
+# npMOyn70lOTTaPBOsoS/tlLM2wEVDiSaJyOVqWcbfCp5R77qzwz9rNjo1pQc2670
+# t4V/pOymblGBgxAs78PSqfYuTxbZKtFUd1wmPbPHutGCvYidFv6EFwfdRtEWyGGh
+# trSC87xwjXZS/D7qLkbwB8JE72q3niNldMcTMmI=
 # SIG # End signature block
