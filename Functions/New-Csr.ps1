@@ -61,9 +61,9 @@
     https://github.com/richardhicks/aovpntools/blob/main/Functions/New-Csr.ps1
 
 .NOTES
-    Version:        2.1.1
+    Version:        2.2
     Creation Date:  June 6, 2022
-    Last Updated:   December 15, 2022
+    Last Updated:   April 12, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -93,7 +93,15 @@ Function New-Csr {
     $CsrPath = ".\$env:computername.csr"
     $CerPath = ".\$env:computername.cer"
 
+    $Hostname = $Hostname.ToLower()
     Write-Verbose "Subject name is $Hostname."
+
+    If ($Hostname -Match '\*') {
+
+        Write-Verbose 'Wildcard subject detected.'
+        $Wildcard = $Hostname -Replace "^\*\.", ""
+
+    }
 
     # // Create INF file
     Write-Verbose 'Creating INF file...'
@@ -102,7 +110,18 @@ Function New-Csr {
 
     $Inf.Add('[NewRequest]')
     $Inf.Add("Subject = ""CN=$Hostname""")
-    $Inf.Add("FriendlyName = $Hostname")
+
+    If ($Wildcard) {
+
+        $Inf.Add("FriendlyName = $Wildcard")
+
+    }
+
+    Else {
+
+        $Inf.Add("FriendlyName = $Hostname")
+
+    }
 
     If ($EC) {
 
@@ -134,11 +153,19 @@ Function New-Csr {
     $Inf.Add('2.5.29.17 = "{text}"')
     $Inf.Add("_continue_ = ""dns=$Hostname&""")
 
-    If ($AdditionalNames) {
+    If ($Wildcard) {
+
+        Write-Verbose "Adding $Wildcard to the Subject Alternative Name list..."
+        $Inf.Add("_continue_ = ""dns=$Wildcard&""")
+
+    }
+
+    ElseIf ($AdditionalNames) {
 
         ForEach ($Name in $AdditionalNames) {
 
             Write-Verbose "Adding $Name to the Subject Alternative Name list..."
+            $Name = $Name.ToLower()
             $Inf.Add("_continue_ = ""dns=$Name&""")
 
         }
@@ -173,8 +200,8 @@ Function New-Csr {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhA/lnCs1WAcq+azI0pKTMI81
-# 7gCggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhsK6TQTd95cBVZlQ6XhTViPI
+# iuOggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -354,30 +381,30 @@ Function New-Csr {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBQzbBWc+XhiHFRm16mlDmWf1G0awzANBgkqhkiG9w0BAQEFAASCAYAnjYJldczD
-# wjVUDC8fdiMQKWMzeyN+kcaf6HchrtuhHiJd62kWOBT+scuMcph3wf9HTLfBNBlb
-# LGf1KgIBf1eYXIA/q3fx0LZfmsv+BQHsSbmwu+m6tC7foFx62ryfGVeC3VhgHqjk
-# 3q1Lagcp1xNENK2NWA/chkjYqiXm8m6uztlgVwSkrgBy+bMEFEyZvSD/SOuztQrz
-# e6y9pEkRmkiJOkWTwAWbB8xCQNI9RuVU5Hv/kVRQAWqTLtAWH+xAb17Vkdxd1TQi
-# iyE6yoM3wZFHgZ0xmDIv2fRTHVEWkhEmE+FzQmTrHdOSj/YsjjjfSATpHdKxG2yL
-# 4sI92BcZICJ6y1VP2Lg/nA9vgZMK6RftpBb9jn9dKQemllM9DkFoszbfwh2nk/Wm
-# MZ9Y/xOstJeLEQ7XxiYC7Ya3TugsG18f9/4f8JN3SQpv8+VbtNwXtUFfhx8/5Qla
-# 5HlD8i+jBYBQ7C1Rf0P8iRIDBK5MsJtL+YyQpcNbdgnescrucfnuVsehggMgMIID
+# BBTLbfiNbX1v0iBxzVdNm8ewVz4N8zANBgkqhkiG9w0BAQEFAASCAYAPRLCn3Q3e
+# NkgA2lBp5RI6U1/x1UDMFXYklaia4CgQjdQw/O120iLrMTU0ky4V66CpriIFXEjD
+# jbdCI2gGOdV/cdMjMnytmLEePtxW5CcqKq4fJQYj7+GnmNbnglUkGYekJrImYD0y
+# /xqxrszEEnrbQ4F6pKjtZOyIGYeWGbi7SOV2p1i2Pk7Uh0E/Fj9tU0fTPeRYdlc/
+# i2CHLE8xGuBLZEB8GlKlEw3YSet5p0xNDBAtLYoz/QI0WI87WqJITBzqXWMNE1dx
+# DjG9SYMXQ8H04X5OHXko1E+RqzcxN7KMPhZH3Q1RMhC6jJtt8ZbQ2/0vjlSzY2pt
+# Bi6sTY1R0KHl2+dmd40u7RSG6mT83qLt4GfUSxYIa8z614E/wpQ/vCOzZdk83Bkq
+# 4+sulkgIGAwmILDr9iH23OG+hA5mJwYIzokQ99Ru5EFn8yg/JUkK7dBNHGeBLTSu
+# 8PpblXuYoNUsiKhybn+XtT68r005vtTWs0VAPsE3iEUKN4NmZ/ghOEihggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjIxMjI3MTk0MTQ3WjAvBgkqhkiG9w0BCQQxIgQge3pXKdSS
-# 4UFJ1Ga9ra1jB/DWBaSlJUEh8Q7DvK8qaocwDQYJKoZIhvcNAQEBBQAEggIAzhtC
-# c3V03DmVHNW8wGMRiDGS3fAoMZNqTT4bnT05u+yWFuyAZTiSY4K/P/wIPkxXm61z
-# wz/cdik4EhZOI8pkp2GbJrba13oY4sB5fhwN1KxNftiwcU2pq9FPq4hnNpKtorpl
-# 7WRtoRJNBvyKGogPlcbcjTkKKk7hVRU24R0WMQdG6rAzrnK3PKJPC6eXGtSAcm1a
-# gDEc3UP3zG7qHXsih32Pathlwij7O694GrQuFTBTCDGmwoDNOh+t+GXWr6JnYGoR
-# xI3sOEkQavTVIILe89oKpXp/3fswh1MhacGAdjA5rv4EKqbDp8T6ha1mp+vvuyBx
-# gRqXFqDnbEevixl6zlwUFy+aaauNJneTghd5V4Q0YAgunYdP4/dLxyaH7t9vWNBY
-# bT0tLzV60voe74D6jfd70GYV0po6qF0oipavs4d1+HSryoLuhlxKCJTIktd4ZM04
-# +temisW7ABioXhdxVhopozr3rmGsKi3cJTWgEmXmSpBgiJ9Nnh6eSEXvW6asqBTC
-# IZWPct6YjctrQuSqALXkxVn/HKDRybucde3lOAhSbH/zjQDRLLXQZglANuv4B8E+
-# TXUeXtXSkxyH+KaNrINB9v6uYC44l8Hy2YH/WmCyLU4UVQWg+V/axp0Sz9GYL5oK
-# rCBd6L4DWK9+oOjw+ajWGlQa/Jlp6H5ZM1uoats=
+# hkiG9w0BCQUxDxcNMjMwNDEyMjMzMzM0WjAvBgkqhkiG9w0BCQQxIgQgVdswE+H5
+# DI3Px8yfKATkCUV80Sh5pkFzXHQMq5OXgYkwDQYJKoZIhvcNAQEBBQAEggIArFLm
+# W2vtztK/DFSYgJkV0mgO4M1F+DureZulZzC/X9oqYqrfSaznNvIPS/eKDC1rtiw6
+# b+UEQmBlJxgSkTIfpdnATX0Ne0NEpe/pxRIKOsbXyEnoTAOWOFZS4Sv1oPKnR0QN
+# OL+UVtx4rF2t86ZTCBLdlYgP+wU77i5H0kLCFO/zTArK4EqmxOsUr8jd9kVoJh0K
+# Ejo/N8SVlmF8XRaZkMXaYtRdeqoAyHcjwV4Fe5k54FFOsU/4npCcXCLUWqPgS54p
+# oQYIexr5ZNXQ4sIV4FrdKoEtqVobGjf5jV+FBdG0DM4SqLrQK4xiRQhdcEDjS5d7
+# X44kVmWj81Po7Qg1p1ju5TRnyxc5V+/hbEufXSDW2G1YuK6yxTSp8PeNhjfrgByS
+# +baMaqBu90VJs6bs3P+KPcTHGtCgpMa0CxnPJeZmC9nFPr3MwwOasLEQE3Chnt7Y
+# I5QJdn7xQVPM+cK2ylK2/zhux5Wx/eeCRsXORcX55KqmyLGX3RczMJJutQ9/+4dV
+# XtFR4TdSgmzJQ8EMysOE8uJn6BZkDfmT91J6z8QYHQShvZd58EATneDLeLj0oECB
+# gV7hjl0az3BZQC/DI7bEXfYQFl7OkI+yfCGW8O+NghZhKI+wM/3OZef59Fm6WvYz
+# MhHB8F5eGjq7uNaQuWgS5Qbfj52sdu/ngViLfXA=
 # SIG # End signature block

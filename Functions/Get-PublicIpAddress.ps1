@@ -1,333 +1,106 @@
 <#
 
 .SYNOPSIS
-    Creates an Always On VPN user or device tunnel connection.
+    PowerShell script to identify a client's public IPv4 address.
 
-.PARAMETER xmlFilePath
-    Path to the ProfileXML configuration file.
+.PARAMETER $UseIpv4Address
+    Use this switch if DNS resolution is not available.
 
-.PARAMETER ProfileName
-    Name of the VPN profile to be created.
+.PARAMETER $UseIpv6Address
+    Use this switch if DNS resolution is not available.
 
-.PARAMETER DeviceTunnel
-    Option to create an Always On VPN device tunnel profile.
-
-.PARAMETER AllUserConnection
-    Option to create the Always On VPN user tunnel profile in the all users profile.
+.PARAMETER $Detailed
+    Includes detailed information including city, country, and hostname.
 
 .EXAMPLE
-    New-AovpnConnection -xmlFilePath 'C:\Users\rdeckard\desktop\ProfileXML_User.xml' -ProfileName 'Always On VPN'
+    Get-PublicIPAddress
 
-    Creates an Always On VPN user tunnel profile named "Always On VPN" for the user Rick Deckard.
-
-.EXAMPLE
-    New-AovpnConnection -xmlFilePath 'C:\Users\rdeckard\desktop\ProfileXML_User.xml' -ProfileName 'Always On VPN' -AllUserConnection
-
-    Creates an Always On VPN user tunnel profile named "Always On VPN" for all users.
+    Running this command will display the public IP address used by the client to access the Internet.
 
 .EXAMPLE
-    New-AovpnConnection -xmlFilePath 'C:\Users\rdeckard\desktop\ProfileXML_Device.xml -DeviceTunnel
+    Get-PublicIPAddress -Detailed
 
-    Creates an Always On VPN device tunnel profile named "Always On VPN Device Tunnel".
+    Running this command will display the public IP address used by the client to access the Internet along with the city, country, and hostname.
+
+.EXAMPLE
+    Get-PublicIPAddress -UseIpv4Address
+
+    Running this command will display the public IP address used by the client to access the Internet but will connect to the server using its IPv4 address. This is required when DNS resolution is not available.
+
+.EXAMPLE
+    Get-PublicIPAddress -UseIpv6Address
+
+    Running this command will display the public IP address used by the client to access the Internet but will connect to the server using its IPv6 address. This is required when DNS resolution is not available.
 
 .DESCRIPTION
-    This script will create an Always On VPN user or device tunnel on supported Windows devices.
+    Knowing a client's public IP address can be helpful for troubleshooting. Running this command provides this information to the administrator.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/blob/main/Functions/New-AovpnConnection.ps1
-
-.LINK
-    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-PublicIPAddress.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:            5.0.1
-    Creation Date:      May 28, 2019
-    Last Updated:       May 11, 2023
-    Special Note:       This script adapted from guidance originally published by Microsoft.
-    Original Author:    Microsoft Corporation
-    Original Script:    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
-    Author:             Richard Hicks
-    Organization:       Richard M. Hicks Consulting, Inc.
-    Contact:            rich@richardhicks.com
-    Web Site:           https://www.richardhicks.com/
+    Version:        1.4.7
+    Creation Date:  January 20, 2020
+    Last Updated:   February 4, 2023
+    Author:         Richard Hicks
+    Organization:   Richard M. Hicks Consulting, Inc.
+    Contact:        rich@richardhicks.com
+    Web Site:       https://www.richardhicks.com/
 
 #>
 
-Function New-AovpnConnection {
+Function Get-PublicIPAddress {
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
 
     Param (
 
-        [Parameter(Mandatory, HelpMessage = 'Enter the path to the ProfileXML file.')]
-        [ValidateNotNullOrEmpty()]
-        [string]$xmlFilePath,
-        [Parameter(HelpMessage = 'Enter a name for the VPN profile.')]
-        [Alias("Name", "ConnectionName")]
-        [string]$ProfileName,
-        [switch]$DeviceTunnel,
-        [switch]$AllUserConnection
+        [Alias('IPv4')]
+        [switch]$UseIpv4Address,
+        [Alias('IPv6')]
+        [switch]$UseIpv6Address,
+        [switch]$Detailed
 
     )
 
-    # // Set default profile name
-    If ($ProfileName -eq '') {
+    # // If DNS is not available attempt to use IP address to connect to ipconfig.io
+    If ($UseIpv4Address) {
 
-        If ($DeviceTunnel) {
-
-            $ProfileName = 'Always On VPN Device Tunnel'
-
-        }
-
-        Else {
-
-            $ProfileName = 'Always On VPN'
-
-        }
+        # // Collect public IP address information
+        Write-Verbose 'Collecting public address information from ipconfig.io using IPv4 address...'
+        $Content = (Invoke-WebRequest -Method Get -Uri 'http://172.67.199.187/json' -Headers @{Host = 'ipconfig.io' } -UseBasicParsing)
 
     }
 
-    # // Check for existing connection. Exit if exists.
-    If ($AllUserConnection -or $DeviceTunnel) {
+    ElseIf ($UseIpv6Address) {
 
-        # // Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM.
-        $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+        # // Collect public IP address information
+        Write-Verbose 'Collecting public address information from ipconfig.io using IPv6 address...'
+        $Content = (Invoke-WebRequest -Method Get -Uri 'http://[2606:4700:3035::6815:2a21]/json' -Headers @{Host = 'ipconfig.io' } -UseBasicParsing)
 
-        If ($CurrentPrincipal.Identities.IsSystem -ne $True) {
-
-            Write-Warning 'This script is not running in the SYSTEM context, as required.'
-            Return
-
-        }
-
-        # // Check for existing connection. Exit if exists.
-        If (Get-VpnConnection -Name $ProfileName -AllUserConnection -ErrorAction SilentlyContinue) {
-
-            Write-Warning "The VPN profile ""$ProfileName"" already exists."
-            Return
-
-        }
 
     }
 
     Else {
 
-        If (Get-VpnConnection -Name $ProfileName -ErrorAction SilentlyContinue) {
-
-            Write-Warning "The VPN profile ""$ProfileName"" already exists."
-            Return
-
-        }
+        # // Collect public address information
+        Write-Verbose 'Collecting public address information from ipconfig.io...'
+        $Content = (Invoke-WebRequest -Method Get -Uri 'http://ipconfig.io/json' -UseBasicParsing)
 
     }
 
-    # // Validate XML for user or device tunnel connections
-    [xml]$Xml = Get-Content $xmlFilePath
+    $Content = $Content | ConvertFrom-Json
 
-    If ($DeviceTunnel) {
+    Write-Output $Content.Ip
 
-        If (($Xml.VPNProfile.DeviceTunnel -eq 'False') -or ($Null -eq $Xml.VPNProfile.DeviceTunnel)) {
+    If ($Detailed) {
 
-            Write-Warning 'ProfileXML is not configured for a device tunnel.'
-            Return
-
-        }
-
-    }
-
-    If (!$DeviceTunnel) {
-
-        If ($Xml.VPNProfile.DeviceTunnel -eq 'True') {
-
-            Write-Warning 'ProfileXML is not configured for a user tunnel.'
-            Return
-
-        }
-
-    }
-
-    # // Import ProfileXML
-    $ProfileXML = Get-Content $xmlFilePath
-
-    # // Escape spaces in profile name
-    $ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
-    $ProfileXML = $ProfileXML -Replace '<', '&lt;'
-    $ProfileXML = $ProfileXML -Replace '>', '&gt;'
-    $ProfileXML = $ProfileXML -Replace '"', '&quot;'
-
-    # // OMA URI information
-    $NodeCSPURI = './Vendor/MSFT/VPNv2'
-    $NamespaceName = 'root\cimv2\mdm\dmmap'
-    $ClassName = 'MDM_VPNv2_01'
-
-    # // Registry clean-up
-    Write-Verbose "Cleaning up registry artifacts for VPN connection ""$ProfileName""..."
-
-    # // Remove registry artifacts from ERM\Tracked
-    Write-Verbose "Searching for profile $ProfileNameEscaped..."
-
-    $BasePath = "HKLM:\SOFTWARE\Microsoft\EnterpriseResourceManager\Tracked"
-    $Tracked = Get-ChildItem -Path $BasePath
-
-    ForEach ($Item in $Tracked) {
-
-        Write-Verbose "Processing $(Convert-Path $Item.PsPath)..."
-        $Key = Get-ChildItem $Item.PsPath -Recurse | Where-Object { $_ | Get-ItemProperty -Include "Path*" }
-        $PathCount = ($Key.Property -Match "Path\d+").Count
-        Write-Verbose "Found a total of $PathCount Path* entries."
-
-        # // There may be more than 1 matching key
-        ForEach ($K in $Key) {
-
-            $Path = $K.Property | Where-Object { $_ -Match "Path\d+" }
-            $Count = $Path.Count
-            Write-Verbose "Found $Count Path* entries under $($K.Name)."
-
-            ForEach ($P in $Path) {
-
-                Write-Verbose "Testing $P..."
-                $Value = $K.GetValue($P)
-
-                If ($Value -Match "$($ProfileNameEscaped)$") {
-
-                    Write-Verbose "Removing $Value under $($K.Name)..."
-                    $K | Remove-ItemProperty -Name $P
-
-                    # // Decrement count
-                    $Count--
-
-                }
-
-            } # // ForEach $P in $Path
-
-            #  // Update count
-            Write-Verbose "Setting count to $Count..."
-            $K | Set-ItemProperty -Name Count -Value $Count
-
-        } # // ForEach $K in $Key
-
-    } # // ForEach $Item in $Tracked
-
-    # // Remove registry artifacts from NetworkList\Profiles
-    $Path = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles\'
-    Write-Verbose "Searching $Path for VPN profile ""$ProfileName""..."
-    $Key = Get-Childitem -Path $Path | Where-Object { (Get-ItemPropertyValue $_.PsPath -Name Description) -eq $ProfileName }
-
-    If ($Key) {
-
-        Write-Verbose "Removing $($Key.Name)..."
-        $Key | Remove-Item
-
-    }
-
-    Else {
-
-        Write-Verbose "No profiles found matching ""$ProfileName"" in the network list."
-
-    }
-
-    # // Remove registry artifacts from RasMan\Config
-    $Path = 'HKLM:\System\CurrentControlSet\Services\RasMan\Config\'
-    $Name = 'AutoTriggerDisabledProfilesList'
-
-    Write-Verbose "Searching $Name under $Path for VPN profile called ""$ProfileName""..."
-
-    Try {
-
-        # // Get the current registry values as an array of strings
-        [string[]]$Current = Get-ItemPropertyValue -Path $Path -Name $Name -ErrorAction Stop
-
-    }
-
-    Catch {
-
-        Write-Verbose "$Name does not exist under $Path. No action required."
-
-    }
-
-    If ($Current) {
-
-        #// Create ordered hashtable
-        $List = [Ordered]@{}
-        $Current | ForEach-Object { $List.Add("$($_.ToLower())", $_) }
-
-        # //Search hashtable for matching VPN profile and remove if present
-        If ($List.Contains($ProfileName)) {
-
-            Write-Verbose "Profile found. Removing entry..."
-            $List.Remove($ProfileName)
-            Write-Verbose "Updating the registry..."
-            Set-ItemProperty -Path $Path -Name $Name -Value $List.Values
-
-        }
-
-    }
-
-    Else {
-
-        Write-Verbose "No profiles found matching ""$ProfileName""."
-
-    }
-
-    # // Create the VPN connection
-
-    If (!$AllUserConnection -and !$DeviceTunnel) {
-
-        Try {
-
-            # // Identify current user
-            $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-            Write-Verbose "User SID is $Sid."
-
-        }
-
-        Catch {
-
-            Write-Warning $_.Exception.Message
-            Return
-
-        }
-
-    }
-
-    $Session = New-CimSession
-
-    Try {
-
-        $NewInstance = New-Object Microsoft.Management.Infrastructure.CimInstance $ClassName, $NamespaceName
-        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ParentID', "$NodeCSPURI", 'String', 'Key')
-        $NewInstance.CimInstanceProperties.Add($Property)
-        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('InstanceID', "$ProfileNameEscaped", 'String', 'Key')
-        $NewInstance.CimInstanceProperties.Add($Property)
-        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ProfileXML', "$ProfileXML", 'String', 'Property')
-        $NewInstance.CimInstanceProperties.Add($Property)
-
-        If (!$AllUserConnection -and !$DeviceTunnel) {
-
-            $Options = New-Object Microsoft.Management.Infrastructure.Options.CimOperationOptions
-            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Type', 'PolicyPlatform_UserContext', $False)
-            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$Sid", $False)
-            $Session.CreateInstance($NamespaceName, $NewInstance, $Options)
-
-        }
-
-        Else {
-
-            $Session.CreateInstance($NamespaceName, $NewInstance)
-
-        }
-
-        Write-Output "Always On VPN profile ""$ProfileName"" created successfully."
-
-    }
-
-    Catch {
-
-        Write-Output "Unable to create ""$ProfileName"" profile: $_"
-        Return
+        Write-Output $Content.City
+        Write-Output $Content.Country
+        Write-Output $Content.Hostname
 
     }
 
@@ -336,8 +109,8 @@ Function New-AovpnConnection {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUitDnty/cWf7Yal7v1BTDAASu
-# KsmggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyy1g5EB6C1tFN5oV5XAj2kr8
+# ZrSggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -517,30 +290,30 @@ Function New-AovpnConnection {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBQweMZvM901NUNtVnpuQGEsE2TPwDANBgkqhkiG9w0BAQEFAASCAYC3wVagEokx
-# KPrdNww5QJp72UNJzBiJh4lw+5BuHHef4kQ4CIzhJqUKXA6RSR4GxUZcBLqC2171
-# C5LJfYb3YLcbbgx5/ZLM1IaXPREjyRDwDxTrOIpF8MoZwTVI+VTYp3inW7hYoBwn
-# iTMGj0DMPOMRjp8ib7Eagp6rFc/wf9Zvo65CDswJ/Qn32Z3Ga9EWaTQOh5C/yrRw
-# s1bd06VMb9xfE5VkW0C5hjev6/8TSSDeMR1Dclw3sIh8S1EyASzD4OAb8jMB2dIA
-# U44HUaORIfFC72UWhgDZM5Kiahn+Drh/ElVof98gbQ7fNzjqxUac0URRs9F2qlwv
-# eeVVZx2sPK4kB7cIliR1pG4MdG4OCxkiE1RB1sSFjym4g+UCUXLhwXVp1FeSAZEl
-# fC6YfYVzMltX7WwgvHyjB15WNUK3eiRLLS44BMHt31jLtjNMCAQW6F39OJCBa3AD
-# +PuWd1xh6X0vvhmIVOh4b5ys8sGevPu6N0fKTQF2+oUQCCm5iUruIzuhggMgMIID
+# BBTqglDHAJqqUsnrnl84R4dWW0t7PjANBgkqhkiG9w0BAQEFAASCAYBIUctUKnWe
+# s60L6rB1UrmtT6OWLYOsUIHZxp/MV+6ZDx1KU6b8jn3svG/me72m/4S3ynOVJh2/
+# DwJKfU0j56NCNDcIe+XkwDYNoZD+QGoxH7Y2oKu5yQzcM9hbIc5US9MuJawEu5F2
+# EYdsfhpQjYKxrpQ/snEmScqmalGlfZUolRhDMlfSY4sv5RiQgWjq+WkepVemwknM
+# LR2Un9nNPtsL/fSiuhPCRYQnJESG4DiMcLva+gqrEwNHYevUcotkb6E1RONm31Ij
+# n9hSvATOMqA9zVC63guOyVofvJQFzh3FbaXZbJ2PBjNK3PjQXEkQCYmOXcuto7zz
+# aCMfNznh9c8EATszkYGfIBYkWIaeI5bGOmtRjx1hI+mpdFr70cLUSRrXpi7Oa9R4
+# oNkqSYW4f23L8XoYgPCiznTExmQxK//xDMhTuy71EMwNg/qvtQy+iZmG39CUGJ+u
+# +ziMfTubX7J8IHeod4EZAzwHYR/fMgvf+b/MOi5Dhlhxs5jMqyTyjhqhggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwNTExMTg1ODAyWjAvBgkqhkiG9w0BCQQxIgQg6LAtjPAF
-# +OzgR1Pwqvd7vlemDvIM53wVyfH9joX0OJEwDQYJKoZIhvcNAQEBBQAEggIAp4X7
-# p9gvbue8/EAbRugbG27vmUPVQdLnvC2k8is+TChA7wV/B8KViuiP5JVmolO/xhXX
-# xKIfpyz10Hp3PlK1fBLNprV0F/iINkoeCkUNE3soO6GZDbiTvJglqofvtXfTdMpK
-# dFiz3ZGbJAZrzX8EO/Lu0kxPutrvecWyar8xzANrxQ8T3XNE52JJGpezhvO86xOe
-# BzDnt7KwTGoo12M7My6OHDhNOlf2q9ZbdttyoUClZFvSoxunmzIER6kE3ibX1n5H
-# NxMwFge3/WGJ+O7JW+clV3qZeFfpGJEmf/nmaLZvbqGyaUH3YaCKLXEjd1h5VAys
-# NgSQnIR8s67r6GiqvUVY+h4pUKxrIi1aC9HzrEFKmkGUjXTnYXRRtUAppC8uLgSV
-# TWSvkr0q8G/pdWLGsRTUXrh2lbPQKoYBVELV32Ob8fBccckS1VJOv/TmcCKCpWcb
-# ddwVbttukcMTnrYBMuMJXILJsG79ABzCxvWXHDaE6sQzOAU0oH/m2Xo4mQBY4Ub2
-# SXwmnaikLh8KYENV50AnHUvcGdpdv+kBH0YFQKFv+nbDQguDpnNHtMu5TUxcQ/ki
-# ozZmKurPZpEmfWfyHLrZe/HflfoP+EAhPhiap8eR5ap1Mm2iy2fKab5Z8lL55Ruw
-# xRRTUCh423BHaEVTWOJO9FIhddMQagiCOW4Hzvg=
+# hkiG9w0BCQUxDxcNMjMwMjA0MTgzNDU4WjAvBgkqhkiG9w0BCQQxIgQgQjq1XnKb
+# ICqV4pYYJXxswRjjdwfkjUkVoD6ELedmE0YwDQYJKoZIhvcNAQEBBQAEggIAdD+I
+# bKjvtdLw3mNTy9Oskv2mPHzq/INN17DI967UQotLPFEJlvXoY4M+nZEhApaHdANm
+# /OF6+WJu+4f8WPvWTgxZTByCYs4QUHKrh8P9PSICQ90TCUwBfvTTaiCeLQV7NWw2
+# jz9iLRXYjhrTVOH6nXbtZBK2IhoFE+mfQs/XvxiDW0o1x7i4KVSAqmbykiHfyU18
+# X6zzDd+3YM8pMjRz9Nr8LHKTyDb9cFrMiRZqalzj+ZCTX2Yj4qreGNaggREku8+I
+# 32b0ThC2kyoJX4D3bnfowj5JaxCE8YkZHvDOGZyh8eT7UX2t+rjz+XY1k58VV3fB
+# LXodq8pCsp9zfR5wR0/JsyJbwpYgYSAsBpIT18+hvSjsjFWjEJbJ9M1VO24ej2vT
+# BRlHpc5ftLG52GhLIA4DTAfy6wIaozffnxR78UPe9doo38dqmRCz3+yqumY1Qh7Z
+# 1nYmmqYtHj0In5ERIe9vRATKpgoAKRdfDv1MGTeRAen1uN3VCa86QlJmsM1IQXn8
+# m4T3SuOqf8ktfvvdZkJbTYXm6bcZs+WtQ63eq42p3n8+yaWu4ZA4NJ8TLzz9I0WI
+# GChbbc9aDgJG/OtwdCk7NTFxOkXNU0W53zfDiHegwBdIBFFqi2jTA1V/b6J39ffR
+# hTMifwpLX6CUaxOqJUGhweR4mHDb5eL21/1PyBs=
 # SIG # End signature block

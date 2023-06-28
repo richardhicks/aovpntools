@@ -9,7 +9,7 @@
 .PARAMETER Port
     The TCP port of the target resource. The default is 443.
 
-.PARAMETER FilePath
+.PARAMETER OutFile
     When this parameter is added the TLS certificate will be saved as a file in this location.
 
 .EXAMPLE
@@ -23,7 +23,7 @@
     Displays the TLS certificate for the website https://www.richardhicks.com/ listening on the nonstandard port 8443.
 
 .EXAMPLE
-    Get-TlsCertificate -Hostname 'www.richardhicks.com' -FilePath .\tlscert.cer
+    Get-TlsCertificate -Hostname 'www.richardhicks.com' -OutFile .\tlscert.cer
 
     Displays the TLS certificate for the website https://www.richardhicks.com/ and saves the certificate to a file named .\tlscert.cer.
 
@@ -37,9 +37,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.0.4
+    Version:        1.0.5
     Creation Date:  August 12, 2021
-    Last Updated:   June 6, 2022
+    Last Updated:   April 27, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -57,7 +57,7 @@ Function Get-TlsCertificate {
         [string]$Hostname,
         [int]$Port = 443,
         [Alias('Path')]
-        [string]$FilePath
+        [string]$OutFile
 
     )
 
@@ -73,10 +73,6 @@ Function Get-TlsCertificate {
         $Callback = {
 
             Param (
-
-                $Cert,
-                $Chain,
-                $Errors
 
             )
 
@@ -120,14 +116,14 @@ Function Get-TlsCertificate {
 
     }
 
-    If ($FilePath) {
+    If ($OutFile) {
 
         $CertOut = New-Object System.Text.StringBuilder
         $CertOut.AppendLine("-----BEGIN CERTIFICATE-----") | Out-Null
         $CertOut.AppendLine([System.Convert]::ToBase64String($Certificate.RawData, 1)) | Out-Null
         $CertOut.AppendLine("-----END CERTIFICATE-----") | Out-Null
-        $CertOut.ToString() | Out-File $FilePath | Out-Null
-        Write-Output "Certificate file saved to $FilePath."
+        $CertOut.ToString() | Out-File $OutFile | Out-Null
+        Write-Output "Certificate file saved to $OutFile."
 
     }
 
@@ -136,8 +132,8 @@ Function Get-TlsCertificate {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUamZMPbIqqkNgzK47+FhF0z4s
-# yRCggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUAMDcG2i7joDiKgfGdXWFpF/L
+# GkGggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -317,30 +313,30 @@ Function Get-TlsCertificate {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBReDkARyXwiSk/apgUIhHX2i0FHETANBgkqhkiG9w0BAQEFAASCAYBsN61bSPyj
-# He3aAvQ2UOHWUS201CNKEAoCnmoAoZGxi98XE8Z0K6s78aWKm7VLSUELDxOF7lzG
-# W211IWxNIgYY6Fknv0hE4dOkV55EcsdXI5q7ApY+Hb21tjr2yS6ooopH9fh2YaKI
-# hN9BvbopqDQ4AibFPZN1jujuZFfbQMHtarFKqKoH9GkbumcqFMJYD3u7l+UBl5kt
-# cvpqjVsyzmOaRyBMlWtpYDF5FXW05y2Nl2b2jpq35rx2QtfRbc8lldjb0d7sxIEP
-# P7E3g9uGHkJ2n3wVVd6J+Neqe8mdw3eIv2HMQiukpkPTyJd9JSJmsHKWgBWb3j2Y
-# Zk8fw39298Ou03puEdfvbEGMDKaugYS7OQ7AWXlPZLUl1TTELFu7fIezWE6CC/+9
-# IUrogsC6W7aA72PSyyofGotgP5+txcmd7ncSMily7U61OUMygZm/A3eAs/qrQzIK
-# N0ZLgOMr0N2RPqOdUXx0X8FPwhAVQ5V4o2ehFGxbWql1vO77bzyJ0EChggMgMIID
+# BBREEiMReBBQqyykNZaVfA8RDnXinDANBgkqhkiG9w0BAQEFAASCAYBhYsdIFMvu
+# jLiTrbfd/of8iGBYakDMTBN7bYMueK6O/81Zjgxn818CZMTNhdLhBpkpy4bb58Ov
+# jUMMjag4LeOwORalsSOevq5WgsZ7cxPv5D7NdvFW+Kxn86a0aTanCJPLJug553yA
+# qui9K+OkzYWsHpBkbnkVTvpStWhy391cnKogxzDdtYD1b4hbQBKsj4R+fgO1cgFI
+# Pew2k8mcGGms8S6iEyhIgigM9+tl9pvqSVahH8tjPviB4UusWH91fiegkGGPNO1p
+# /mq632rQ8P2X1kuJEgHxjnd+uQd9AQwKEukn56ysr9KpoZWmn4UCDpigK4aVtq16
+# WprInglJKxJY0GbMFD6K9lxF+PAPDAIz/ZHwgDgkK5kvvIWobEIAb7D7qsp7mKWn
+# vxWNmYne1A67a8YzPs/kuNOt4OjfP+q0BlyNAIg4SER0VON0zVAWeTkHksRRW8/3
+# zZZLatQidjcHNMnMLTXqF+8Ikpkc9zP0d96xcWOSABjWG8bLas6b8pShggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjIxMjExMTgxNzQ4WjAvBgkqhkiG9w0BCQQxIgQgqq4jYx6a
-# MqzEG/bnmUDJ/Mx9NGYrRznkUszLNViHaq8wDQYJKoZIhvcNAQEBBQAEggIAFEFf
-# auQ5OdzZCv63DUae/xduQHeqz5p+JstHiQs3uStnDmi6YwVeRPqyJt2yhlt6QbBh
-# xUC4zQzq6U3pIUNYBdZF0xapqNWzZt2Y3c5k59VSAeYhULq2+AYqKrvPkhd3hym+
-# ISSKirUNR0TiLaXk1Yz+gOHwtWibdDqORlYkd7D/iSXW5B77LI3ayJ4/kYEOHx9k
-# 8x+V0xyPg1EDmoCwVgeJFvw8LroHYkYUQwBJETzH3wjpf8kJ1NPDX5I9k4RfjoI9
-# y1GlwQjkwHttp87d10UBm+sP8HOjsvKLMp9vMGHFXIktQlspoBcyvVUE7s0EY7Bq
-# f7mCxf5N5Qw2LlGX7z1A84cIjF19oqgmhcdjCbxJOtGQT3aIdUGf0N17OgbmUlb4
-# vZrI9mGCTb7DRKDGweWjCDDg5cKSt+aWd6vq0x05zJ0X4b6QA7I855wSBEECJhLz
-# 2Vgk3RwkBGJ3D6yefTYlWuJtBCOYTIrucBK5qhHPnoMtvqYBZm0UVN5HYy4Poa3p
-# zOzHJkiNUgP5lo0nEu4t2WVdWT5P1dPmlWRNdQVBzU/I/14pGk0toos5y+9RqXOM
-# dr9+gWkCkfVvrb+fvr1A1Yg1hqpddNbvybRI9N98vPiJWY/UFKqzfH/4bZwM0Tgg
-# 36/bslS6XLPjrV48L9e0b2f33y1A8K5wJ/Y9Y9Q=
+# hkiG9w0BCQUxDxcNMjMwNjI4MjA1MTM5WjAvBgkqhkiG9w0BCQQxIgQgFG6CHV2o
+# w3PPCDVMmCgzpp5iIc+6gMqUpdGVtmXzM48wDQYJKoZIhvcNAQEBBQAEggIANSP5
+# gAl749vOCrVcwI7dOnco1BceepOyB6m5t9+TCCDSD5cWUWkKXJRYeIsZD8E4WDcO
+# 3e0JMnAKwzcsAceMAbo/r1b4B3ltuHlAnzY0DP4kbT5B/bvkeFwjsBFqw717YUsE
+# vI/1q324hKHKgTFrFIB/sS0WY3O+QDK79hTRBgOJdV5g5pmTbqyADSwZJo2W1T6f
+# rlqUbj0MCDe0Wyy03g1kcGohxJkr3yd5Qn6N/OKHbfB/DbTRfVG2cGzTBUC5aWLQ
+# CuZEQDMd7RODqxX7hHK/BLNfMhnXw4t68TCE9nbfs2Q3H+R2pBtB7F9JgG/J2Wa/
+# hG62M0VeXEme0UR75V/h0IBxmK1q71rwBiRqVVcL7ZkVdPQzOs27u79Xt3Biv4KO
+# r+ZwFCv2CpEDkxuMguz7egGEX9p0LDMnCzifg6q6GMfW4j0pddgFQ57fESn/G826
+# 4aD2C1s/DlbfFTrIguFg6JgwJOTTrrTiyy62xUhMpCi+WPJC7z1pAmDhL4OuscUK
+# igeonduqUSJRAXBx2rFCzlIxJX71cNVA4HZjiY5A97RDl/SHLVUwW10U5oKgE8gx
+# +GrgBHyw4ovpqB8JqKfh3cwZ+1a0rYW1g7tPWGi+sF3vcOHzuaaO7/OHKmGa1lqj
+# h3/VOjypbqQ/0EfWIEMZ5puwRxCnHlMDwFFj1W4=
 # SIG # End signature block

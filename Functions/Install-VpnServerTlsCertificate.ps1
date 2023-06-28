@@ -1,333 +1,78 @@
 <#
 
 .SYNOPSIS
-    Creates an Always On VPN user or device tunnel connection.
+    Assigns a TLS certificate to the SSTP listener on Windows Server Routing and Remote Access Service (RRAS) servers.
 
-.PARAMETER xmlFilePath
-    Path to the ProfileXML configuration file.
+.PARAMETER Thumbprint
+    The thumbprint of the TLS certificate to be used for SSTP VPN connections.
 
-.PARAMETER ProfileName
-    Name of the VPN profile to be created.
-
-.PARAMETER DeviceTunnel
-    Option to create an Always On VPN device tunnel profile.
-
-.PARAMETER AllUserConnection
-    Option to create the Always On VPN user tunnel profile in the all users profile.
+.PARAMETER Restart
+    Restarts the RemoteAccess service after assigning the TLS certificate to the SSTP listener.
 
 .EXAMPLE
-    New-AovpnConnection -xmlFilePath 'C:\Users\rdeckard\desktop\ProfileXML_User.xml' -ProfileName 'Always On VPN'
+    Install-VpnServerTLSCertificate -Thumbprint '885706B3AF716DFA7F3F03A8328358EF2A97R2D2'  -Restart
 
-    Creates an Always On VPN user tunnel profile named "Always On VPN" for the user Rick Deckard.
-
-.EXAMPLE
-    New-AovpnConnection -xmlFilePath 'C:\Users\rdeckard\desktop\ProfileXML_User.xml' -ProfileName 'Always On VPN' -AllUserConnection
-
-    Creates an Always On VPN user tunnel profile named "Always On VPN" for all users.
-
-.EXAMPLE
-    New-AovpnConnection -xmlFilePath 'C:\Users\rdeckard\desktop\ProfileXML_Device.xml -DeviceTunnel
-
-    Creates an Always On VPN device tunnel profile named "Always On VPN Device Tunnel".
+    Assigns the TLS certificate with thumbprint 885706B3AF716DFA7F3F03A8328358EF2A97R2D2 to the SSTP listener and restarts the RemoteAccess service.
 
 .DESCRIPTION
-    This script will create an Always On VPN user or device tunnel on supported Windows devices.
+    Run this command to assign a TLS certificate to the SSTP listener to support SSTP VPN connections.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/blob/main/Functions/New-AovpnConnection.ps1
-
-.LINK
-    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Install-VpnServerTLSCertificate.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:            5.0.1
-    Creation Date:      May 28, 2019
-    Last Updated:       May 11, 2023
-    Special Note:       This script adapted from guidance originally published by Microsoft.
-    Original Author:    Microsoft Corporation
-    Original Script:    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
-    Author:             Richard Hicks
-    Organization:       Richard M. Hicks Consulting, Inc.
-    Contact:            rich@richardhicks.com
-    Web Site:           https://www.richardhicks.com/
+    Version:        1.0.1
+    Creation Date:  March 6, 2023
+    Last Updated:   March 14, 2023
+    Author:         Richard Hicks
+    Organization:   Richard M. Hicks Consulting, Inc.
+    Contact:        rich@richardhicks.com
+    Web Site:       https://www.richardhicks.com/
 
 #>
 
-Function New-AovpnConnection {
+Function Install-VpnServerTLSCertificate {
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
 
     Param (
 
-        [Parameter(Mandatory, HelpMessage = 'Enter the path to the ProfileXML file.')]
+        [Parameter(Mandatory, HelpMessage = 'Enter the thumbprint of the TLS certificate used for SSTP.')]
         [ValidateNotNullOrEmpty()]
-        [string]$xmlFilePath,
-        [Parameter(HelpMessage = 'Enter a name for the VPN profile.')]
-        [Alias("Name", "ConnectionName")]
-        [string]$ProfileName,
-        [switch]$DeviceTunnel,
-        [switch]$AllUserConnection
+        [string]$Thumbprint,
+        [switch]$Restart
 
     )
 
-    # // Set default profile name
-    If ($ProfileName -eq '') {
+    If ($Thumbprint.Length -ne '40') {
 
-        If ($DeviceTunnel) {
-
-            $ProfileName = 'Always On VPN Device Tunnel'
-
-        }
-
-        Else {
-
-            $ProfileName = 'Always On VPN'
-
-        }
-
-    }
-
-    # // Check for existing connection. Exit if exists.
-    If ($AllUserConnection -or $DeviceTunnel) {
-
-        # // Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM.
-        $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-
-        If ($CurrentPrincipal.Identities.IsSystem -ne $True) {
-
-            Write-Warning 'This script is not running in the SYSTEM context, as required.'
-            Return
-
-        }
-
-        # // Check for existing connection. Exit if exists.
-        If (Get-VpnConnection -Name $ProfileName -AllUserConnection -ErrorAction SilentlyContinue) {
-
-            Write-Warning "The VPN profile ""$ProfileName"" already exists."
-            Return
-
-        }
-
-    }
-
-    Else {
-
-        If (Get-VpnConnection -Name $ProfileName -ErrorAction SilentlyContinue) {
-
-            Write-Warning "The VPN profile ""$ProfileName"" already exists."
-            Return
-
-        }
-
-    }
-
-    # // Validate XML for user or device tunnel connections
-    [xml]$Xml = Get-Content $xmlFilePath
-
-    If ($DeviceTunnel) {
-
-        If (($Xml.VPNProfile.DeviceTunnel -eq 'False') -or ($Null -eq $Xml.VPNProfile.DeviceTunnel)) {
-
-            Write-Warning 'ProfileXML is not configured for a device tunnel.'
-            Return
-
-        }
-
-    }
-
-    If (!$DeviceTunnel) {
-
-        If ($Xml.VPNProfile.DeviceTunnel -eq 'True') {
-
-            Write-Warning 'ProfileXML is not configured for a user tunnel.'
-            Return
-
-        }
-
-    }
-
-    # // Import ProfileXML
-    $ProfileXML = Get-Content $xmlFilePath
-
-    # // Escape spaces in profile name
-    $ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
-    $ProfileXML = $ProfileXML -Replace '<', '&lt;'
-    $ProfileXML = $ProfileXML -Replace '>', '&gt;'
-    $ProfileXML = $ProfileXML -Replace '"', '&quot;'
-
-    # // OMA URI information
-    $NodeCSPURI = './Vendor/MSFT/VPNv2'
-    $NamespaceName = 'root\cimv2\mdm\dmmap'
-    $ClassName = 'MDM_VPNv2_01'
-
-    # // Registry clean-up
-    Write-Verbose "Cleaning up registry artifacts for VPN connection ""$ProfileName""..."
-
-    # // Remove registry artifacts from ERM\Tracked
-    Write-Verbose "Searching for profile $ProfileNameEscaped..."
-
-    $BasePath = "HKLM:\SOFTWARE\Microsoft\EnterpriseResourceManager\Tracked"
-    $Tracked = Get-ChildItem -Path $BasePath
-
-    ForEach ($Item in $Tracked) {
-
-        Write-Verbose "Processing $(Convert-Path $Item.PsPath)..."
-        $Key = Get-ChildItem $Item.PsPath -Recurse | Where-Object { $_ | Get-ItemProperty -Include "Path*" }
-        $PathCount = ($Key.Property -Match "Path\d+").Count
-        Write-Verbose "Found a total of $PathCount Path* entries."
-
-        # // There may be more than 1 matching key
-        ForEach ($K in $Key) {
-
-            $Path = $K.Property | Where-Object { $_ -Match "Path\d+" }
-            $Count = $Path.Count
-            Write-Verbose "Found $Count Path* entries under $($K.Name)."
-
-            ForEach ($P in $Path) {
-
-                Write-Verbose "Testing $P..."
-                $Value = $K.GetValue($P)
-
-                If ($Value -Match "$($ProfileNameEscaped)$") {
-
-                    Write-Verbose "Removing $Value under $($K.Name)..."
-                    $K | Remove-ItemProperty -Name $P
-
-                    # // Decrement count
-                    $Count--
-
-                }
-
-            } # // ForEach $P in $Path
-
-            #  // Update count
-            Write-Verbose "Setting count to $Count..."
-            $K | Set-ItemProperty -Name Count -Value $Count
-
-        } # // ForEach $K in $Key
-
-    } # // ForEach $Item in $Tracked
-
-    # // Remove registry artifacts from NetworkList\Profiles
-    $Path = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles\'
-    Write-Verbose "Searching $Path for VPN profile ""$ProfileName""..."
-    $Key = Get-Childitem -Path $Path | Where-Object { (Get-ItemPropertyValue $_.PsPath -Name Description) -eq $ProfileName }
-
-    If ($Key) {
-
-        Write-Verbose "Removing $($Key.Name)..."
-        $Key | Remove-Item
-
-    }
-
-    Else {
-
-        Write-Verbose "No profiles found matching ""$ProfileName"" in the network list."
-
-    }
-
-    # // Remove registry artifacts from RasMan\Config
-    $Path = 'HKLM:\System\CurrentControlSet\Services\RasMan\Config\'
-    $Name = 'AutoTriggerDisabledProfilesList'
-
-    Write-Verbose "Searching $Name under $Path for VPN profile called ""$ProfileName""..."
-
-    Try {
-
-        # // Get the current registry values as an array of strings
-        [string[]]$Current = Get-ItemPropertyValue -Path $Path -Name $Name -ErrorAction Stop
-
-    }
-
-    Catch {
-
-        Write-Verbose "$Name does not exist under $Path. No action required."
-
-    }
-
-    If ($Current) {
-
-        #// Create ordered hashtable
-        $List = [Ordered]@{}
-        $Current | ForEach-Object { $List.Add("$($_.ToLower())", $_) }
-
-        # //Search hashtable for matching VPN profile and remove if present
-        If ($List.Contains($ProfileName)) {
-
-            Write-Verbose "Profile found. Removing entry..."
-            $List.Remove($ProfileName)
-            Write-Verbose "Updating the registry..."
-            Set-ItemProperty -Path $Path -Name $Name -Value $List.Values
-
-        }
-
-    }
-
-    Else {
-
-        Write-Verbose "No profiles found matching ""$ProfileName""."
-
-    }
-
-    # // Create the VPN connection
-
-    If (!$AllUserConnection -and !$DeviceTunnel) {
-
-        Try {
-
-            # // Identify current user
-            $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-            Write-Verbose "User SID is $Sid."
-
-        }
-
-        Catch {
-
-            Write-Warning $_.Exception.Message
-            Return
-
-        }
-
-    }
-
-    $Session = New-CimSession
-
-    Try {
-
-        $NewInstance = New-Object Microsoft.Management.Infrastructure.CimInstance $ClassName, $NamespaceName
-        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ParentID', "$NodeCSPURI", 'String', 'Key')
-        $NewInstance.CimInstanceProperties.Add($Property)
-        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('InstanceID', "$ProfileNameEscaped", 'String', 'Key')
-        $NewInstance.CimInstanceProperties.Add($Property)
-        $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ProfileXML', "$ProfileXML", 'String', 'Property')
-        $NewInstance.CimInstanceProperties.Add($Property)
-
-        If (!$AllUserConnection -and !$DeviceTunnel) {
-
-            $Options = New-Object Microsoft.Management.Infrastructure.Options.CimOperationOptions
-            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Type', 'PolicyPlatform_UserContext', $False)
-            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$Sid", $False)
-            $Session.CreateInstance($NamespaceName, $NewInstance, $Options)
-
-        }
-
-        Else {
-
-            $Session.CreateInstance($NamespaceName, $NewInstance)
-
-        }
-
-        Write-Output "Always On VPN profile ""$ProfileName"" created successfully."
-
-    }
-
-    Catch {
-
-        Write-Output "Unable to create ""$ProfileName"" profile: $_"
+        Write-Warning "Certificate thumbprint ""$Thumbprint"" is invalid."
         Return
+
+    }
+
+    # // Find certificate
+    Write-Verbose "Validating TLS certificate with thumbprint $Thumbprint..."
+    $Certificate = Get-ChildItem -Path Cert:\LocalMachine\My\$Thumbprint -ErrorAction SilentlyContinue
+
+    If ($Null -eq $Certificate) {
+
+        Write-Warning 'Unable to find the certificate.'
+        Return
+
+    }
+
+    # // Assign TLS certificate to SSTP listener
+    Write-Verbose 'Assigning TLS certificate to SSTP listener...'
+    Set-RemoteAccess -SslCertificate $Certificate -Force | Out-Null
+
+    If ($Restart) {
+
+        Write-Verbose 'Restarting the RemoteAccess service...'
+        Restart-Service RemoteAccess -PassThru
 
     }
 
@@ -336,8 +81,8 @@ Function New-AovpnConnection {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUitDnty/cWf7Yal7v1BTDAASu
-# KsmggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSWcy6u4jEOoLYQ4SOKCcwGY+
+# 4TaggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -517,30 +262,30 @@ Function New-AovpnConnection {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBQweMZvM901NUNtVnpuQGEsE2TPwDANBgkqhkiG9w0BAQEFAASCAYC3wVagEokx
-# KPrdNww5QJp72UNJzBiJh4lw+5BuHHef4kQ4CIzhJqUKXA6RSR4GxUZcBLqC2171
-# C5LJfYb3YLcbbgx5/ZLM1IaXPREjyRDwDxTrOIpF8MoZwTVI+VTYp3inW7hYoBwn
-# iTMGj0DMPOMRjp8ib7Eagp6rFc/wf9Zvo65CDswJ/Qn32Z3Ga9EWaTQOh5C/yrRw
-# s1bd06VMb9xfE5VkW0C5hjev6/8TSSDeMR1Dclw3sIh8S1EyASzD4OAb8jMB2dIA
-# U44HUaORIfFC72UWhgDZM5Kiahn+Drh/ElVof98gbQ7fNzjqxUac0URRs9F2qlwv
-# eeVVZx2sPK4kB7cIliR1pG4MdG4OCxkiE1RB1sSFjym4g+UCUXLhwXVp1FeSAZEl
-# fC6YfYVzMltX7WwgvHyjB15WNUK3eiRLLS44BMHt31jLtjNMCAQW6F39OJCBa3AD
-# +PuWd1xh6X0vvhmIVOh4b5ys8sGevPu6N0fKTQF2+oUQCCm5iUruIzuhggMgMIID
+# BBQHHe+FP2Q7LsAllZlmVdHdHDl0MDANBgkqhkiG9w0BAQEFAASCAYA3pbw7vRBD
+# 857poI9awD1HA/ShQ2N7HpIeGnUx1dFyvJEU48YjsCJahCJsIN+6vJNMcjPyAcz5
+# GgGrIziBDaQf8FCihw5F/IPnIYcHsqtd6BdOf5hwPClXmFH4uRDDrs3y3zbMWwiz
+# zEL+7PKAJV7QA7aj+vPXVXkVtNWsKX4E65968LfwKgxeRmXVqHI5/BUEwx/JTRg1
+# dL0XUSf5X9YL/fVZglLmS29Oa3NwwMgWFoLnblXFpYhdnFa25ZDcSNzGmpnsS52E
+# b6nU+p+k91lpXRG7q60lmpa66r6zNIMeZ1OjwBqZHbKdNKsK+6idqUuUIbTi2xID
+# fXvSLvvO9w/VGBHAc29fLLrJHvfX6fAA9lZqhDh/FvPhh0sk32laFaA+l4gZcH67
+# PzQ9OrxEIB8EA0bCLnR+NY5PH0TyJ6bvvIWgPbrwgWWtJGZM+iEpAYgLVMennmtD
+# yRN5C1iJTCV3K1LdVX4jmypkuJ4bzeyRrVIBaaMP4ZSPxuQYFokE5wWhggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwNTExMTg1ODAyWjAvBgkqhkiG9w0BCQQxIgQg6LAtjPAF
-# +OzgR1Pwqvd7vlemDvIM53wVyfH9joX0OJEwDQYJKoZIhvcNAQEBBQAEggIAp4X7
-# p9gvbue8/EAbRugbG27vmUPVQdLnvC2k8is+TChA7wV/B8KViuiP5JVmolO/xhXX
-# xKIfpyz10Hp3PlK1fBLNprV0F/iINkoeCkUNE3soO6GZDbiTvJglqofvtXfTdMpK
-# dFiz3ZGbJAZrzX8EO/Lu0kxPutrvecWyar8xzANrxQ8T3XNE52JJGpezhvO86xOe
-# BzDnt7KwTGoo12M7My6OHDhNOlf2q9ZbdttyoUClZFvSoxunmzIER6kE3ibX1n5H
-# NxMwFge3/WGJ+O7JW+clV3qZeFfpGJEmf/nmaLZvbqGyaUH3YaCKLXEjd1h5VAys
-# NgSQnIR8s67r6GiqvUVY+h4pUKxrIi1aC9HzrEFKmkGUjXTnYXRRtUAppC8uLgSV
-# TWSvkr0q8G/pdWLGsRTUXrh2lbPQKoYBVELV32Ob8fBccckS1VJOv/TmcCKCpWcb
-# ddwVbttukcMTnrYBMuMJXILJsG79ABzCxvWXHDaE6sQzOAU0oH/m2Xo4mQBY4Ub2
-# SXwmnaikLh8KYENV50AnHUvcGdpdv+kBH0YFQKFv+nbDQguDpnNHtMu5TUxcQ/ki
-# ozZmKurPZpEmfWfyHLrZe/HflfoP+EAhPhiap8eR5ap1Mm2iy2fKab5Z8lL55Ruw
-# xRRTUCh423BHaEVTWOJO9FIhddMQagiCOW4Hzvg=
+# hkiG9w0BCQUxDxcNMjMwMzE0MjMzODQ0WjAvBgkqhkiG9w0BCQQxIgQgYD2cTzGt
+# RIIsj7xWKx90WQXR0f9vXnL7optDvqWVtXcwDQYJKoZIhvcNAQEBBQAEggIAChew
+# MwDJuO0hWl4FjiUVRMFO/ValARyrtLEbI8eKzRiJSZryKfqH9LUvSr7dAYQ24i+p
+# f0z1dwujkvo0rjhK0lc5P1BlLDm9BePSm8puZHFn0s2AB9uUKRmuIPuRTMo3I1cd
+# G/f4Be7bkuddPD+hPSVBKpJ+pVsZ+Fz+HQecYBUzcXwZMQ4vSmqpKiUdTMlh2x4O
+# ei7BRDbWqbWV/GGTOZbmKs3v+Fnam4+5LmF17/j4axlGSriL0sASyesu2emqUhhh
+# /4ajL1oZTYteE9Ef7J3Qk/x1yTMfn3b+rtydkLrWKp0fhhjzs85zZVj0UW8rTHym
+# yXuUAuIRAyCk7ZxGwRj0hMIbIzj3fVi44b9olbXRXbGt6c6tWkIodxPrfi6BtWWq
+# vHl/izI+iKZItfWK88PKiEamtxJK5MeGLgvK4C8kNwuH8GTj2dlbH/wAr5NjiJrn
+# RPc8SrSkdnDpJfWZEbNg1ZlG6hJEwGFNlzoLSZfM5Jbejf5Nc2ynBk8H3nK/De9C
+# DaHIgvE+2Jfu+aTaEZTAh1GYRO7khnjmI5nHBPbIShw2OnPoJY9B5a80KvEbGJub
+# FsuVr2CXE+K5AaNVYqxXOWcwvdjXaeTx5opeeVSMFZz77XVRldVspuHKFLFk7TJk
+# 8vO6KfKvp72b8dsm79r+fbZ0FfWYVR2lHqWyRTo=
 # SIG # End signature block

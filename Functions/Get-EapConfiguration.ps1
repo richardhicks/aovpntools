@@ -25,7 +25,7 @@
     Extracts the EAP configuration from a VPN connection named "Test VPN Connection" and the file is saved to a custom location.
 
 .DESCRIPTION
-    Use this script to extract the EAP configuration from an existing VPN connection. The output XML can be copied and pasted in to ProfileXML for configuring Windows Always On VPN connections.
+    Use this command to extract the EAP configuration from an existing VPN connection. The output XML can be copied and pasted in to ProfileXML for configuring Windows Always On VPN connections.
 
 .LINK
     https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-EapConfiguration.ps1
@@ -34,13 +34,13 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.4.5
+    Version:        1.5
     Creation Date:  May 27, 2019
-    Last Updated:   August 15, 2022
+    Last Updated:   June 28, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
-    Web Site:       https://www.richardhicks.com/
+    Website:        https://www.richardhicks.com/
 
 #>
 
@@ -50,7 +50,7 @@ Function Get-EapConfiguration {
 
     Param (
 
-        [Parameter(Mandatory, HelpMessage = "Enter the name of the VPN template connection.")]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName, HelpMessage = 'Enter the name of the VPN template connection.')]
         [Alias('Name')]
         [string]$ConnectionName,
         [string]$xmlFilePath = '.\eapconfig.xml',
@@ -58,63 +58,67 @@ Function Get-EapConfiguration {
 
     )
 
-    # // Format XML
-    Function Format-XML ([xml]$Xml, $indent = 3) {
+    Process {
 
-        $StringWriter = New-Object System.IO.StringWriter
-        $XmlWriter = New-Object System.XMl.XmlTextWriter $StringWriter
-        $XmlWriter.Formatting = "Indented"
-        $XmlWriter.Indentation = $Indent
-        $Xml.WriteContentTo($XmlWriter)
-        $XmlWriter.Flush()
-        $StringWriter.Flush()
-        Write-Output $StringWriter.ToString()
+        # // Validate VPN connection
+        If ($AllUserConnection) {
 
-    } # Format-XML
+            $Vpn = Get-VpnConnection -Name $ConnectionName -AllUserConnection -ErrorAction SilentlyContinue
 
-    # // Validate VPN connection
-    If ($AllUserConnection) {
+        }
 
-        $Vpn = Get-VpnConnection -Name $ConnectionName -AllUserConnection -ErrorAction SilentlyContinue
+        Else {
+
+            $Vpn = Get-VpnConnection -Name $ConnectionName -ErrorAction SilentlyContinue
+
+        }
+
+        If ($Null -eq $Vpn) {
+
+            Write-Warning "The VPN connection `"$ConnectionName`" does not exist."
+            Return
+
+        }
+
+        # // Create EAP configuration object
+        Write-Verbose "Extracting EAP configuration from template connection $ConnectionName..."
+        $EapConfig = $Vpn.EapConfigXmlStream.InnerXml
+
+        # // Validate EAP authentication is configured
+        If ($Null -eq $EapConfig) {
+
+            Write-Warning "The VPN connection `"$ConnectionName`" is not configured to use EAP authentication."
+            Return
+
+        }
+
+        # // Format XML
+        Function Format-XML ([xml]$Xml, $Indent = 3) {
+
+            $StringWriter = New-Object System.IO.StringWriter
+            $XmlWriter = New-Object System.XMl.XmlTextWriter $StringWriter
+            $XmlWriter.Formatting = "Indented"
+            $XmlWriter.Indentation = $Indent
+            $Xml.WriteContentTo($XmlWriter)
+            $XmlWriter.Flush()
+            $StringWriter.Flush()
+            Write-Output $StringWriter.ToString()
+
+        } # Format-XML
+
+        # // Convert text stream to XML format
+        Write-Verbose "Saving EAP configuration to $xmlFilePath..."
+        Format-XML $EapConfig | Out-File $xmlFilePath
 
     }
-
-    Else {
-
-        $Vpn = Get-VpnConnection -Name $ConnectionName -ErrorAction SilentlyContinue
-
-    }
-
-    If ($Null -eq $Vpn) {
-
-        Write-Warning "The VPN connection ""$ConnectionName"" does not exist."
-        Return
-
-    }
-
-    # // Create EAP configuration object
-    Write-Verbose "Extracting EAP configuration from template connection $ConnectionName..."
-    $EapConfig = $Vpn.EapConfigXmlStream.InnerXml
-
-    # // Validate EAP authentication is configured
-    If ($Null -eq $EapConfig) {
-
-        Write-Warning "The VPN connection ""$ConnectionName"" is not configured to use EAP authentication."
-        Return
-
-    }
-
-    # // Convert text stream to XML format
-    Write-Verbose "Saving EAP configuration to $xmlFilePath..."
-    Format-XML $EapConfig | Out-File $xmlFilePath
 
 }
 
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVVA0iH9SE23psX3RzezAikEG
-# +pmggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUn7WwHSJpbBgkKE3Rxc57b/4S
+# cWCggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -294,30 +298,30 @@ Function Get-EapConfiguration {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBTAVLKr1KQwZDJC6lpoavd3ycUDSTANBgkqhkiG9w0BAQEFAASCAYC6YOLoeSs/
-# E/KUBtpde1ALBEvjj/IhQalfreZIJxB+usHOTZICqj4LWntNcxVY48E7OnX5yT1p
-# zlx4Ua4t0ZWcnONry+PyXUfbLf93v6HZ6WcO/y1SIe/kxEGsC40uGj6Y9nRyfWBf
-# /NiBEKAWFQnlW6a4R2f/J4TUffJIdS32NhQrQ0Mxzr0ysk5QhHzdK7aa5J4RAVUK
-# aJsvYjPPfUyutlOrVX0ujZjx37SqlthsNj4eq7Fnps1PKeJVFqaohSrhITkpwmBI
-# +5I35HOu4x5lzw2WX8YybPpxXR8UwPH0G93VLp58FhWW9sRqc2qlflk0QsTfoL/E
-# Z8Pdh0HR4IgUdo9hy/3GmFdvDubWTu7muhMjlATNIcIlHZIDxqt0CWkbMRGtcpaA
-# g18sBC/hKY/DcRAxZFpSjj4myOOHOUU4XXqM2RJo8oLTuSS0Q+XJvNnnYnqPB4f9
-# W+yJ1XFTF4iDel27pfAt6YrVyyDl4tmEeuy5lHZItVbObeCkkUkhzLehggMgMIID
+# BBTUhIdd8S9ix3SKGCxgw6P8tpk/3TANBgkqhkiG9w0BAQEFAASCAYCLzXNHWGk6
+# 1GPcTag+SFiV+XKkKuKCa2Jy5OcOE0t0DmxUkFzsBX+akpR12yMS2QYT/HWltPIH
+# kXq8HtwFG9DX4utyXxrxu1rbxE4dJLth5Pwi9z6YWxzOQ8DFI+2mK+iaQ89u19U2
+# wIlSOBQtMK88Tt4N390HY1NggkabGdGktfdmarrkYHOTIC7YrGqEX+f8RPHE3MYv
+# egdBKWIi75XK+7VzAfRUSrvKRBgFNRSBJJ/H/iocnx9hRBcNvUVhwnCqI8tSQDky
+# LuXYcJwKBC71fwccYH0wY5fmfk5WdR3zzZQ4SCmmFx3QOlPt/MrWm3iwt6BUhImR
+# Lkfr4Ft/9P3VdjWZoYPpddw5kAt6cl0wwQ3k/aP63whWK05Hhr0W4cA9EW+WJVba
+# LUtLUqbJBYRWrO9RWluwCnM+iddyiUmi2Niw/F1lFIMQadEMjBZbLMjfHHw2OeKr
+# BlxXx6L6WhDLsEtZTvGOIp0AzByth742by7JKATZK0AbyFO630Drx+6hggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjIxMjExMTgxNzQ4WjAvBgkqhkiG9w0BCQQxIgQgTuQLnguu
-# n5Df2fqEztYShm97WWkgqcdMCwlo6ZrB4jYwDQYJKoZIhvcNAQEBBQAEggIAf23w
-# AxbLPKYEwscBW7MMR6o/D5LJlMmdb98OEAAFpbHPK2AeivE8li6eLKIZQaHDAHs9
-# dZBhIWqK6Q5+BhmUbc7PVaWWK3wdOWU6NqKl8Lkx/kBvfT9P25uaESYBOH+6Q3uy
-# yecu7V101RZmcU7WD+rexyuAOlfaTi5Gbuh3S/gMYqYBQiuxaCzFYdZ5mhP1oE8n
-# O2enK5hOvoWEFVbkIy4GUV8zh2BePab2EralFHACvxA9gd2FNJQ0Mn564AwSSYOV
-# QIA65CquJ2KVeQN/zrs9SDV+6S9Xk5VOL4TXD3b6TZReJHvls81SFx8OfwM5YrBR
-# C719RKkoKBWcOlszbVIKRMPCjhSj6CS5RHXlRjAs5jghPl9lmrzKOSJ/UZTc2Cov
-# sCR+JkFQZx2rbzX1G3bTCP9v0QmShEBPsCq2XazLuSSi+4UtTsc7kpx8Zyc6rfJw
-# Zp7NACnCrVGI4dpGtSGRsJFjhllwhs6LbBqGL38t5J+Fe+wGSc+fS79FCHrNooiv
-# 3XfosLsNLDJmUb1JtYvDx9E+lCXxfTfzvjwE5eiSUPjX03SecYsn1JuHMbdyUkbn
-# xJ9JPj24ZuSe9+++gBKi9JqRlQU4smbR0dY6DX/EWXH7nAVKiQfFo/kTdKPxSoXG
-# nPPy0951pTJRzrs3Ppr33dfuGjaOoV/4wkPRMjQ=
+# hkiG9w0BCQUxDxcNMjMwNjI4MjA1MzIwWjAvBgkqhkiG9w0BCQQxIgQgw1u7YCBs
+# Le5OprGOk/47DAK9KE47JMAPnpg5XEZjaQUwDQYJKoZIhvcNAQEBBQAEggIASTmr
+# MweIuJfZ7f+kY5hIbQ6KThaVd0TEwZ/VccYJaA3HlEimfCiS0ybrRGjx/Be00hun
+# N5lQzz7o/+P4oNy4gBrkFdB0bY868s70MMateDUDO7+Bqnrn/3WlNAb7KTrhWHml
+# +kxFWKdvcSQC8RzwRsiqU1Bd26pG+0BZEkJA/+1X2zh1/mEN+MiW9ybqAepYQWrV
+# ZzLFt34ENwK3XtIrh5AEMe0g8bCoy8qBlWUE5TYppWOuJfjQjcveW44PTHpkxggp
+# 0IkN3zRt0KZOmYOCHn+r7EfPZdwX7SA+PObDzouvJTlTlBrQ0iLtr98UI0tLVCkg
+# vI6J03QOfItZi6Hz0AffQVAbKyXz3qWaVjKwIPQa5VNaIF7mwAT5iJHZCAahS+7g
+# GxLAcsWRXT+JhcQcCZkBPlYLMKZxSe5NhDTUdDVT2uV2vEUczmXW8gzzs5M86ldj
+# jSz+cQsYHuCv/2bbPYc0vJjxcgE5z/Qn+LSXfQC0onJgkAsilR0GzcJsJbEfhCVQ
+# 4Y/sDNUNnV8s4ZZyXDwv0a+Sz4zWx2ljDtWpYPUOYnco8Vyi4Fnk2bFZfhkhFO8U
+# /JnSOmOl+M2vLVe8IFOxe02UGqVm2V6TuwdOiwlY6fxjWRJm9H37wYsnGLHKvTZ4
+# 2Trtss7nVgeHtgqdwhd6GfoSyIA5r5Kb8RdqUr8=
 # SIG # End signature block

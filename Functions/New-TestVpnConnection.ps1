@@ -53,9 +53,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.2.3
+    Version:        1.2.4
     Creation Date:  July 11, 2022
-    Last Updated:   February 4, 2023
+    Last Updated:   April 4, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -73,8 +73,8 @@ Function New-TestVpnConnection {
         [string]$ConnectionName,
         [Parameter(Mandatory, HelpMessage = "Enter the VPN server's public hostname in FQDN format.")]
         [string]$ServerAddress,
-        [Parameter(Mandatory, HelpMessage = 'Specify a VPN protocol for the connection - SSTP, IKEv2, or Automatic.')]
-        [ValidateSet('IKEv2', 'SSTP', 'Automatic')]
+        [Parameter(Mandatory, HelpMessage = 'Specify a VPN protocol for the connection - IKEv2 or SSTP.')]
+        [ValidateSet('IKEv2', 'SSTP')]
         [string]$VpnProtocol,
         [Parameter(Mandatory, HelpMessage = 'Enter a DNS suffix for the VPN connection.')]
         [string]$DnsSuffix,
@@ -124,7 +124,7 @@ Function New-TestVpnConnection {
 
         ConnectionName       = $ConnectionName
         ServerAddress        = $ServerAddress
-        TunnelType           = $VpnProtocol
+        TunnelType           = 'IKEv2'
         DnsSuffix            = $DnsSuffix
         AuthenticationMethod = 'EAP'
         EapConfigXmlStream   = $EapConfig
@@ -167,6 +167,13 @@ Function New-TestVpnConnection {
         Write-Verbose 'Updating IKEv2 IPsec security policy...'
         [PSCustomObject]$Parameters | Set-VpnConnectionIPsecConfiguration -ConnectionName $ConnectionName -Force
 
+        # // Enable SSTP if required
+        If ($VpnProtocol -eq 'SSTP') {
+
+            Set-VpnConnection -Name $ConnectionName -TunnelType 'SSTP' -Force
+
+        }
+
         If ($Connect) {
 
             Write-Verbose "Launching VPN connection $ConnectionName..."
@@ -181,8 +188,8 @@ Function New-TestVpnConnection {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUDXy1bJWoDPfQGjnDvd1HIwCu
-# NL+ggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhChSSTOzJgF3SF0TFeEeE1wf
+# lCqggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -362,30 +369,30 @@ Function New-TestVpnConnection {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBQKThZ+s6uqwAcexmnMqijyuyf3sTANBgkqhkiG9w0BAQEFAASCAYBiliXToi7a
-# +gFdxQ9imw0h6t94YIpd//X8I2WDlYwAPRME1lhIQiC+5YT77ae8ristLehZ1UWi
-# ntsZXLTJ0ydmZoXuICPblHDohbuZSe2dUpP7CaI760PcN4N86bicC/OH0tr18wj2
-# nC67C+0Y8WyLkHgnlhfNnfh5jIYK0nuintu7u8ifUvzfaWRynfYKQKUJoevx/LRX
-# /578BVFxO4ttUEsKxS3wet4QI7roLymJJPjyQFdvqlAd1mtevt0dCuzPaLvTNeXf
-# BVE0s7HWt6YsOefePMP/lKy7uHGN/Nm9FwfkzU+P9/lynnQKlAlnZdQnUAw3GL55
-# GGjD1NIynQWpSGQOQMUuHuJ0h9iefIPwYQ/OPeUNUBDYcYeGexXLbueLH5zjh+oQ
-# HDC0asc/JCLc9ZfoV+XhQvD10Zfpo3HIZly/aSKDSnpODKiBPq/MDXSMZSwN68HQ
-# s50woGfX9zLFTxG6aoWw7KwaxPkon9yUDVy5nyVicfmtUSUbNDMqOiGhggMgMIID
+# BBRqWnvyGWFDC4B+HPA356fb5jUjWzANBgkqhkiG9w0BAQEFAASCAYAunjKdwmk6
+# IOMjL4YOrChg49tEpERtKbtaOWP5QhHinwzEYoS5WV9sXm1LSvPecRX45ZotIHJ7
+# jBo0PV0E7XjO4U5nD1j5PdDJ0Jj7na4c7L5zDC7pLtlszZ3Csw5r6lsWRvxupVE4
+# Agz8NoVWdL849y8fukv/HlHzpoFro3bxxOFBY/tWfa+SdGqQhRsvunBAybfcpGdS
+# BU54pJhifuv/GheC8i9f2Q1+gP7LI8wS/Q2LPeZnum5pl5NUTtrgHgVuS4I2qYIV
+# F2+VAfLsxUDwI5T8Lk1uD1TJ02Axn25qzo1LWe8qCVoseyzZK4nR/mF66CWFVkNf
+# n4eMbz6lodoyDKLQ0Daqz2BlMg5RVgALdkfdDZjEoi06IufU8pDbYQGYbibyQlXf
+# DOtZMn3ImrTBofrccDiD/OIoLMkZkCqaNAI9sq23gHPSpYZJgBmJwbkCV7dn4bmy
+# UymdHvK6P/h/v4SEOEgwIRNKVmuylG9ujJknbR8lFgPS4EmyqMh7lc6hggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwMjA0MTgzOTU1WjAvBgkqhkiG9w0BCQQxIgQgNR8MQcCi
-# ut4EvkF+cjguKyVSjPm5MOUVhsTUgza0dEIwDQYJKoZIhvcNAQEBBQAEggIAzZUx
-# frwvDwDVLng62Rj3jlROkPzgFylmJq8AZg5r1NcH0KxVgfFFbZ2kfT3nR5UnwWbf
-# uU1hblinS951ESOrDMiVIXVBlbtoeKnEzMVtP6vagliBAT94b4WYBWuk/SziJUtx
-# tLjdEWz1NkcQm8cCYmMTbpWt3pKA1T5GSdi3r7w3PLMZzr2aaRSYqIRLMw/7++l1
-# Ng+v+snWN9lLIvS2PlSjB5AkCDqqOksEOG6TNnkPYoRcr7pMffe8UytvjNtv0ZdW
-# HMZGV9S7J6qxcQ+JxmoEQx92uMFR8lPJdq0Sjb4bFumsKAieGrGqIPxtuXtBHssy
-# ktotzqkPY4Ng+cCpnN630pk/TAxmRMakHk9Nm0dhJRHsuxpqybhng4dcfumc8XzT
-# gIkCli0IblQsZXpQ5C9yGeqy8aGIQ6GJG9+MEEnSeAw+7VeTFgCrIfElvXkQ04n4
-# XViYV4byJMv5dx1hjNMVEOFU+cCqq8HQk11dmk59RxblbwNhsLj1e+y8TmMJ77lB
-# 9T6uXV2TGXRkSO4A79UdcpRhiek11LnUCR4i8QZSQtWLHb+fqxfF0QurvYR+fgpu
-# RqhEn6UZ5XwR4goCY90H+Dnbo0Eb6Vuvr3Lo2IMNiua3bq1HAe378mkeUkiRUyG8
-# Q83pZjACTyinprZx1GZtiN1I6WrBDADB6/hncPw=
+# hkiG9w0BCQUxDxcNMjMwNDA0MjAxOTMxWjAvBgkqhkiG9w0BCQQxIgQgu3fSa6xl
+# ot4/sUlmlSwCB8vOsW4q6vxn0RYmy3fDn+owDQYJKoZIhvcNAQEBBQAEggIAJf+C
+# av0K3DEYwmdq/O/zBmnodMSUADRp9eeqVFW6c3ybaOH1pg1nHJc1dErKH9Nfpfz1
+# yFbnbWSUNmbwj3Jm6aClZA9zcq9JUVAsJAtI41VOkgrJ3GU64yAHBEpXf6+xQd1Q
+# 6v7g1PLkoeIUWGI4Nr5EuZWc5JOzy/lsRdAZw2ItArzXnB+/mLxFZl28K1LVaM0p
+# fu0nPFU+xCDB99kEWAt65wOzRqBbTMt6MNCfyHoGDrrPpotDi4q0v+2LZiBBgMBg
+# L5gRr+21JSgSO/UgSKaXRo1nEAZ3+KkQghWwP6e/pzhvfpaUIfSnW/Y2JCJKiD5a
+# EbqhaQuYBlWF3DAkWy7Ntpyq2/30U+hnhcu5SJx4WgUrjWtBzpnUeBLzGdCktGhd
+# VGvjAGccn4V9K29x9IwFOZJ/NIF0FePm1vICwV9xdakhTfQkBxNSL+DAnOm59c1E
+# KPQTFzmAZnwRlswEGSmR5bFfU/LFkG2KXXhzld7YG8uScguJmwbrbBjEpyjasFjz
+# OvME7BAtBIgVvrpokj8yk68XH10DfH0s8UyuHXOgFKyKiSIymOq2duCLPPIcbA2s
+# 3ATrVmZZw1XUt7GGWPm+6tz5q2QiG361lEKdn4bSajw121Z8PLXnuy3lD08ssds+
+# 06JS8xowrBVWT8SErkx29Ny4HUHozN6m4C+R7iw=
 # SIG # End signature block
