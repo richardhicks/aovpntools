@@ -1,195 +1,244 @@
 <#
 
 .SYNOPSIS
-    PowerShell function to create a test VPN connection for validating Always On VPN infrastructure.
+    PowerShell script to remove an Always On VPN profile from the AutoTriggerDisabledProfiles list.
 
-.PARAMETER ConnectionName
-    Defines the name of the test VPN connection.
-
-.PARAMETER ServerAddress
-    The public hostname in fully qualified domain name (FQDN) format of the VPN server.
-
-.PARAMETER VpnProtocol
-    The VPN protocol to be used for the test VPN connection.
-
-.PARAMETER DnsSuffix
-    Defines the DNS suffix to be used for the test VPN connection.
-
-.PARAMETER SplitTunnel
-    Configures split tunneling for the test VPN connection.
-
-.PARAMETER Routes
-    Defines IPv4 networks to be routed over the test VPN connection when split tunneling is enabled.
-
-.PARAMETER NpsServers
-    Defines NPS servers trusted for authentication with the test VPN connection.
-
-.PARAMETER RootCaThumbprint
-    The thumbprint of the enterprise root CA server certificate.
-
-.PARAMETER EkuName
-    The name of the custom application policy assigned to the user authentication certificate (optional).
-
-.PARAMETER EkuOID
-    The Object Identifier (OID) of the custom application policy assigned to the user authentication certificate (optional).
-
-.PARAMETER Connect
-    Initiates the test VPN connection.
+.PARAMETER ProfileName
+    The name of the VPN profile to remove from the AutoTriggerDisabledProfiles list.
 
 .EXAMPLE
-    New-TestVpnConnection -ConnectionName 'Always On VPN Test' -ServerAddress test.example.net -VpnProtocol SSTP -DnsSuffix corp.example.net -SplitTunnel -Routes 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 -NpsServers nps1.corp.example.net, nps2.corp.example.net -RootCaThumbprint CDD4EEAE6000AC7F40C3802C171E30148030C072
+    Clear-AutoTriggerDisabledProfile -ProfileName 'Always On VPN'
 
-    Creates a new test VPN connection.
+    Removes the Always On VPN profile 'Always On VPN' from the AutoTriggerDisabledProfiles list.
 
-    Note: This command reuqires many parameters. Using Show-Command New-TestVpnConnection displays a GUI to input reuqired parameters.
+.EXAMPLE
+    Clear-AutoTriggerDisabledProfile -ProfileName 'Always On VPN' -AllUserConnection
+
+    Removes the Always On VPN profile 'Always On VPN' from the AutoTriggerDisabledProfiles list when the profile is deployed in the all users context.
 
 .DESCRIPTION
-    Administrators should configure a test VPN connection to validate Always On VPN infrastructure before proceeding with broad client configuration deployment. This function creates a test VPN connection for validating connection establishment, authentication, routing, and single sign-on.
+    When a user unchecks the 'connect automatically' check box for an Always On VPN profile, the profile will not start automatically until the user rechecks this box. This script allows administrators to programmatically ensure that Always On VPN profiles are automatically established even when a user disables this functionality.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/blob/main/Functions/New-TestVpnConnection.ps1
-
-.LINK
-    https://directaccess.richardhicks.com/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Clear-AutoTriggerDisabledProfile.ps1
 
 .NOTES
-    Version:        1.2.4
-    Creation Date:  July 11, 2022
-    Last Updated:   April 4, 2023
+    Version:        1.0.1
+    Creation Date:  March 30, 2023
+    Last Updated:   July 12, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
-    Web Site:       https://www.richardhicks.com/
+    Website:        https://www.richardhicks.com/
 
 #>
 
-Function New-TestVpnConnection {
+Function Clear-AutoTriggerDisabledProfile {
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
 
     Param (
 
-        [Parameter(Mandatory, HelpMessage = 'Enter a name for the VPN connection.')]
-        [string]$ConnectionName,
-        [Parameter(Mandatory, HelpMessage = "Enter the VPN server's public hostname in FQDN format.")]
-        [string]$ServerAddress,
-        [Parameter(Mandatory, HelpMessage = 'Specify a VPN protocol for the connection - IKEv2 or SSTP.')]
-        [ValidateSet('IKEv2', 'SSTP')]
-        [string]$VpnProtocol,
-        [Parameter(Mandatory, HelpMessage = 'Enter a DNS suffix for the VPN connection.')]
-        [string]$DnsSuffix,
-        [switch]$SplitTunnel,
-        [string[]]$Routes,
-        [Parameter(Mandatory, HelpMessage = 'Enter the names of NPS servers trusted for this VPN connection.')]
-        [string[]]$NpsServers,
-        [Parameter(Mandatory, HelpMessage = "Enter the thumbprint of the root CA server's certificate.")]
-        [string]$RootCaThumbprint,
-        [string]$EkuName,
-        [string]$EkuOID,
-        [switch]$Connect
+        [Parameter(Mandatory, HelpMessage = 'Enter a name for the VPN profile.')]
+        [Alias('Name', 'ConnectionName')]
+        [string]$ProfileName,
+        [switch]$AllUserConnection
 
     )
 
-    # // Check if VPN connection already exists
-    $Vpn = Get-VpnConnection -Name $ConnectionName -ErrorAction SilentlyContinue
+    # Validate VPN profile
+    Write-Verbose "Searching VPN profiles for `"$ProfileName`"."
 
-    If ($Vpn) {
+    If ($AllUserConnection) {
 
-        Write-Warning "The VPN connection ""$ConnectionName"" already exists."
-        Return
-
-    }
-
-    # // Convert NPS servers array to semi-colon separated string
-    $NpsServers = [System.String]::Join(";", $NpsServers)
-
-    # // Remove spaces in root CA certificate thumbprint
-    $RootCaThumbprint = $RootCaThumbprint.Replace(' ', '')
-
-    # // Select XML template
-    If ($EkuOID) {
-
-        $EapConfig = "<EapHostConfig xmlns=`"http://www.microsoft.com/provisioning/EapHostConfig`"><EapMethod><Type xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">25</Type><VendorId xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">0</VendorId><VendorType xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">0</VendorType><AuthorId xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">0</AuthorId></EapMethod><Config xmlns=`"http://www.microsoft.com/provisioning/EapHostConfig`"><Eap xmlns=`"http://www.microsoft.com/provisioning/BaseEapConnectionPropertiesV1`"><Type>25</Type><EapType xmlns=`"http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV1`"><ServerValidation><DisableUserPromptForServerValidation>true</DisableUserPromptForServerValidation><ServerNames>$NpsServers</ServerNames><TrustedRootCA>$RootCAThumbprint</TrustedRootCA></ServerValidation><FastReconnect>false</FastReconnect><InnerEapOptional>false</InnerEapOptional><Eap xmlns=`"http://www.microsoft.com/provisioning/BaseEapConnectionPropertiesV1`"><Type>13</Type><EapType xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV1`"><CredentialsSource><CertificateStore><SimpleCertSelection>true</SimpleCertSelection></CertificateStore></CredentialsSource><ServerValidation><DisableUserPromptForServerValidation>true</DisableUserPromptForServerValidation><ServerNames>$NpsServers</ServerNames><TrustedRootCA>$RootCAThumbprint</TrustedRootCA></ServerValidation><DifferentUsername>false</DifferentUsername><PerformServerValidation xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV2`">true</PerformServerValidation><AcceptServerName xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV2`">true</AcceptServerName><TLSExtensions xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV2`"><FilteringInfo xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV3`"><CAHashList Enabled=`"true`"><IssuerHash>$RootCAThumbprint</IssuerHash><IssuerHash>$RootCAThumbprint</IssuerHash></CAHashList><EKUMapping><EKUMap><EKUName>$EkuName</EKUName><EKUOID>$EkuOID</EKUOID></EKUMap></EKUMapping><ClientAuthEKUList Enabled=`"true`"><EKUMapInList><EKUName>$EkuName</EKUName></EKUMapInList></ClientAuthEKUList></FilteringInfo></TLSExtensions></EapType></Eap><EnableQuarantineChecks>false</EnableQuarantineChecks><RequireCryptoBinding>true</RequireCryptoBinding><PeapExtensions><PerformServerValidation xmlns=`"http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV2`">true</PerformServerValidation><AcceptServerName xmlns=`"http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV2`">true</AcceptServerName></PeapExtensions></EapType></Eap></Config></EapHostConfig>"
+        # Get VPN profile running in the user's context
+        $Vpn = Get-VpnConnection -Name $ProfileName -AllUserConnection -ErrorAction SilentlyContinue
 
     }
 
     Else {
 
-        $EapConfig = "<EapHostConfig xmlns=`"http://www.microsoft.com/provisioning/EapHostConfig`"><EapMethod><Type xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">25</Type><VendorId xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">0</VendorId><VendorType xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">0</VendorType><AuthorId xmlns=`"http://www.microsoft.com/provisioning/EapCommon`">0</AuthorId></EapMethod><Config xmlns=`"http://www.microsoft.com/provisioning/EapHostConfig`"><Eap xmlns=`"http://www.microsoft.com/provisioning/BaseEapConnectionPropertiesV1`"><Type>25</Type><EapType xmlns=`"http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV1`"><ServerValidation><DisableUserPromptForServerValidation>true</DisableUserPromptForServerValidation><ServerNames>$NpsServers</ServerNames><TrustedRootCA>$RootCaThumbprint</TrustedRootCA></ServerValidation><FastReconnect>false</FastReconnect><InnerEapOptional>false</InnerEapOptional><Eap xmlns=`"http://www.microsoft.com/provisioning/BaseEapConnectionPropertiesV1`"><Type>13</Type><EapType xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV1`"><CredentialsSource><CertificateStore><SimpleCertSelection>true</SimpleCertSelection></CertificateStore></CredentialsSource><ServerValidation><DisableUserPromptForServerValidation>true</DisableUserPromptForServerValidation><ServerNames>$NpsServers</ServerNames><TrustedRootCA>$RootCaThumbprint</TrustedRootCA></ServerValidation><DifferentUsername>false</DifferentUsername><PerformServerValidation xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV2`">true</PerformServerValidation><AcceptServerName xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV2`">true</AcceptServerName><TLSExtensions xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV2`"><FilteringInfo xmlns=`"http://www.microsoft.com/provisioning/EapTlsConnectionPropertiesV3`"><CAHashList Enabled=`"true`"><IssuerHash>$RootCaThumbprint</IssuerHash></CAHashList><ClientAuthEKUList Enabled=`"true`" /></FilteringInfo></TLSExtensions></EapType></Eap><EnableQuarantineChecks>false</EnableQuarantineChecks><RequireCryptoBinding>true</RequireCryptoBinding><PeapExtensions><PerformServerValidation xmlns=`"http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV2`">true</PerformServerValidation><AcceptServerName xmlns=`"http://www.microsoft.com/provisioning/MsPeapConnectionPropertiesV2`">true</AcceptServerName></PeapExtensions></EapType></Eap></Config></EapHostConfig>"
+        # Get VPN profile running in the 'all users' context
+        $Vpn = Get-VpnConnection -Name $ProfileName -ErrorAction SilentlyContinue
 
     }
 
-    # // Define VPN connection parameters
+    If ($Null -eq $Vpn) {
+
+        # Exit if VPN profile does not exist
+        Write-Warning "VPN connection `"$ProfileName`" not found."
+        Return
+
+    }
+
+    Else {
+
+        Write-Verbose "VPN connection `"$ProfileName`" found."
+
+    }
+
+    # Use transaction for registry updates
+    Start-Transaction
+
+    # Search AutoTriggerDisabledProfilesList for VPN profile
+    $Path = 'HKLM:\System\CurrentControlSet\Services\RasMan\Config\'
+    $Name = 'AutoTriggerDisabledProfilesList'
+
+    Write-Verbose "Searching $Name in $Path for VPN profile `"$ProfileName`"..."
+
+    Try {
+
+        # Get the current registry values as an array of strings
+        [string[]]$DisabledProfiles = Get-ItemPropertyValue -Path $Path -Name $Name -ErrorAction Stop
+
+    }
+
+    Catch {
+
+        Write-Verbose "$Name does not exist in $Path. No action required."
+        Return
+
+    }
+
+    If ($DisabledProfiles) {
+
+        # Create ordered hashtable
+        $List = [Ordered]@{}
+        $DisabledProfiles | ForEach-Object { $List.Add("$($_.ToLower())", $_) }
+
+        # Search hashtable for matching VPN profile and remove if present
+        If ($List.Contains($ProfileName)) {
+
+            Write-Verbose 'Profile found. Removing entry...'
+            $List.Remove($ProfileName)
+            Write-Verbose 'Updating the registry...'
+            Set-ItemProperty -Path $Path -Name $Name -Value $List.Values -UseTransaction
+
+        }
+
+    }
+
+    Else {
+
+        Write-Verbose "No profiles found matching `"$ProfileName`"."
+        Return
+
+    }
+
+    # Add user SID to registry
+    If ($AllUserConnection) {
+
+        $SID = 'S-1-1-0'
+        Write-Verbose "Adding SYSTEM SID $SID to registry..."
+
+    }
+
+    Else {
+
+        Try {
+
+            $SID = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+            Write-Verbose "Adding user SID $SID to registry..."
+
+        }
+
+        Catch {
+
+            Write-Warning $_.Exception.Message
+            Return
+
+        }
+
+    }
+
     $Parameters = @{
 
-        ConnectionName       = $ConnectionName
-        ServerAddress        = $ServerAddress
-        TunnelType           = 'IKEv2'
-        DnsSuffix            = $DnsSuffix
-        AuthenticationMethod = 'EAP'
-        EapConfigXmlStream   = $EapConfig
+        Path           = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\Config\'
+        Name           = 'UserSID'
+        PropertyType   = 'String'
+        Value          = $SID
+        UseTransaction = $True
 
     }
 
-    If ($PsCmdlet.ShouldProcess($ConnectionName, 'Create test VPN connection')) {
+    New-ItemProperty @Parameters -Force | Out-Null
 
-        # // Create VPN connection
-        Write-Verbose "Creating VPN connection $ConnectionName..."
-        Add-VpnConnection @Parameters
+    # Add VPN profile name to registry
+    $Parameters = @{
 
-        # // Enable split tunneling and define routes
-        If ($SplitTunnel) {
-
-            Write-Verbose 'Enabling split tunneling...'
-            Set-VpnConnection -Name $ConnectionName -SplitTunneling $True
-
-            ForEach ($Route in $Routes) {
-
-                Write-Verbose "Adding route to $Route..."
-                Add-VpnConnectionRoute -ConnectionName $ConnectionName -DestinationPrefix $Route
-
-            }
-
-        }
-
-        # // Define IPsec policy
-        $Parameters = @{
-
-            AuthenticationTransformConstants = 'GCMAES128'
-            CipherTransformConstants         = 'GCMAES128'
-            DHGroup                          = 'Group14'
-            EncryptionMethod                 = 'GCMAES128'
-            IntegrityCheckMethod             = 'SHA256'
-            PFSgroup                         = 'ECP256'
-
-        }
-
-        Write-Verbose 'Updating IKEv2 IPsec security policy...'
-        [PSCustomObject]$Parameters | Set-VpnConnectionIPsecConfiguration -ConnectionName $ConnectionName -Force
-
-        # // Enable SSTP if required
-        If ($VpnProtocol -eq 'SSTP') {
-
-            Set-VpnConnection -Name $ConnectionName -TunnelType 'SSTP' -Force
-
-        }
-
-        If ($Connect) {
-
-            Write-Verbose "Launching VPN connection $ConnectionName..."
-            rasdial.exe $ConnectionName
-
-        }
+        Path           = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\Config\'
+        Name           = 'AutoTriggerProfileEntryName'
+        PropertyType   = 'String'
+        Value          = $ProfileName
+        UseTransaction = $True
 
     }
+
+    New-ItemProperty @Parameters | Out-Null
+
+    # Add VPN profile GUID to registry
+    Write-Verbose "Adding VPN GUID $GUID to registry..."
+    [guid]$Guid = $Vpn | Select-Object -ExpandProperty Guid
+    $Binary = $Guid.ToByteArray()
+
+    $Parameters = @{
+
+        Path           = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\Config\'
+        Name           = 'AutoTriggerProfileGUID'
+        PropertyType   = 'Binary'
+        Value          = $Binary
+        UseTransaction = $True
+
+    }
+
+    New-ItemProperty @Parameters | Out-Null
+
+    # Add phonebook path to registry
+    If ($AllUserConnection) {
+
+        $Path = Join-Path -Path $env:programdata -ChildPath Microsoft\Network\Connections\Pbk\rasphone.pbk
+        Write-Verbose "RAS phonebook path is $Path."
+
+    }
+
+    Else {
+
+        $Path = Join-Path -Path $env:userprofile -ChildPath AppData\Roaming\Microsoft\Network\Connections\Pbk\rasphone.pbk
+        Write-Verbose "RAS phonebook path is $Path."
+
+    }
+
+    $Parameters = @{
+
+        Path           = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\Config\'
+        Name           = 'AutoTriggerProfilePhonebookPath'
+        PropertyType   = 'String'
+        Value          = $Path
+        UseTransaction = $True
+
+    }
+
+    New-ItemProperty @Parameters | Out-Null
+
+    # Commit registry changes
+    Complete-Transaction
+
+    # Stop the RasMan service
+    $Id = Get-CimInstance -ClassName win32_service | Where-Object Name -eq 'RasMan' | Select-Object -ExpandProperty ProcessId
+    Write-Verbose "RasMan process ID is $Id..."
+    Write-Verbose 'Restarting the RasMan service...'
+    Stop-Process -Id $Id -Force
+
+    # Pause before restarting the RasMan service
+    Start-Sleep -Seconds 5
+    Start-Service RasMan
 
 }
-
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhChSSTOzJgF3SF0TFeEeE1wf
-# lCqggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUnK12EaXk8qawW4075ITkPEYN
+# rJOggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -369,30 +418,30 @@ Function New-TestVpnConnection {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBRqWnvyGWFDC4B+HPA356fb5jUjWzANBgkqhkiG9w0BAQEFAASCAYAunjKdwmk6
-# IOMjL4YOrChg49tEpERtKbtaOWP5QhHinwzEYoS5WV9sXm1LSvPecRX45ZotIHJ7
-# jBo0PV0E7XjO4U5nD1j5PdDJ0Jj7na4c7L5zDC7pLtlszZ3Csw5r6lsWRvxupVE4
-# Agz8NoVWdL849y8fukv/HlHzpoFro3bxxOFBY/tWfa+SdGqQhRsvunBAybfcpGdS
-# BU54pJhifuv/GheC8i9f2Q1+gP7LI8wS/Q2LPeZnum5pl5NUTtrgHgVuS4I2qYIV
-# F2+VAfLsxUDwI5T8Lk1uD1TJ02Axn25qzo1LWe8qCVoseyzZK4nR/mF66CWFVkNf
-# n4eMbz6lodoyDKLQ0Daqz2BlMg5RVgALdkfdDZjEoi06IufU8pDbYQGYbibyQlXf
-# DOtZMn3ImrTBofrccDiD/OIoLMkZkCqaNAI9sq23gHPSpYZJgBmJwbkCV7dn4bmy
-# UymdHvK6P/h/v4SEOEgwIRNKVmuylG9ujJknbR8lFgPS4EmyqMh7lc6hggMgMIID
+# BBSrTNyLwLQE0xJm4rEK5hYiT0yylzANBgkqhkiG9w0BAQEFAASCAYDAXNloTTII
+# LKQ7hVkvMSWIB89YVn+1cX9M/PSh1+eIplpr3/yOKtFCIdeUcQOncMtgYO220bVQ
+# qf8Kub/wLFs5SRlgO5T/dSPf9sK6ozN+TihSspFt27KYySkk+gSKge21jaw/WhtO
+# do7eA9uBj0/kfYK9dPwrV11BjChg0T7VxNUNy+QPcv8iDu22e0EIOboecZBS8+7F
+# rSVbJYs/+tx5j0f2ofTmAoJBIDFfhpkYRx2xsQn0XqMoGliukPcrbcJsnDnjUUQS
+# 0RSI74kFEdSGnR7G6JzstPt9LREKnOaRkHNvkh1DMzbqMFeZ98RJ8UltnRTJsLA1
+# 3xw43j07aTJrg7VB2QiKadKIZWNj5ijsz9uHZeZRuQTVKVd5UKWNWgQ8enqBDyeO
+# dhNwAj4EVeQVETeNLABQTAu1SyP8EW0SdpyKTAH+YBzOjI/7efMZdy+Nv38Fo53v
+# +o90dC70F7XRHRGcFUQufO1AYAUWXN+ADn5Mt8l8wgzswAlfZkiX/3WhggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwNzEzMDQyNDQzWjAvBgkqhkiG9w0BCQQxIgQgu3fSa6xl
-# ot4/sUlmlSwCB8vOsW4q6vxn0RYmy3fDn+owDQYJKoZIhvcNAQEBBQAEggIAawIU
-# cc7uOPLAef5vuytFlN2wrt9LM2/zWY2lHtPjxsuXzj983jPw5RdQyhx5uhYLFVmi
-# A7LuAp61mFaVBs1jZYdaPzPAVY6BUhWCyalPfyFn3VWFP6FsaicXM2vmxR1XTurN
-# Hma//Nkt/g7WLJAsPunUBZ9omXq8QN30LnJag3ACcKcm88yMWHJaNN9EMOKRb6ix
-# SgP3XESHlPjI97P2YmczensXVPjtB+mIQI4vDEg0Q4mt15Eo5cvBt5JH2IxBhPPn
-# ZxMj0HTU9dMVB95dh/arxYtBNbXx1kjBbfUOJDelWtbejMeS7SG9PHUb9UUZ6AmM
-# yINXbdVY2jUaxz6DengSVUWCfZ+TJFpi0yeJSwTNp6FsJLNd24ElWlbpE2Uw3e4H
-# WrJ+4vbd/uq/ESVVrKUN2QH8vl9CmBZhbVsrLyVZU+J7imkrECsMuuYW5/VAxYFW
-# 8TXo2Cw07oZ9iqy7wm2gwv5+TJ9knRpJdzqYx+rzkoujnxUr/ejTf8YG392i0E6c
-# Qgjsoi3knSUxNvx3hhAdZeL9MJ6v2PKIcfPRCQYtxgkIP64GCOe9mJEHHqJS0r6D
-# jTbNCpJebQIhF1K5yb/kR+o0+875SQcQUwMpXTawVyzfN6Gm47jJA+QoTxcpb53b
-# tqtULgiAqlTUC6IVUllDTRn1gh41gQDJ27gqeq8=
+# hkiG9w0BCQUxDxcNMjMwNzEzMDQyNDQyWjAvBgkqhkiG9w0BCQQxIgQgcg1iRRcn
+# hAOgc6mr+IsmGu/5qS7bpHqO98jQeaSAI+EwDQYJKoZIhvcNAQEBBQAEggIANWeH
+# XuI2vfq6h4bwqjuPuiA9AlGIDJGqDCufa6v9fNjoKH/p0o/k7gA7/pd4E/BcVHFI
+# H8687QAsrqNCkfNv1Z5LhG0i2TMF/tfTDc3t1Z1Zk1QY9T9NanLXYNrq4qwWlJ5j
+# 7b59kls/jGG2TIKi03zy7/rk286nlTr7dYJqGz0R7lmPo6v35eijYqSuWQ7n3Y2a
+# JCHmn7iDneJR/0UDXGR9ZHbxYcCC98r6q+GYU8skdHojan2eR/cjoS6lOVxX1IDb
+# NSYC+d7faqNj41EGw3wN3uGf/73Njkx0NnYYqwd0qpiU8FUmG6ScxnHXYq4oNfAW
+# 4YTPmmsQDYMp2Ae6upWQasp+bOcWDUDCobYuMZ6zBafnfHAZiw2VgagW5YA0GKaO
+# GUyVzPiHWrGiXkWiCIN4JH6RM6k5bZ6NgCdxGIcCM2QfKbJFKpu6fx13WgFYhdid
+# F5dqpTvrnWeb/oXhuFzpo1vtvaD1xVV1EfzbUnspU22M5YGbGon0ScYJk58IJmmL
+# o6m6LnUQL7ytSYvAofUU/bQdKtno41+SrLOENmxEXbfPFFmePoV4qcMO9akMy1za
+# z1PedMWBA+LyKYUH62UDGMxXba/Ue4mxwI7Ohn7sNbITWE7tNbmi02wM2T3q002l
+# GZIrB0Y3L247iEAg/W7IIzWBER5+MXb4ljsBJR4=
 # SIG # End signature block
