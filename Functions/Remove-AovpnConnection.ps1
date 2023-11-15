@@ -1,7 +1,7 @@
 <#
 
 .SYNOPSIS
-    PowerShell script to remove Always On VPN connections.
+    PowerShell function to remove Always On VPN connections.
 
 .PARAMETER ProfileName
     Specifies the name of the VPN connection to remove.
@@ -40,9 +40,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        4.1.1
+    Version:        4.2
     Creation Date:  August 23, 2020
-    Last Updated:   September 7, 2023
+    Last Updated:   November 15, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -58,9 +58,9 @@ Function Remove-AovpnConnection {
 
         [Parameter(Mandatory, ValueFromPipelineByPropertyName, HelpMessage = 'Enter the name of the VPN profile to remove.')]
         [ValidateNotNullOrEmpty()]
-        [Alias("Name", "ConnectionName")]
+        [Alias('Name', 'ConnectionName')]
         [string]$ProfileName,
-        [Alias("DeviceTunnel")]
+        [switch]$DeviceTunnel,
         [switch]$AllUserConnection,
         [switch]$CleanUpOnly
 
@@ -219,7 +219,7 @@ Function Remove-AovpnConnection {
 
             # Remove registry artifacts from NetworkList\Profiles
             $Path = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles\'
-            Write-Verbose "Searching $path for VPN profile ""$ProfileName""..."
+            Write-Verbose "Searching $Path for VPN profile ""$ProfileName""..."
             $Key = Get-Childitem -Path $Path | Where-Object { (Get-ItemPropertyValue $_.PsPath -Name Description) -eq $ProfileName }
 
             If ($Key) {
@@ -236,7 +236,7 @@ Function Remove-AovpnConnection {
             }
 
             # Remove registry artifacts from RasMan\Config
-            $Path = 'HKLM:\System\CurrentControlSet\Services\RasMan\Config\'
+            $Path = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\Config\'
             $Name = 'AutoTriggerDisabledProfilesList'
 
             Write-Verbose "Searching $Name under $Path for VPN profile ""$ProfileName""..."
@@ -256,11 +256,11 @@ Function Remove-AovpnConnection {
 
             If ($Current) {
 
-                #// Create ordered hashtable
+                # Create ordered hashtable
                 $List = [Ordered]@{}
                 $Current | ForEach-Object { $List.Add("$($_.ToLower())", $_) }
 
-                #Search hashtable for matching VPN profile and remove if present
+                # Search hashtable for matching VPN profile and remove if present
                 If ($List.Contains($ProfileName)) {
 
                     Write-Verbose "Profile found in AutoTriggerDisabledProfilesList. Removing entry..."
@@ -275,6 +275,28 @@ Function Remove-AovpnConnection {
             Else {
 
                 Write-Verbose "No profiles found matching ""$ProfileName"" in the AutoTriggerDisabledProfilesList registry key."
+
+            }
+
+            # Remove registry artifacts from RasMan\DeviceTunnel
+            If ($DeviceTunnel) {
+
+                Write-Verbose 'Searching for entries in RasMan\DeviceTunnel...'
+                $Path = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\DeviceTunnel\'
+
+                If (Test-Path -Path $Path) {
+
+                    Write-Verbose 'RasMan\DeviceTunnel found. Removing registry key...'
+                    $Path = Get-Item -Path $Path
+                    Remove-Item -Path $Path.PsPath -Recurse -Force
+
+                }
+
+                Else {
+
+                    Write-Verbose 'RasMan\DeviceTunnel not found. No action required.'
+
+                }
 
             }
 
@@ -293,8 +315,8 @@ Function Remove-AovpnConnection {
 # SIG # Begin signature block
 # MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUUawpN+N9/EWvtB7L4eTdUp/C
-# zQCggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjivkli7iaCRqcrhsqIVt4oxP
+# yTaggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -474,30 +496,30 @@ Function Remove-AovpnConnection {
 # NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
 # MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
 # gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
-# MRYEFCvGIVZCyX6SxQlX+uxvBebmGXRrMA0GCSqGSIb3DQEBAQUABIIBgNXlNNJw
-# dhjBCb+JWg+LFuwnuEFX9uq9rhWN4v3YziW+Sk9GqdTjXm0uUG+sjRrqijCHByIC
-# s62DHAaaw8n44xHgrD8VLB66ojDfuufphrJw1wsOd/u/uEvEoTj70S3erQZ5ZalN
-# WDNTFWrcHgOtbfax8DQt89hESZiXmNyDAR5QZvYMQR5OJjtPlZAzlZwKG2RLsaGw
-# U25fcRcB7w4E3mO9EOBD/hJ1A1sdUwacP8QZBeHx+nh2OVyLvZFHH7x8rhT7ddxC
-# X5pbTzzhTNnWfunKyNx6QwvCsyhenbbmrPa0kTu5yApf44KVoygPqwOGHnl35kMG
-# YZcyrJ/pOOXYaehl6DIrZLlupdWOnz1fyvFsfRSdAjcycxrEfi/+z5wDURY4ydF8
-# wzMeIGKXXmx3UdMNh5adhuzVPbCrp1tbJbzgAMTL4u/Lmy0ClgLmsjmKfsJIH7OG
-# eBsTB5ClkgomFaAQI6zajq9279riBgXj4kpODdJgHnW1G79oSLnmqXKmFKGCAyAw
+# MRYEFH7KHOeywFUpUrCsWNB3dBHOPi0NMA0GCSqGSIb3DQEBAQUABIIBgOCeacPX
+# ZeM7cp+ijyfmV4oox3jMslR4XLSYxBxpn/UWWHfDT5zIz9utwsbJelvs0OmpWfDX
+# J+bR9ipmfvD2GKpbQjV468hsONxqu4c5rmSaWGCaloWnlXrgAP4qoE66asK+8XEp
+# GkXEdrYw1lqo2Uzjrc2OUdvHmhzE5bkEJfHXrt8DxZN91u0N2xlc4dBJjPmGz3wU
+# 55CmgEAjb7DUAxtRuxbsUrns3VQUxzxS3VtT1WihCr67htaolZszmc+Xv2JAsBkn
+# y4800zpnzi2/UahKP54kLZBilRuP2UtjQ4sNU5t85ZUmIxheRA7npCOg2x0G85cS
+# 3ZNX+xkEJTdpqef6tumtohH3heJtB6u7oLMfn01QPHSDfIlgUelioo/bv5sAmNkr
+# 5BN4ZM3wmEmBIxrmvM9+IYYHHYmDlRKe5rakyc0mPU5vht0UmtHL4MySiPG1AK9F
+# fj5NKYAN+f7vPCwg7Rf2agd6PoE55dIiyYS5+iwEZoyEZUd+5Ls3IehgZKGCAyAw
 # ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
 # VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
 # NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
 # YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-# CSqGSIb3DQEJBTEPFw0yMzA5MDgwMDM4MzlaMC8GCSqGSIb3DQEJBDEiBCBFe7fN
-# 6NrdPDOH3SLjNvnKmpVKs6GKPM+6Rf17+vZ0JjANBgkqhkiG9w0BAQEFAASCAgCQ
-# 3CefFioLKiPv9RYvwskjzdPu1WQVIK+mn0kTvrjRji3AsHm09/hjWzo1ubWA3UNV
-# mCuqm1QwUVgE4d1JDxP0eOzaT+OprhAH8E1QOe8aXKuoDmYW2D8GmXNT88KaBEt1
-# /EkfTe4z0IZCzErHpK9C547MRKuqEJF8Rli3+xrJpQzO2qx8HsAArcWwUi+1DlJ2
-# yCm1+WGhxjYuHr5PPxCLKOgCSPSXtt9B7vMegTgkinMRSrmqqwauX/b2+GsHbNRq
-# wHorj05MSxO0Njtz2bTXpOnFRPWvH0g/N8N/tADp86mwUDOcCg4vIBTk21uYzU1W
-# aln7YlUs1vnXQAkIU1SdgFcBMwV7dSWLkdy/spYb91S7L3FWz6ARspwf00IceFZC
-# 0FUVi6J5S0e4I3/+Ke6Z+cnS5QnOORH33AAJ5w7l0yA1iMifF1XzyjAEb8myqdr8
-# UzelyFWEKYWNK8wphc4QzXHA/mfigLN0ci7l4nZio6eR8trLVcw9jbyorhxB4oyr
-# afxxO8H7pzmRGGzAXUAtwI7XUTZhGKCBwkpWxWwQvJN5PCKW8AJOu81w+CrWOcfb
-# zoXQLj126TPxTarqSOp42sC234ac4CQwtVf8BuaGfCk78ccG4CSFyFpTvonDkrbZ
-# bUU1eoQ8xkMMEIc95Qw5Z1BPrULQgB28wZD0ynpRLw==
+# CSqGSIb3DQEJBTEPFw0yMzExMTUyMjEwNDBaMC8GCSqGSIb3DQEJBDEiBCCFj7ta
+# 9MK+JNKWJqB4Rs/mO1y5YcVhAHKdlqllsnNmMzANBgkqhkiG9w0BAQEFAASCAgAc
+# d41P7D0Z4iNjYRtI18Qvz2iDNPL+a3k3/hQ9GvFPaa5lJxC89J+WAek04XmXFrYu
+# 1rD1uCUlPSF9uznMSwaM+W++T/szajvx1Xb+RaLZ62kOifUF37tXsXxJ9YkdRcEP
+# Cv1dW4ZzsqZssV6t9nAr0yGjLBWNTBYtV8llhVJWOPe3fsXrGTlhQnqpsQ+KFgL3
+# he58WH6oYzeWoQtEiffc+J0mb02C1xtFMy/3/MjroX8+PwtfZ82KGXjxUAKXIoYB
+# UVlll0lWFDB3k9sq/TkyhiIkHFlZgL3b4xBcCcGhiMwLcca1UwE1uTqAoqGDUp68
+# OuhZz+dLpQJ6WnWm3Kaqg4vKIwlaGdYJHc1uu1EF8AL+Wmxcl0uFmuSW8HkXOpWE
+# pbwSWETUNPz2VRMI0pTcwP1jJrq8XX/NLoWErWDWKAOCmhqMXUL6+dKIxH1ZH8rt
+# +bpustbUn4uwFZb+FuCnJrcN/uSHO9v8pE7jWHOYQMXTb9mpACWD0D+UGXuO4YnI
+# 4/jibxU3czdKnZYxsGj2DdWcj3adHRP5LU206sYPEymLn5/jt3xcn6ngn/83Hx53
+# i0y5e8W0NHTSbH5MUchwQJnK4VLm230JQsw2iIzpjcSAcz6dIu9gN9cI1Ycidfge
+# caV9lNolxNHdhjzDTvinyqlNQLYHNcQeJNDmQc+Vbw==
 # SIG # End signature block
