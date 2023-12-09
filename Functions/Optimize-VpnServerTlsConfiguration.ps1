@@ -1,7 +1,7 @@
 <#
 
 .SYNOPSIS
-    Optimizes TLS configuration for SSTP VPN connections.
+    Optimize TLS configuration for SSTP VPN connections.
 
 .PARAMETER Security
     TLS cipher suites optimized for security. AES-256 ciphers are included.
@@ -26,9 +26,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.0
+    Version:        2.0.1
     Creation Date:  October 24, 2019
-    Last Updated:   December 7, 2023
+    Last Updated:   December 9, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -46,7 +46,7 @@ Function Optimize-VpnServerTlsConfiguration {
 
     )
 
-    # // Determine OS version
+    # Determine OS version
     $OSVersion = (Get-CimInstance 'Win32_OperatingSystem').Version
     Write-Verbose "Operating system version is $OSVersion."
 
@@ -111,7 +111,7 @@ Function Optimize-VpnServerTlsConfiguration {
     Write-Verbose 'Starting registry transaction...'
     Start-Transaction
 
-    # // Define registry parameters
+    # Define registry parameters
     $Parameters = @{
 
         Path           = 'HKLM:\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002\'
@@ -122,17 +122,17 @@ Function Optimize-VpnServerTlsConfiguration {
 
     }
 
-    # // Update registry settings
+    # Update registry settings
     Write-Verbose 'Updating TLS cipher suite configuration...'
     New-ItemProperty @Parameters -Force | Out-Null
 
-    # // Disable SSL 3.0
+    # Disable SSL 3.0
     Write-Verbose 'Disabling SSL 3.0...'
 
-    # // Create registry key
+    # Create registry key
     New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server\' -Force | Out-Null
 
-    # // Define registry parameters
+    # Define registry parameters
     $Parameters = @{
 
         Path           = 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server\'
@@ -143,16 +143,16 @@ Function Optimize-VpnServerTlsConfiguration {
 
     }
 
-    # // Update registry settings
+    # Update registry settings
     New-ItemProperty @Parameters -Force | Out-Null
 
-    # // Disable TLS 1.0
+    # Disable TLS 1.0
     Write-Verbose 'Disabling TLS 1.0...'
 
-    # // Create registry key
+    # Create registry key
     New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server\' -Force | Out-Null
 
-    # // Define registry parameters
+    # Define registry parameters
     $Parameters = @{
 
         Path           = 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server\'
@@ -163,16 +163,16 @@ Function Optimize-VpnServerTlsConfiguration {
 
     }
 
-    # // Update registry settings
+    # Update registry settings
     New-ItemProperty @Parameters -Force | Out-Null
 
-    # // Disable TLS 1.1
+    # Disable TLS 1.1
     Write-Verbose 'Disabling TLS 1.1...'
 
-    # // Create registry key
+    # Create registry key
     New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server\' -Force | Out-Null
 
-    # // Define registry parameters
+    # Define registry parameters
     $Parameters = @{
 
         Path           = 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server\'
@@ -183,7 +183,7 @@ Function Optimize-VpnServerTlsConfiguration {
 
     }
 
-    # // Update registry settings
+    # Update registry settings
     New-ItemProperty @Parameters -Force | Out-Null
 
     # Complete transaction
@@ -197,8 +197,8 @@ Function Optimize-VpnServerTlsConfiguration {
 # SIG # Begin signature block
 # MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOP4Qq+kZguDPSq7RsSzMycbU
-# 4u2ggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCmxve8yWKNpldaolZf8wpljq
+# 1F2ggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -378,30 +378,30 @@ Function Optimize-VpnServerTlsConfiguration {
 # NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
 # MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
 # gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
-# MRYEFKA624Qso3X3mbOC+s3PstIOJ5wtMA0GCSqGSIb3DQEBAQUABIIBgIh+WZ3V
-# dPtc5AbtEzZpvSjlLxKIPzatuWXK6tnVMqrawRa9681p2s2J8y2FRPqovqXSTKls
-# jbhjZgKQklLJlvbQCGZAYmMtAbJG5mqg9slf5IvvsPlO/rpdi9uNKCzh2SCuk8JB
-# pj0D5qvCD94uRkxWCRRuN2UIxRyFX1oWCo0BJ46kc/k122zxbQGp0zmrYYmj+YZV
-# 2MoaOwDPGMGkS8ldI1UvPfkJSWfoOerkzMtuEznA+U1JdLj88W0KG8e+YKivEf/Z
-# KV9JNkcmtpo4yZwzh7HsZcbclz22RVQ6GO786/GWaAfks1/iWbNnOM6IxzlXGonR
-# J6wPLGGt/i9aFl5+KdgVYUWXv8ojTosa3WM5KIJSItJByJyjiMre0W+xaMdpGc2Y
-# BTa6KKQRtxzXm4PlQ6NVsJvb+GmqovypMGSdIHRubuhT2DsZFL5IJmro+k+bveLA
-# Jw1vs82P2HQieoB/5c84QcrchtTdwjn3hfK0SKZwH7fCTks0GlJ/adPZy6GCAyAw
+# MRYEFHtzawTGPu9dRi9mQbQ2FMrvnCluMA0GCSqGSIb3DQEBAQUABIIBgDYPfvVb
+# XlsJfcKgImfyTVKnnIWjuoAo/CHeBZUmcL1pI7GogZuEm0gmH6+wlneoEJTsekIj
+# 5RabhGyjBDks3M3al2KpREpg/pC8XAjXGy3+QQa6253lHqsX5dKgdHFPiM6z+FBW
+# Cj6/he6Vj0swfepZH6FL72xVMrGjHyVfzc7C/g9OsKxI3KHlebUqdEWHJVYHZ7NH
+# 56Lx3GLZD8WqprgkHinGHPNbhDGBrqCcCdF9xLPGyF5FBowrE8haW22CfoHd6rBN
+# NOg9brgio9M9fY3Mz0aSRX48AWBAwejaOCHVpo3DhZ6+C+ZLJUlIIQ3Ww2BMC4nA
+# 102+FIkEZLpkoOHP2L99dK6xfA6ZDLJx50FAgOKBqZ2zma4eoUW/w26ZZVEgVDg2
+# zyO3/8I+6qotmiT6uF6b4fZdrBwwmVQierCFxNF474LLRDcim2bUhoneYtRbio8c
+# D+NL/sxG8G7b9lXGwSjXC8/6kSEKLk+cumk9Xzyr0ikW7G2+9FBj1Z//uaGCAyAw
 # ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
 # VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
 # NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
 # YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-# CSqGSIb3DQEJBTEPFw0yMzEyMDgwMDAwMjZaMC8GCSqGSIb3DQEJBDEiBCCQ53SH
-# eSnFjH46SS62E+QunAoqbRkRfH3eTBxnQ1arETANBgkqhkiG9w0BAQEFAASCAgCa
-# 9WRsIjypZ8S0sLVcKtjmtvyte6Af6nZMSyDM1LfSQEsG8vVKDD/0h7YqndvGFWUV
-# Cxx2a3o+noFKE4nHeRpd9AnFPi4NICLcm3AoaqZOTsKXggNWYTLeRJILcnjNyKpi
-# wS2aHO1oj75hIxteWVxPQwv61o2sG/En8brNziCx+MXTjmrTxr3QJmbu4AUp+/9K
-# g6EajJKKewOYcbVoli1ErUhHXUZqJR2rX5Y2ENvZk0D5rPeyMOCaLL1AWfMzvkDO
-# uw65yhXz5MruyFkOTir/KMDR+JSJ7uoKsKJqmLneexLh2tLJmHho2auoKumBSbZ6
-# LP+QcYBwxXzPHtE97MrlZs7Iv/C06GFM5YFmMBTzgf/i9HGGPaFgv85nl48iAKLd
-# vO7j4OXOyWjoAlZR1eF3/HdqU3wkGZoW92ZhYIGk3rgiiD+CNoXvhG4nPmWmapdx
-# sAOJmmlLFw0CQ2R4hUqex7DJYW/CirOT45GYGV0VvzpMUXSImpedVjPwgxwEqRLb
-# KluNxl1+p7LLs20n4uySH8ZLJm2jmc35HK6NNxiJZ0geQ2+jhpmboLqPOXbZFL8y
-# BkKpNC8JEbuOoRP0uxZ7QedcOcEH5EEDEuusT1XAbf/IQSZS796f51mVMNSCTfEx
-# /LiAehvkeET10pGTNvNXVCAfT8D/Hdc50QUoT1H6Dg==
+# CSqGSIb3DQEJBTEPFw0yMzEyMDkxOTMyMThaMC8GCSqGSIb3DQEJBDEiBCDbCOGM
+# B9xr7ra/I/epOlgssK5xYhCs28tDtefiKNfiazANBgkqhkiG9w0BAQEFAASCAgB7
+# BXCemOvH3KfwButGBCoV7WjTClcOVWI4+cVa6IOjMBsQxMLCnSLyKHQlu4ZsfVBa
+# J3C77Hr5nd9he4GTW4UVIxK66nOlE1elU+dV7VqrpMDlIYEgf7V1CadZzWZB6r2U
+# OX9pcDkq/cqRx5bl9JBPS18cR4trfzdOmZeem0yO0CVygrmcMQxU2J5eLciS76+/
+# sjSvJ0BIRqPDzU6ACxDM9wlNYQcpuKocStUXXBNl+QLgr1kMG92zD7ITRwhiteqf
+# Q1zaaTAIACYaNayc3TTSnmf4rbjSlYWyVUFjL5RuKaCl7kuA97m2DbEBlqxwLDHS
+# Hpfblfdd1hUWZE14DbW0+e9PvlFan7I4wVnEvWZma65A6Xp78jmp9Cp17UU1l+Zt
+# F7Ks2cPn2Kt7tUMVQzTcQk8mfz5+c2nICtpUAkh4cF5gqRoT2MfHSr9OD6+JAwI9
+# aDojO/flqLU5Ad5dUr1CyqodoGiWpNoB2jIELG1Pq0oAjM9mTWVPgNhI+i6lBXZ/
+# LiL7iPycLLemra8PnI6+pM2uz45M67Lmphc2Vg09wIx8Q8pdDgD/8I5dGDhcX6L6
+# LNwCBYYypVqTIZg15kfDRcK58Wi9qTDesNyx7HtNocYZ0Uvnz40PIlT7Q+bG1DGH
+# dcEEZb7v27t4EiMtj8YA606oYOrl+vPcAx7SVyMOow==
 # SIG # End signature block

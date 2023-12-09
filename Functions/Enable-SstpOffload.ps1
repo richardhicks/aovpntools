@@ -1,7 +1,7 @@
 <#
 
 .SYNOPSIS
-    PowerShell script to enable TLS offloading for Windows Server Routing and Remote Access (RRAS) Secure Socket Tunneling Protocol (SSTP) VPN connections.
+    Enable TLS offloading for Windows Server Routing and Remote Access (RRAS) Secure Socket Tunneling Protocol (SSTP) VPN connections.
 
 .PARAMETER Computername
     The name of the server on which to enable TLS offloading.
@@ -31,13 +31,13 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.1.3
+    Version:        1.1.4
     Creation Date:  May 14, 2019
-    Last Updated:   December 11, 2022
+    Last Updated:   December 9, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
-    Web Site:       https://www.richardhicks.com/
+    Website:        https://www.richardhicks.com/
 
 #>
 
@@ -53,8 +53,8 @@ Function Enable-SstpOffload {
         [string[]]$Computername = $env:computername,
         [Parameter(Position = 1, Mandatory, HelpMessage = "Enter the SHA2 certificate hash", ValueFromPipelineByPropertyName)]
         [ValidateNotNullorEmpty()]
-        # // The hash value must be 64 characters long
-        [ValidateScript( { $_.length -eq 64 })]
+        # The hash value must be 64 characters long
+        [ValidateScript({ $_.length -eq 64 })]
         [Alias("Hash")]
         [string]$CertificateHash,
         [switch]$Restart,
@@ -98,10 +98,10 @@ Function Enable-SstpOffload {
 
             }
 
-            # // Validate this registry path exists
-            If (Test-Path -Path $regPath) {
+            # Validate this registry path exists
+            If (Test-Path -Path $RegPath) {
 
-                Write-Verbose "Updating $regpath..."
+                Write-Verbose "Updating $RegPath..."
                 Write-Verbose "Creating CertBinary from $CertificateHash..."
 
                 $CertBinary = @()
@@ -112,42 +112,42 @@ Function Enable-SstpOffload {
 
                 }
 
-                # // Use transactions when modifying the registry so that if any change fails the entire transaction fails
-                If (-Not $whatifpreference) {
+                # Use transactions when modifying the registry so that if any change fails the entire transaction fails
+                If (-Not $WhatIfPreference) {
 
                     Start-Transaction -RollbackPreference TerminatingError
 
                 }
 
-                # // Define a hashtable of parameter values to splat to New-ItemProperty
+                # Define a hashtable of parameter values to splat to New-ItemProperty
                 Write-Verbose "Setting SstpSvc parameter values..."
-                $newParams = @{
+                $NewParams = @{
 
-                    Path         = $regPath
+                    Path         = $RegPath
                     Force        = $True
                     PropertyType = "DWORD"
                     Name         = ""
                     Value        = ""
-                    WhatIf       = $whatifpreference
+                    WhatIf       = $WhatifPreference
                     ErrorAction  = "stop"
 
                 }
 
                 If (-Not $whatifpreference) {
 
-                    $newParams.Add("UseTransaction", $True)
+                    $NewParams.Add("UseTransaction", $True)
 
                 }
 
-                $newParams | Out-String | Write-Verbose
+                $NewParams | Out-String | Write-Verbose
 
-                $newParams.name = 'UseHttps'
-                $newParams.value = 0
+                $NewParams.Name = 'UseHttps'
+                $NewParams.Value = 0
 
                 Try {
 
-                    Write-Verbose "Create new item property $($newparams.name) with a value of $($newparams.value)"
-                    New-ItemProperty @newParams | Out-Null
+                    Write-Verbose "Create new item property $($NewParams.Name) with a value of $($NewParams.Value)"
+                    New-ItemProperty @NewParams | Out-Null
 
                 }
 
@@ -157,13 +157,13 @@ Function Enable-SstpOffload {
 
                 }
 
-                $newParams.name = 'isHashConfiguredByAdmin'
-                $newParams.value = 1
+                $NewParams.Name = 'IsHashConfiguredByAdmin'
+                $NewParams.Value = 1
 
                 Try {
 
-                    Write-Verbose "Create new item property $($newparams.name) with a value of $($newparams.value)"
-                    New-ItemProperty @newParams | Out-Null
+                    Write-Verbose "Create new item property $($NewParams.Name) with a value of $($NewParams.Value)"
+                    New-ItemProperty @NewParams | Out-Null
 
                 }
 
@@ -173,14 +173,14 @@ Function Enable-SstpOffload {
 
                 }
 
-                $newParams.name = 'SHA256CertificateHash'
-                $newParams.value = $CertBinary
-                $newParams.PropertyType = "binary"
+                $NewParams.Name = 'SHA256CertificateHash'
+                $NewParams.Value = $CertBinary
+                $NewParams.PropertyType = "Binary"
 
                 Try {
 
                     Write-Verbose "Creating new item property SHA256CertificateHash..."
-                    New-ItemProperty @newParams | Out-Null
+                    New-ItemProperty @NewParams | Out-Null
 
                 }
 
@@ -190,15 +190,15 @@ Function Enable-SstpOffload {
 
                 }
 
-                # // If registry entry SHA1CertificateHash exists, delete it
+                # If registry entry SHA1CertificateHash exists, delete it
                 Try {
 
-                    $key = Get-ItemProperty -path $RegPath -name SHA1CertificateHash -ErrorAction Stop
+                    $Key = Get-ItemProperty -path $RegPath -name SHA1CertificateHash -ErrorAction Stop
 
-                    If ($key) {
+                    If ($Key) {
 
                         Write-Verbose "Removing SHA1CertificateHash..."
-                        $rmParams = @{
+                        $RmParams = @{
 
                             Path        = $RegPath
                             Name        = "SHA1CertificateHash"
@@ -206,13 +206,13 @@ Function Enable-SstpOffload {
 
                         }
 
-                        If (-Not $whatifpreference) {
+                        If (-Not $WhatIfPreference) {
 
-                            $rmParams.Add("UseTransaction", $True)
+                            $RmParams.Add("UseTransaction", $True)
 
                         }
 
-                        Remove-ItemProperty @rmParams
+                        Remove-ItemProperty @RmParams
 
                     }
 
@@ -220,7 +220,7 @@ Function Enable-SstpOffload {
 
                 Catch {
 
-                    # // Ignore the error if the registry value is not found
+                    # Ignore the error if the registry value is not found
                     Write-Verbose "SHA1CertificateHash key not found."
 
                 }
@@ -233,9 +233,9 @@ Function Enable-SstpOffload {
 
                 If (-Not $WhatifPreference) {
 
-                    # // Set a flag to indicate registry changes where successful so that -Passthru and service message are only displayed if this is true
+                    # Set a flag to indicate registry changes where successful so that -Passthru and service message are only displayed if this is true
                     Write-Verbose "Validating changes..."
-                    If ( (Get-ItempropertyValue -path $regpath -name IsHashConfiguredByAdmin) -eq 1) {
+                    If ((Get-ItempropertyValue -path $RegPath -name IsHashConfiguredByAdmin) -eq 1) {
 
                         Write-Verbose "Registry changes successful."
 
@@ -254,14 +254,14 @@ Function Enable-SstpOffload {
 
                         If ($Passthru) {
 
-                            Get-ItemProperty -Path $regPath | Select-Object -Property UseHttps, isHashConfiguredByAdmin,
-                            @{Name = "SHA1Hash"; Expression = { [System.BitConverter]::ToString($_.SHA1CertificateHash) -replace "-", "" } },
-                            @{Name = "SHA256Hash"; Expression = { [System.BitConverter]::ToString($_.SHA256CertificateHash) -replace "-", "" } },
+                            Get-ItemProperty -Path $RegPath | Select-Object -Property UseHttps, IsHashConfiguredByAdmin,
+                            @{Name = "SHA1Hash"; Expression = { [System.BitConverter]::ToString($_.SHA1CertificateHash) -Replace "-", "" } },
+                            @{Name = "SHA256Hash"; Expression = { [System.BitConverter]::ToString($_.SHA256CertificateHash) -Replace "-", "" } },
                             @{Name = "Computername"; Expression = { $env:computername } }
 
                         }
 
-                    } # // If validated
+                    } # If validated
 
                     Else {
 
@@ -269,7 +269,7 @@ Function Enable-SstpOffload {
 
                     }
 
-                } # // Should process
+                } # Should process
 
                 Else {
 
@@ -277,51 +277,51 @@ Function Enable-SstpOffload {
 
                 }
 
-            } # // If registry path found
+            } # If registry path found
 
             Else {
 
-                Write-Warning "Can't find registry path $($regpath)."
+                Write-Warning "Can't find registry path $($RegPath)."
 
             }
 
-        } # // Close scriptblock
+        } # Close scriptblock
 
-        # // Define a set of parameter values to splat to Invoke-Command
-        $icmParams = @{
+        # Define a set of parameter values to splat to Invoke-Command
+        $IcmParams = @{
 
-            Scriptblock  = $sb
+            Scriptblock  = $Sb
             ArgumentList = ""
             ErrorAction  = "Stop"
 
         }
 
-    } # // Begin
+    } # Begin
 
     Process {
 
-        ForEach ($computer in $computername) {
+        ForEach ($Computer in $ComputerName) {
 
-            $icmParams.ArgumentList = @($regPath, $CertificateHash, $restart, $passthru)
-            # // Only use -Computername if querying a remote computer
-            If ($Computername -ne $env:computername) {
+            $IcmParams.ArgumentList = @($RegPath, $CertificateHash, $Restart, $PassThru)
+            # Only use -Computername if querying a remote computer
+            If ($ComputerName -ne $env:computername) {
 
                 Write-Verbose "Using remote parameters..."
-                $icmParams.Computername = $computer
-                $icmParams.HideComputername = $True
-                $icmParams.Authentication = $Authentication
+                $IcmParams.ComputerName = $Computer
+                $IcmParams.HideComputerName = $True
+                $IcmParams.Authentication = $Authentication
 
-                If ($pscredential.username) {
+                If ($PsCredential.UserName) {
 
-                    Write-Verbose "Adding an alternate credential for $($pscredential.username)..."
-                    $icmParams.Add("Credential", $PSCredential)
+                    Write-Verbose "Adding an alternate credential for $($PsCredential.UserName)..."
+                    $IcmParams.Add("Credential", $PSCredential)
 
                 }
 
                 If ($UseSSL) {
 
                     Write-Verbose "Using SSL."
-                    $icmParams.Add("UseSSL", $True)
+                    $IcmParams.Add("UseSSL", $True)
 
                 }
 
@@ -329,14 +329,14 @@ Function Enable-SstpOffload {
 
             }
 
-            $icmParams | Out-String | Write-Verbose
+            $IcmParams | Out-String | Write-Verbose
 
-            Write-Verbose "Modifying $($computer.toUpper())..."
+            Write-Verbose "Modifying $($Computer.ToUpper())..."
 
             Try {
 
-                # // Display result without the runspace ID
-                Invoke-Command @icmParams | Select-Object -Property * -ExcludeProperty RunspaceID
+                # Display result without the runspace ID
+                Invoke-Command @IcmParams | Select-Object -Property * -ExcludeProperty RunspaceID
 
             }
 
@@ -346,17 +346,17 @@ Function Enable-SstpOffload {
 
             }
 
-        } # // ForEach
+        } # ForEach
 
-    } # // Process
+    } # Process
 
 }
 
 # SIG # Begin signature block
-# MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOU1SqZTWl5Pf7lQBk8NfgagP
-# xriggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHWoDZ572ieX0fJlXZWomX/qW
+# eAiggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -457,109 +457,109 @@ Function Enable-SstpOffload {
 # 443wFSjO7fEYVgcqLxDEDAhkPDOPriiMPMuPiAsNvzv0zh57ju+168u38HcT5uco
 # P6wSrqUvImxB+YJcFWbMbA7KxYbD9iYzDAdLoNMHAmpqQDBISzSoUSC7rRuFCOJZ
 # DW3KBVAr6kocnqX9oKcfBnTn8tZSkP2vhUgh+Vc7tJwD7YZF9LRhbr9o4iZghurI
-# r6n+lB3nYxs6hlZ4TjCCBsAwggSooAMCAQICEAxNaXJLlPo8Kko9KQeAPVowDQYJ
+# r6n+lB3nYxs6hlZ4TjCCBsIwggSqoAMCAQICEAVEr/OUnQg5pr/bP1/lYRYwDQYJ
 # KoZIhvcNAQELBQAwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJ
 # bmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2
-# IFRpbWVTdGFtcGluZyBDQTAeFw0yMjA5MjEwMDAwMDBaFw0zMzExMjEyMzU5NTla
-# MEYxCzAJBgNVBAYTAlVTMREwDwYDVQQKEwhEaWdpQ2VydDEkMCIGA1UEAxMbRGln
-# aUNlcnQgVGltZXN0YW1wIDIwMjIgLSAyMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A
-# MIICCgKCAgEAz+ylJjrGqfJru43BDZrboegUhXQzGias0BxVHh42bbySVQxh9J0J
-# dz0Vlggva2Sk/QaDFteRkjgcMQKW+3KxlzpVrzPsYYrppijbkGNcvYlT4DotjIdC
-# riak5Lt4eLl6FuFWxsC6ZFO7KhbnUEi7iGkMiMbxvuAvfTuxylONQIMe58tySSge
-# TIAehVbnhe3yYbyqOgd99qtu5Wbd4lz1L+2N1E2VhGjjgMtqedHSEJFGKes+JvK0
-# jM1MuWbIu6pQOA3ljJRdGVq/9XtAbm8WqJqclUeGhXk+DF5mjBoKJL6cqtKctvdP
-# bnjEKD+jHA9QBje6CNk1prUe2nhYHTno+EyREJZ+TeHdwq2lfvgtGx/sK0YYoxn2
-# Off1wU9xLokDEaJLu5i/+k/kezbvBkTkVf826uV8MefzwlLE5hZ7Wn6lJXPbwGqZ
-# IS1j5Vn1TS+QHye30qsU5Thmh1EIa/tTQznQZPpWz+D0CuYUbWR4u5j9lMNzIfMv
-# wi4g14Gs0/EH1OG92V1LbjGUKYvmQaRllMBY5eUuKZCmt2Fk+tkgbBhRYLqmgQ8J
-# JVPxvzvpqwcOagc5YhnJ1oV/E9mNec9ixezhe7nMZxMHmsF47caIyLBuMnnHC1mD
-# jcbu9Sx8e47LZInxscS451NeX1XSfRkpWQNO+l3qRXMchH7XzuLUOncCAwEAAaOC
-# AYswggGHMA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQM
-# MAoGCCsGAQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAf
-# BgNVHSMEGDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUYore0GH8
-# jzEU7ZcLzT0qlBTfUpwwWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGln
-# aWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFt
-# cGluZ0NBLmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6
-# Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMu
-# ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVT
-# dGFtcGluZ0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAVaoqGvNG83hXNzD8deNP
-# 1oUj8fz5lTmbJeb3coqYw3fUZPwV+zbCSVEseIhjVQlGOQD8adTKmyn7oz/AyQCb
-# Ex2wmIncePLNfIXNU52vYuJhZqMUKkWHSphCK1D8G7WeCDAJ+uQt1wmJefkJ5ojO
-# fRu4aqKbwVNgCeijuJ3XrR8cuOyYQfD2DoD75P/fnRCn6wC6X0qPGjpStOq/CUkV
-# NTZZmg9U0rIbf35eCa12VIp0bcrSBWcrduv/mLImlTgZiEQU5QpZomvnIj5EIdI/
-# HMCb7XxIstiSDJFPPGaUr10CU+ue4p7k0x+GAWScAMLpWnR1DT3heYi/HAGXyRkj
-# gNc2Wl+WFrFjDMZGQDvOXTXUWT5Dmhiuw8nLw/ubE19qtcfg8wXDWd8nYiveQclT
-# uf80EGf2JjKYe/5cQpSBlIKdrAqLxksVStOYkEVgM4DgI974A6T2RUflzrgDQkfo
-# QTZxd639ouiXdE4u2h4djFrIHprVwvDGIqhPm73YHJpRxC+a9l+nJ5e6li6FV8Bg
-# 53hWf2rvwpWaSxECyIKcyRoFfLpxtU56mWz06J7UWpjIn7+NuxhcQ/XQKujiYu54
-# BNu90ftbCqhwfvCXhHjjCANdRyxjqCU4lwHSPzra5eX25pvcfizM/xdMTQCi2NYB
-# DriL7ubgclWJLCcZYfZ3AYwwggcCMIIE6qADAgECAhABZnISBJVCuLLqeeLTB6xE
-# MA0GCSqGSIb3DQEBCwUAMGkxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2Vy
-# dCwgSW5jLjFBMD8GA1UEAxM4RGlnaUNlcnQgVHJ1c3RlZCBHNCBDb2RlIFNpZ25p
-# bmcgUlNBNDA5NiBTSEEzODQgMjAyMSBDQTEwHhcNMjExMjAyMDAwMDAwWhcNMjQx
-# MjIwMjM1OTU5WjCBhjELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEx
-# FjAUBgNVBAcTDU1pc3Npb24gVmllam8xJDAiBgNVBAoTG1JpY2hhcmQgTS4gSGlj
-# a3MgQ29uc3VsdGluZzEkMCIGA1UEAxMbUmljaGFyZCBNLiBIaWNrcyBDb25zdWx0
-# aW5nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA6svrVqBRBbazEkrm
-# htz7h05LEBIHp8fGlV19nY2gpBLnkDR8Mz/E9i1cu0sdjieC4D4/WtI4/NeiR5id
-# tBgtdek5eieRjPcn8g9Zpl89KIl8NNy1UlOWNV70jzzqZ2CYiP/P5YGZwPy8Lx5r
-# IAOYTJM6EFDBvZNti7aRizE7lqVXBDNzyeHhfXYPBxaQV2It+sWqK0saTj0oNA2I
-# u9qSYaFQLFH45VpletKp7ded2FFJv2PKmYrzYtax48xzUQq2rRC5BN2/n7771NDf
-# J0t8udRhUBqTEI5Z1qzMz4RUVfgmGPT+CaE55NyBnyY6/A2/7KSIsOYOcTgzQhO4
-# jLmjTBZ2kZqLCOaqPbSmq/SutMEGHY1MU7xrWUEQinczjUzmbGGw7V87XI9sn8Ec
-# WX71PEvI2Gtr1TJfnT9betXDJnt21mukioLsUUpdlRmMbn23or/VHzE6Nv7Kzx+t
-# A1sBdWdC3Mkzaw/Mm3X8Wc7ythtXGBcLmBagpMGCCUOk6OJZAgMBAAGjggIGMIIC
-# AjAfBgNVHSMEGDAWgBRoN+Drtjv4XxGG+/5hewiIZfROQjAdBgNVHQ4EFgQUxF7d
-# o+eIG9wnEUVjckZ9MsbZ+4kwDgYDVR0PAQH/BAQDAgeAMBMGA1UdJQQMMAoGCCsG
-# AQUFBwMDMIG1BgNVHR8Ega0wgaowU6BRoE+GTWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0
-# LmNvbS9EaWdpQ2VydFRydXN0ZWRHNENvZGVTaWduaW5nUlNBNDA5NlNIQTM4NDIw
-# MjFDQTEuY3JsMFOgUaBPhk1odHRwOi8vY3JsNC5kaWdpY2VydC5jb20vRGlnaUNl
-# cnRUcnVzdGVkRzRDb2RlU2lnbmluZ1JTQTQwOTZTSEEzODQyMDIxQ0ExLmNybDA+
-# BgNVHSAENzA1MDMGBmeBDAEEATApMCcGCCsGAQUFBwIBFhtodHRwOi8vd3d3LmRp
-# Z2ljZXJ0LmNvbS9DUFMwgZQGCCsGAQUFBwEBBIGHMIGEMCQGCCsGAQUFBzABhhho
-# dHRwOi8vb2NzcC5kaWdpY2VydC5jb20wXAYIKwYBBQUHMAKGUGh0dHA6Ly9jYWNl
-# cnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNENvZGVTaWduaW5nUlNB
-# NDA5NlNIQTM4NDIwMjFDQTEuY3J0MAwGA1UdEwEB/wQCMAAwDQYJKoZIhvcNAQEL
-# BQADggIBAEvHt/OKalRysHQdx4CXSOcgoayuFXWNwi/VFcFr2EK37Gq71G4AtdVc
-# WNLu+whhYzfCVANBnbTa9vsk515rTM06exz0QuMwyg09mo+VxZ8rqOBHz33xZyCo
-# Ttw/+D/SQxiO8uQR0Oisfb1MUHPqDQ69FTNqIQF/RzC2zzUn5agHFULhby8wbjQf
-# Ut2FXCRlFULPzvp7/+JS4QAJnKXq5mYLvopWsdkbBn52Kq+ll8efrj1K4iMRhp3a
-# 0n2eRLetqKJjOqT335EapydB4AnphH2WMQBHHroh5n/fv37dCCaYaqo9JlFnRIrH
-# U7pHBBEpUGfyecFkcKFwsPiHXE1HqQJCPmMbvPdV9ZgtWmuaRD0EQW13JzDyoQdJ
-# xQZSXJhDDL+VSFS8SRNPtQFPisZa2IO58d1Cvf5G8iK1RJHN/Qx413lj2JSS1o3w
-# gNM3Q5ePFYXcQ0iPxjFYlRYPAaDx8t3olg/tVK8sSpYqFYF99IRqBNixhkyxAyVC
-# k6uLBLgwE9egJg1AFoHEdAeabGgT2C0hOyz55PNoDZutZB67G+WN8kGtFYULBloR
-# KHJJiFn42bvXfa0Jg1jZ41AAsMc5LUNlqLhIj/RFLinDH9l4Yb0ddD4wQVsIFDVl
-# JgDPXA9E1Sn8VKrWE4I0sX4xXUFgjfuVfdcNk9Q+4sJJ1YHYGmwLMYIFwjCCBb4C
-# AQEwfTBpMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/
-# BgNVBAMTOERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYg
-# U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
-# BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
-# AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBRxSGRT/Bz7yAlcvC+Y5Fy95UJOajANBgkqhkiG9w0BAQEFAASCAYDAZFkd/obE
-# pnmh2Y/dReWkcfqMtiW3kskuA2n9xxLkkzNEWPU2GzeQmMPa1dlKR8nbYUueDW10
-# kKtvNVQ3C80GoqIcfIN+QPLdJwE6E008QptQtJQQXfQYMrsFrDlkP6ZvsJFkY4kp
-# BZEIJGEUDuzq2lw4JFZXiH/wadyVANp3DUqtUKIv1qD79Hr1VRT55BsLqcFIVK3n
-# iMbNG5ikJcqEHs7U1qjOJmawQKzJH/OxmYEf3L8bdc2mqQxHhEusg6RRskTFpI1a
-# SKLERvIQyQh7hA39kHVnUpWuZhT0JZzi9mvfS743r7Cz9fUQLs1iW1hlimAGR14U
-# Sn9b2HN6MjyHepw3m+JM775he2LiUg3zNvdnpfZI/NUpLczH6HEhDJIIrQk9goa/
-# xTb6ZEJZczqKAzi3YKcu7V3g+MeSvWH/Y/ecfPG8SBLZH/YMrG6ACBJoKGRaKEV3
-# XQr2cDS043/PqLdjagylU0mJ7F0bw0CGEjjvx102XEpYM+HhojICZVGhggMgMIID
-# HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
-# ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
-# UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
-# MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwNzEzMDQyNDQyWjAvBgkqhkiG9w0BCQQxIgQgo6RIR9Ml
-# RsYfdzRrsScMYjvM6iMKw42RyY3uIrgH4LwwDQYJKoZIhvcNAQEBBQAEggIApFZn
-# uyd9angVaIava/6aHt5clevGADO+eD6a2sqA7jaKFPqDvlCk+/U1H3h8p8V+jpHC
-# n79uon4VNcRgwE1Xc3A8JDymE5HAB07VNwtZBm9m/13qDEQo8o+UZR1ZvFUEm1We
-# eJOO/y7O9A5mEVjXTuc0cud0RYm75vJxVu50U5fllzHlxKyJTZLzqgxKKHC8E7d8
-# pj3qi+xOaR0JblSxEoc+qzUQgy94rv5L325ScKqjUy7v18bD2d3OJFE40JHH8JI0
-# 3AKq5SwdDTYZB/Hny39j3KHrvGaqTSnRyUvLptHh2Qc2mB0zIMvRZDQSc/CAtSDG
-# Wy45GB/gug3x19oeGAQmyIWrnj8PGwmBZgo1f9Hde+E/LKyytWHpyI1DXXQwMwV+
-# CWHC6QuM9VxSpReNd6ioZQ9z48ZDBGGvfgGTiFCYxzVyt4jt9foSRWnSJkFNVS+J
-# dGghBw9S39H9puQ8D9+KdPXN5iCFH6e40GEajbeQpe/WhUZSR1hxdNdW1Qa11EfM
-# HWLA2W6Y/Xw939XDwPwkqDd4BeqAdRqJob2K4t/hDUJJQ7dXZYCCoO77EdwtTQfg
-# kJJ52Hxi9B/lEB+B4zIbE0uP1lZ3zPiUMLInMxZzZw0IEee2rFeAveoN9FzTVYRK
-# +pXnUqO/207rb7080jVa9ZHu2cOCEBDak39RCio=
+# IFRpbWVTdGFtcGluZyBDQTAeFw0yMzA3MTQwMDAwMDBaFw0zNDEwMTMyMzU5NTla
+# MEgxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjEgMB4GA1UE
+# AxMXRGlnaUNlcnQgVGltZXN0YW1wIDIwMjMwggIiMA0GCSqGSIb3DQEBAQUAA4IC
+# DwAwggIKAoICAQCjU0WHHYOOW6w+VLMj4M+f1+XS512hDgncL0ijl3o7Kpxn3GIV
+# WMGpkxGnzaqyat0QKYoeYmNp01icNXG/OpfrlFCPHCDqx5o7L5Zm42nnaf5bw9Yr
+# IBzBl5S0pVCB8s/LB6YwaMqDQtr8fwkklKSCGtpqutg7yl3eGRiF+0XqDWFsnf5x
+# XsQGmjzwxS55DxtmUuPI1j5f2kPThPXQx/ZILV5FdZZ1/t0QoRuDwbjmUpW1R9d4
+# KTlr4HhZl+NEK0rVlc7vCBfqgmRN/yPjyobutKQhZHDr1eWg2mOzLukF7qr2JPUd
+# vJscsrdf3/Dudn0xmWVHVZ1KJC+sK5e+n+T9e3M+Mu5SNPvUu+vUoCw0m+PebmQZ
+# BzcBkQ8ctVHNqkxmg4hoYru8QRt4GW3k2Q/gWEH72LEs4VGvtK0VBhTqYggT02ke
+# fGRNnQ/fztFejKqrUBXJs8q818Q7aESjpTtC/XN97t0K/3k0EH6mXApYTAA+hWl1
+# x4Nk1nXNjxJ2VqUk+tfEayG66B80mC866msBsPf7Kobse1I4qZgJoXGybHGvPrhv
+# ltXhEBP+YUcKjP7wtsfVx95sJPC/QoLKoHE9nJKTBLRpcCcNT7e1NtHJXwikcKPs
+# CvERLmTgyyIryvEoEyFJUX4GZtM7vvrrkTjYUQfKlLfiUKHzOtOKg8tAewIDAQAB
+# o4IBizCCAYcwDgYDVR0PAQH/BAQDAgeAMAwGA1UdEwEB/wQCMAAwFgYDVR0lAQH/
+# BAwwCgYIKwYBBQUHAwgwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcB
+# MB8GA1UdIwQYMBaAFLoW2W1NhS9zKXaaL3WMaiCPnshvMB0GA1UdDgQWBBSltu8T
+# 5+/N0GSh1VapZTGj3tXjSTBaBgNVHR8EUzBRME+gTaBLhklodHRwOi8vY3JsMy5k
+# aWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGltZVN0
+# YW1waW5nQ0EuY3JsMIGQBggrBgEFBQcBAQSBgzCBgDAkBggrBgEFBQcwAYYYaHR0
+# cDovL29jc3AuZGlnaWNlcnQuY29tMFgGCCsGAQUFBzAChkxodHRwOi8vY2FjZXJ0
+# cy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGlt
+# ZVN0YW1waW5nQ0EuY3J0MA0GCSqGSIb3DQEBCwUAA4ICAQCBGtbeoKm1mBe8cI1P
+# ijxonNgl/8ss5M3qXSKS7IwiAqm4z4Co2efjxe0mgopxLxjdTrbebNfhYJwr7e09
+# SI64a7p8Xb3CYTdoSXej65CqEtcnhfOOHpLawkA4n13IoC4leCWdKgV6hCmYtld5
+# j9smViuw86e9NwzYmHZPVrlSwradOKmB521BXIxp0bkrxMZ7z5z6eOKTGnaiaXXT
+# UOREEr4gDZ6pRND45Ul3CFohxbTPmJUaVLq5vMFpGbrPFvKDNzRusEEm3d5al08z
+# jdSNd311RaGlWCZqA0Xe2VC1UIyvVr1MxeFGxSjTredDAHDezJieGYkD6tSRN+9N
+# UvPJYCHEVkft2hFLjDLDiOZY4rbbPvlfsELWj+MXkdGqwFXjhr+sJyxB0JozSqg2
+# 1Llyln6XeThIX8rC3D0y33XWNmdaifj2p8flTzU8AL2+nCpseQHc2kTmOt44Owde
+# OVj0fHMxVaCAEcsUDH6uvP6k63llqmjWIso765qCNVcoFstp8jKastLYOrixRoZr
+# uhf9xHdsFWyuq69zOuhJRrfVf8y2OMDY7Bz1tqG4QyzfTkx9HmhwwHcK1ALgXGC7
+# KP845VJa1qwXIiNO9OzTF/tQa/8Hdx9xl0RBybhG02wyfFgvZ0dl5Rtztpn5aywG
+# Ru9BHvDwX+Db2a2QgESvgBBBijCCBwIwggTqoAMCAQICEAFmchIElUK4sup54tMH
+# rEQwDQYJKoZIhvcNAQELBQAwaTELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lD
+# ZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2VydCBUcnVzdGVkIEc0IENvZGUgU2ln
+# bmluZyBSU0E0MDk2IFNIQTM4NCAyMDIxIENBMTAeFw0yMTEyMDIwMDAwMDBaFw0y
+# NDEyMjAyMzU5NTlaMIGGMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5p
+# YTEWMBQGA1UEBxMNTWlzc2lvbiBWaWVqbzEkMCIGA1UEChMbUmljaGFyZCBNLiBI
+# aWNrcyBDb25zdWx0aW5nMSQwIgYDVQQDExtSaWNoYXJkIE0uIEhpY2tzIENvbnN1
+# bHRpbmcwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDqy+tWoFEFtrMS
+# SuaG3PuHTksQEgenx8aVXX2djaCkEueQNHwzP8T2LVy7Sx2OJ4LgPj9a0jj816JH
+# mJ20GC116Tl6J5GM9yfyD1mmXz0oiXw03LVSU5Y1XvSPPOpnYJiI/8/lgZnA/Lwv
+# HmsgA5hMkzoQUMG9k22LtpGLMTuWpVcEM3PJ4eF9dg8HFpBXYi36xaorSxpOPSg0
+# DYi72pJhoVAsUfjlWmV60qnt153YUUm/Y8qZivNi1rHjzHNRCratELkE3b+fvvvU
+# 0N8nS3y51GFQGpMQjlnWrMzPhFRV+CYY9P4JoTnk3IGfJjr8Db/spIiw5g5xODNC
+# E7iMuaNMFnaRmosI5qo9tKar9K60wQYdjUxTvGtZQRCKdzONTOZsYbDtXztcj2yf
+# wRxZfvU8S8jYa2vVMl+dP1t61cMme3bWa6SKguxRSl2VGYxufbeiv9UfMTo2/srP
+# H60DWwF1Z0LcyTNrD8ybdfxZzvK2G1cYFwuYFqCkwYIJQ6To4lkCAwEAAaOCAgYw
+# ggICMB8GA1UdIwQYMBaAFGg34Ou2O/hfEYb7/mF7CIhl9E5CMB0GA1UdDgQWBBTE
+# Xt2j54gb3CcRRWNyRn0yxtn7iTAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYI
+# KwYBBQUHAwMwgbUGA1UdHwSBrTCBqjBToFGgT4ZNaHR0cDovL2NybDMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29kZVNpZ25pbmdSU0E0MDk2U0hBMzg0
+# MjAyMUNBMS5jcmwwU6BRoE+GTWh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydFRydXN0ZWRHNENvZGVTaWduaW5nUlNBNDA5NlNIQTM4NDIwMjFDQTEuY3Js
+# MD4GA1UdIAQ3MDUwMwYGZ4EMAQQBMCkwJwYIKwYBBQUHAgEWG2h0dHA6Ly93d3cu
+# ZGlnaWNlcnQuY29tL0NQUzCBlAYIKwYBBQUHAQEEgYcwgYQwJAYIKwYBBQUHMAGG
+# GGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBcBggrBgEFBQcwAoZQaHR0cDovL2Nh
+# Y2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29kZVNpZ25pbmdS
+# U0E0MDk2U0hBMzg0MjAyMUNBMS5jcnQwDAYDVR0TAQH/BAIwADANBgkqhkiG9w0B
+# AQsFAAOCAgEAS8e384pqVHKwdB3HgJdI5yChrK4VdY3CL9UVwWvYQrfsarvUbgC1
+# 1VxY0u77CGFjN8JUA0GdtNr2+yTnXmtMzTp7HPRC4zDKDT2aj5XFnyuo4EfPffFn
+# IKhO3D/4P9JDGI7y5BHQ6Kx9vUxQc+oNDr0VM2ohAX9HMLbPNSflqAcVQuFvLzBu
+# NB9S3YVcJGUVQs/O+nv/4lLhAAmcpermZgu+ilax2RsGfnYqr6WXx5+uPUriIxGG
+# ndrSfZ5Et62oomM6pPffkRqnJ0HgCemEfZYxAEceuiHmf9+/ft0IJphqqj0mUWdE
+# isdTukcEESlQZ/J5wWRwoXCw+IdcTUepAkI+Yxu891X1mC1aa5pEPQRBbXcnMPKh
+# B0nFBlJcmEMMv5VIVLxJE0+1AU+KxlrYg7nx3UK9/kbyIrVEkc39DHjXeWPYlJLW
+# jfCA0zdDl48VhdxDSI/GMViVFg8BoPHy3eiWD+1UryxKlioVgX30hGoE2LGGTLED
+# JUKTq4sEuDAT16AmDUAWgcR0B5psaBPYLSE7LPnk82gNm61kHrsb5Y3yQa0VhQsG
+# WhEockmIWfjZu9d9rQmDWNnjUACwxzktQ2WouEiP9EUuKcMf2XhhvR10PjBBWwgU
+# NWUmAM9cD0TVKfxUqtYTgjSxfjFdQWCN+5V91w2T1D7iwknVgdgabAsxggXCMIIF
+# vgIBATB9MGkxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjFB
+# MD8GA1UEAxM4RGlnaUNlcnQgVHJ1c3RlZCBHNCBDb2RlIFNpZ25pbmcgUlNBNDA5
+# NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
+# MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
+# gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
+# MRYEFC3D7f85zKhYYBe7mVw/c4xZfIaiMA0GCSqGSIb3DQEBAQUABIIBgMG8dV6m
+# q+0yDQbcQR2wutuSHjeRSeGQZyICmEjYQaxRt0sotYHh0ZSGjpujfVQbSmo/Ovtp
+# OTZ97RNyGt0+Pl5Pvd+7+1Og9yTCX1XeG+PGnst9k5ZuzW+2tuzZfebfrXXUJKCv
+# AhHYfQsnn0M7vWXxGu+1gB17ahTRY48yCGzGT9GYOYQJh8xR2w3572FtrHTTmfMZ
+# abeeBw2EFgnQdSGJbDyLjEJoVN7hYy+ivyD1mQrW6aCKftDLRzK2tcDinnSicY31
+# VfYjU8UtGJUQrct+bCNGT4ZIMKe2iSGLFxNbZN7l02seeiPb6u4dNbomEzsm3eAV
+# kTORzll4E4QgH8q5bd4ReypYOtPyaJuKODtQPcq2yyySX96dJ2VuZhSPeeYcuKpO
+# 7HgjU+yfEclV0A8k5D/hD5mdmxaWdtR2BalIiYZfxJhcbhmLsrFKeOGwBIcWDO86
+# 5LS236AZ32wS5OtOAzp2H6Iw/+L2DGWGDUMD0+AED26JCFI2cP04bR9zN6GCAyAw
+# ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
+# VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
+# NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
+# YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
+# CSqGSIb3DQEJBTEPFw0yMzEyMDkxOTMyMTZaMC8GCSqGSIb3DQEJBDEiBCCody7z
+# cOm40ffdKXUHoQs4J5945Pk8OzVK8+s1H+UuWzANBgkqhkiG9w0BAQEFAASCAgB8
+# CpzK2TU8uR+qCElKv/N/ghMvHIUBisLR32yEnKhsrWCxCPVKQJzSseTartLPcchf
+# cjmsWu8i2zO2rd7zUNKGo46WPNwklwAEo9gQ1W2AqRsizTADbRBKm3BUczreUawY
+# Ah7NCrOZQ5uwk9l55lSVohJc8VoE23DliFsd/iMg/M0mhl9k1PY46U0RLbi61mZH
+# ymhcknhd8UEW/zvYfu9KxJ54Jp6geeyG3c3dK8W2XNYS/6GcEd/GV81/f4xm2gyX
+# 26RQ68qzQkaky+sdvu0SEMzdx2MQhNIws5CYa0uI9+dQwmxqtrE5k1CSNALeXloX
+# C4arwcVpfUi5JvF1mHaqs00ClryVyJHPIMG8qv2KsHn9wxxWF2jw6QGxOCUZF/S7
+# XT5ziB5s/32NH30OAGGDFs6fGjmpmwmcX/6lD+lMMMKtsmFYSt2C9qKgggIhhWwD
+# wOaIT9dhdjOqhCdivArNYZl9mubp/eRSoUtlcJ4hSifdX187PN67HBOxrqh/coPw
+# zyvj3GJapkc7rKbtWDaQNrCHlvsJwbXWFDQuDbUHVnvFSKt2aGgVeRSzbKhwRpb0
+# ub+cgzsYHF4Norwopf9G8VODBcBxPx8+xRKJyOzVOh82XoDSZT82PvEECRuKgaTP
+# WjEViekbRwzVs7g+FbvSBfWaPWZA1ok73v+pYoUInQ==
 # SIG # End signature block

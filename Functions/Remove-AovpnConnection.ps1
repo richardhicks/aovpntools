@@ -1,7 +1,7 @@
 <#
 
 .SYNOPSIS
-    PowerShell function to remove Always On VPN connections.
+    Remove an Always On VPN profile and associated registry artifacts from Windows 10/11 clients.
 
 .PARAMETER ProfileName
     Specifies the name of the VPN connection to remove.
@@ -40,9 +40,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        4.2
+    Version:        4.3
     Creation Date:  August 23, 2020
-    Last Updated:   November 15, 2023
+    Last Updated:   December 9, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -93,7 +93,7 @@ Function Remove-AovpnConnection {
 
         }
 
-        If (($Null -eq $Vpn) -and (!($CleanUpOnly))) {
+        If (($Null -eq $Vpn) -and (-Not $CleanUpOnly)) {
 
             Write-Warning "The VPN connection ""$ProfileName"" does not exist."
             Return
@@ -107,14 +107,14 @@ Function Remove-AovpnConnection {
         $NamespaceName = 'root\cimv2\mdm\dmmap'
         $ClassName = 'MDM_VPNv2_01'
 
-        If (!$CleanUpOnly) {
+        If (-Not $CleanUpOnly) {
 
             # Search for and remove matching VPN profile
             Try {
 
                 $Session = New-CimSession
 
-                If (!$AllUserConnection -and ($CurrentPrincipal.Identities.IsSystem -eq $True)) {
+                If (-Not $AllUserConnection -and ($CurrentPrincipal.Identities.IsSystem -eq $True)) {
 
                     $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
                     Write-Verbose "User SID is $Sid."
@@ -315,8 +315,8 @@ Function Remove-AovpnConnection {
 # SIG # Begin signature block
 # MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjivkli7iaCRqcrhsqIVt4oxP
-# yTaggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU3Yh2fydX6W/8hs5I7pqrmWjN
+# Ap2ggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -496,30 +496,30 @@ Function Remove-AovpnConnection {
 # NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
 # MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
 # gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
-# MRYEFH7KHOeywFUpUrCsWNB3dBHOPi0NMA0GCSqGSIb3DQEBAQUABIIBgOCeacPX
-# ZeM7cp+ijyfmV4oox3jMslR4XLSYxBxpn/UWWHfDT5zIz9utwsbJelvs0OmpWfDX
-# J+bR9ipmfvD2GKpbQjV468hsONxqu4c5rmSaWGCaloWnlXrgAP4qoE66asK+8XEp
-# GkXEdrYw1lqo2Uzjrc2OUdvHmhzE5bkEJfHXrt8DxZN91u0N2xlc4dBJjPmGz3wU
-# 55CmgEAjb7DUAxtRuxbsUrns3VQUxzxS3VtT1WihCr67htaolZszmc+Xv2JAsBkn
-# y4800zpnzi2/UahKP54kLZBilRuP2UtjQ4sNU5t85ZUmIxheRA7npCOg2x0G85cS
-# 3ZNX+xkEJTdpqef6tumtohH3heJtB6u7oLMfn01QPHSDfIlgUelioo/bv5sAmNkr
-# 5BN4ZM3wmEmBIxrmvM9+IYYHHYmDlRKe5rakyc0mPU5vht0UmtHL4MySiPG1AK9F
-# fj5NKYAN+f7vPCwg7Rf2agd6PoE55dIiyYS5+iwEZoyEZUd+5Ls3IehgZKGCAyAw
+# MRYEFGO0izYqxbv/R8Yj+EWpUFHGyWBZMA0GCSqGSIb3DQEBAQUABIIBgLVEoXeU
+# 2pWryw41EGzPM0v9gai5JdVoIasUzhT6DH+Z7e4nmBPin7sZ5kJ669nN6VnXA4e/
+# H9ROeKfYda2MGZre8Oz8HeTYHzJkc56OhUErR4xEeGifIJTyUr3TAzLfk7Z3dkHZ
+# skV8ecHgG3Sh2F8Tqlqm0HZXYPJQ3mpb2Q38NXvZQLPDle41c4wTcsJm+T+CMLgh
+# /HBezfXO6VqJSJ4IKwRVItjgv72n3iUMYMehSTJ0l97/AhQQCJ1sS4UPfwBUwDSP
+# BWKQ+LQQACFNTM5MuVFB02F1SRRzgLJEBy6knUuRTRgW+NL9tLAfDbZ2FbMLjj7y
+# i4+cuOUz5nd5WEQL0MvoYQvRaJAo49QrYEzFM/zcvENFdB4r/hXp8NjGdbyocJN+
+# Kma1pNB6RyrITygqQLVBjhMGLnDL6ATiXSrSRYtGx4abJSbZPdYmohKh2WVXN3rW
+# ytwXsqHKmUhh8iX529qqF9FWZPdYFnQfSIUDtl9pRTlORFD8h6uWX+NpvKGCAyAw
 # ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
 # VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
 # NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
 # YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-# CSqGSIb3DQEJBTEPFw0yMzExMTUyMjEwNDBaMC8GCSqGSIb3DQEJBDEiBCCFj7ta
-# 9MK+JNKWJqB4Rs/mO1y5YcVhAHKdlqllsnNmMzANBgkqhkiG9w0BAQEFAASCAgAc
-# d41P7D0Z4iNjYRtI18Qvz2iDNPL+a3k3/hQ9GvFPaa5lJxC89J+WAek04XmXFrYu
-# 1rD1uCUlPSF9uznMSwaM+W++T/szajvx1Xb+RaLZ62kOifUF37tXsXxJ9YkdRcEP
-# Cv1dW4ZzsqZssV6t9nAr0yGjLBWNTBYtV8llhVJWOPe3fsXrGTlhQnqpsQ+KFgL3
-# he58WH6oYzeWoQtEiffc+J0mb02C1xtFMy/3/MjroX8+PwtfZ82KGXjxUAKXIoYB
-# UVlll0lWFDB3k9sq/TkyhiIkHFlZgL3b4xBcCcGhiMwLcca1UwE1uTqAoqGDUp68
-# OuhZz+dLpQJ6WnWm3Kaqg4vKIwlaGdYJHc1uu1EF8AL+Wmxcl0uFmuSW8HkXOpWE
-# pbwSWETUNPz2VRMI0pTcwP1jJrq8XX/NLoWErWDWKAOCmhqMXUL6+dKIxH1ZH8rt
-# +bpustbUn4uwFZb+FuCnJrcN/uSHO9v8pE7jWHOYQMXTb9mpACWD0D+UGXuO4YnI
-# 4/jibxU3czdKnZYxsGj2DdWcj3adHRP5LU206sYPEymLn5/jt3xcn6ngn/83Hx53
-# i0y5e8W0NHTSbH5MUchwQJnK4VLm230JQsw2iIzpjcSAcz6dIu9gN9cI1Ycidfge
-# caV9lNolxNHdhjzDTvinyqlNQLYHNcQeJNDmQc+Vbw==
+# CSqGSIb3DQEJBTEPFw0yMzEyMDkxOTMyMThaMC8GCSqGSIb3DQEJBDEiBCCo6J5z
+# tH8xJv3XE3LXl9Pj2WFgAbrwsaFEcEspNKlOkjANBgkqhkiG9w0BAQEFAASCAgBW
+# xKtYForPyDHO2It1RyZ1CDPonRZW29f0XV+Q+/3bsF8zLBMxngZx/WeA+euGvihJ
+# saDVmwe0VJcnBqTM/FX7PvOimd0fjIy0aWPIIRxvzDzrcx2k1DgWbiil67NG8t5F
+# esnDLVDRqukCsDQ2R7Uln8D1Nm+xEq9xlrKmX7JqsyZeVYChT0diroK4gj17kpjZ
+# 02h+SUOVzYbQVkd8TENaehjvq9EaEVRYXrbh6T6IogwYiii4p1Gg3jS/Kp/jZ2aC
+# pB/6nvx0bmLxSe1WtvAmw/DvL7mz7DjXVFPrhJebaBvpJe1qY6KwwSEjs/RPv/P1
+# CPmhZykOLEhp4pdkLLGyQ7U8Ho2pMcxvyUjd5oWDVKHZeJXgYafHwex2aEBbmXzp
+# hyxjMpC13ZkDy0hAFUalvU4y4qEO506BIjQ4OTLPhiLDQsZVo1VKUnYoTMY1GtVT
+# ivMUExLu6bBoeVVTiyzqbcHLQqpC1Z1rnw/BLv4gaBZILYc3IdpSXvFsgOBweTh3
+# UHcIEs789VdZWeoLOENYvpaXqB4jpjAAM7fQFIAZwCLiSErthRW9L0LQS9Po2hMP
+# coCHiCTrAWXXp8sDDummfjPL67MGctQ71QyLzHelzaC61Xp1W46OfQFnWq4YppLy
+# D2J1DLeRutFkUuHBQZvbp+DF5OgpCGbfz5+saboMFg==
 # SIG # End signature block
