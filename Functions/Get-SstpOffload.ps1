@@ -1,219 +1,156 @@
 <#
 
 .SYNOPSIS
-    Configure baseline security settings for IPsec on Windows Server Routing and Remote Access Service (RRAS) servers.
+    Enumerate TLS offload settings for Windows Server Routing and Remote Access (RRAS) Secure Socket Tunneling Protocol (SSTP) VPN connections.
 
-.PARAMETER EnhancedSecurity
-    Configures enhanced IPsec security settings. Requires Windows Server 1803 and Windows 10 1803 or later.
-
-.PARAMETER Reset
-    Resets the VPN server's IKEv2 security settings to their default settings.
-
-.PARAMETER Restart
-    Restarts the RemoteAccess service after implementing IPsec policy changes.
-
-.PARAMETER EnforceIKEv2CrlCheck
-    Enables CRL checking for IKEv2 VPN connections.
+.PARAMETER ComputerName
+    The name of the server on which to query TLS offload settings. The default is the local computer.
 
 .EXAMPLE
-    Set-IKEv2VpnSecurityBaseline
+    Get-SstpOffload -ComputerName 'vpn1.corp.example.net'
 
-    Running this command will configure minimum recommended security settings for IKEv2 VPN connections.
-
-.EXAMPLE
-    Set-IKEv2VpnSecurityBaseline -EnforceIKEv2CrlCheck
-
-    Running this command will configure minimum recommended security settings for IKEv2 VPN connections. It will also enforce CRL checks for IKEv2 VPN connections.
-
-.EXAMPLE
-    Set-IKEv2VpnSecurityBaseline -EnhancedSecurity
-
-    Running this command will configure enhanced security settings for IKEv2 VPN connections. Requires Windows Server 1803 or later.
-
-.EXAMPLE
-    Set-IKEv2VpnSecurityBaseline -Restart
-
-    Running this command will configure minimum recommended security settings for IKEv2 VPN connections and restart the RemoteAccess service.
-
-.EXAMPLE
-    Set-IKEv2VpnSecurityBaseline -Reset
-
-    Running this command will restore the default IKEv2 security settings.
+    Running this command will display TLS offload settings for the remote server vpn1.corp.example.net.
 
 .DESCRIPTION
-    The default IPsec policy settings for Windows Server RRAS IKEv2 VPN connections are considered weak and should be updated. This script implements current minimum security best practices for IPsec.
+    Administrators can configure Windows Server RRAS SSTP to support TLS offload with an external load balancer, firewall, or other network devices. These configuration settings are stored in the registry on the RRAS server. This PowerShell script enumerates these settings and displays them in a table.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/blob/main/Functions/Set-IKEv2VpnSecurityBaseline.ps1
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-SstpOffload.ps1
 
 .LINK
-    https://directaccess.richardhicks.com/2018/12/10/always-on-vpn-ikev2-security-configuration/
-
-.LINK
-    https://directaccess.richardhicks.com/
+    https://directaccess.richardhicks.com/2019/02/18/always-on-vpn-sstp-load-balancing-and-ssl-offload/
 
 .NOTES
-    Version:        1.4.8
-    Creation Date:  July 26, 2019
-    Last Updated:   March 13, 2024
+    Version:        1.0
+    Creation Date:  January 22, 2024
+    Last Updated:   January 22, 2024
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
-    Website:        https://www.richardhicks.com/
+    Website:        https://directaccess.richardhicks.com/
 
 #>
 
-#Requires -Modules RemoteAccess
-#Requires -RunAsAdministrator
+Function Get-SstpOffload {
 
-Function Set-IKEv2VpnSecurityBaseline {
-
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
+    [OutputType("PSCustomObject")]
 
     Param (
 
-        [Alias('EnforceCrlCheck')]
-        [switch]$EnforceIKEv2CrlCheck,
-        [switch]$EnhancedSecurity,
-        [switch]$Reset,
-        [switch]$Restart
+        [Parameter(Position = 0, HelpMessage = "Enter the name of the remote RRAS server.", ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+        [Parameter(HelpMessage = "Enter an optional credential in the form domain\username or machine\username")]
+        [PSCredential]$Credential,
+        [ValidateSet('Default', 'Basic', 'Credssp', 'Digest', 'Kerberos', 'Negotiate', 'NegotiateWithImplicitCredential')]
+        [ValidateNotNullorEmpty()]
+        [string]$Authentication = "default",
+        [switch]$UseSSL
 
     )
 
-    # Determine OS version
-    $OSVersion = Get-CimInstance 'Win32_OperatingSystem' | Select-Object -ExpandProperty Version
-    Write-Verbose "OS Version is $OSVersion."
+    Begin {
 
-    If (([System.Version]$OSVersion -lt [System.Version]"10.0.17134") -and $EnhancedSecurity) {
+        Write-Verbose "Starting $($myinvocation.mycommand)"
 
-        Write-Warning 'The enhanced security option is only supported on Windows Server 1803 and later.'
-        Return
+        # Display some meta information for troubleshooting
+        Write-Verbose "PowerShell version: $($psversiontable.psversion)"
+        Write-Verbose "Operating System: $((Get-Ciminstance -class win32_operatingsystem -property caption).caption)"
 
-    }
+        $Sb = {
 
-    # Restore default settings
-    If ($Reset) {
+            $RegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\SstpSvc\Parameters"
 
-        If ($PSCmdlet.ShouldProcess("$env:computername")) {
+            If (Test-Path -Path $RegPath) {
 
-            Write-Verbose 'Resetting VPN server IKEv2 security parameters to their defaults...'
-            Set-VpnServerConfiguration -RevertToDefault | Out-Null
+                Get-ItemProperty -Path $RegPath |
+                Select-Object -Property UseHttps, isHashConfiguredByAdmin,
+                @{Name = "SHA1Hash"; Expression = { [System.BitConverter]::ToString($_.SHA1CertificateHash) -Replace "-", "" } },
+                @{Name = "SHA256Hash"; Expression = { [System.BitConverter]::ToString($_.SHA256CertificateHash) -Replace "-", "" } },
+                @{Name = "RemoteAccess"; Expression = { (Get-Service RemoteAccess).Status } },
+                @{Name = "ComputerName"; Expression = { $env:COMPUTERNAME } }
 
-        }
+            }
 
-        If ($Restart) {
+            Else {
 
-            Write-Verbose 'Restarting the RemoteAccess service...'
-            Restart-Service -Name RemoteAccess -PassThru
+                Write-Warning "Failed to find $RegPath on $env:COMPUTERNAME."
 
-        }
+            }
 
-        Else {
+        } # End scriptblock
 
-            Write-Warning 'The RemoteAccess service must be restarted for changes to take effect.'
+        # Define a set of parameter values to splat to Invoke-Command
+        $IcmParams = @{
 
-        }
-
-        Return
-
-    }
-
-    # Minimum recommended security settings for IPsec VPN compatible with all supported versions of Windows Server and Client operating systems.
-    # Settings documented here: https://docs.microsoft.com/en-us/windows/client-management/mdm/vpnv2-csp
-
-    If ($EnhancedSecurity) {
-
-        # Define enhanced IPsec policy settings
-        $Parameters = @{
-
-            AuthenticationTransformConstants    = 'GCMAES128'
-            CipherTransformConstants            = 'GCMAES128'
-            DHGroup                             = 'Group14'
-            EncryptionMethod                    = 'GCMAES128'
-            IntegrityCheckMethod                = 'SHA256'
-            PFSgroup                            = 'ECP256'
-            SALifeTimeSeconds                   = '28800'
-            MMSALifeTimeSeconds                 = '86400'
-            SADataSizeForRenegotiationKilobytes = '1024000'
+            Scriptblock = $Sb
+            ErrorAction = "Stop"
 
         }
 
-    }
+    } # Begin
 
-    Else {
+    Process {
 
-        # Define standard IPsec policy settings
-        $Parameters = @{
+        ForEach ($Computer in $ComputerName) {
 
-            AuthenticationTransformConstants    = 'SHA256128'
-            CipherTransformConstants            = 'AES128'
-            DHGroup                             = 'Group14'
-            EncryptionMethod                    = 'AES128'
-            IntegrityCheckMethod                = 'SHA256'
-            PFSgroup                            = 'PFS2048'
-            SALifeTimeSeconds                   = '28800'
-            MMSALifeTimeSeconds                 = '86400'
-            SADataSizeForRenegotiationKilobytes = '1024000'
+            Write-Verbose "Querying $($Computer.toUpper())"
+            If ($ComputerName -ne $env:ComputerName) {
 
-        }
+                Write-Verbose "Using remote parameters"
+                $IcmParams.ComputerName = $Computer
+                $IcmParams.HideComputerName = $True
+                $IcmParams.Authentication = $Authentication
 
-    }
+                If ($PsCredential.UserName) {
 
-    # Implement new IPsec policy
-    If ($PSCmdlet.ShouldProcess("$env:computername")) {
+                    Write-Verbose "Adding an alternate credential for $($PsCredential.UserName)"
+                    $IcmParams.Add("Credential", $PSCredential)
 
-        Write-Verbose 'Configuring VPN server IPsec policy...'
-        [PSCustomObject]$Parameters | Set-VpnServerConfiguration -CustomPolicy
+                }
 
-    }
+                If ($UseSSL) {
 
-    If ($EnforceIKEv2CrlCheck) {
+                    Write-Verbose "Using SSL"
+                    $IcmParams.Add("UseSSL", $True)
 
-        # Enable CRL check for IKEv2 connections
-        # Requires update KB4505658 for Windows Server 2019 and KB4503294 for Windows Server 2016
-        # Reference: https://support.microsoft.com/en-us/help/4505658/windows-10-update-kb4505658
-        # Reference: https://support.microsoft.com/en-us/help/4503294/windows-10-update-kb4503294
+                }
 
-        $Parameters = @{
+                Write-Verbose "Using $Authentication authentication."
 
-            Path         = 'HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ikev2\'
-            Name         = 'CertAuthFlags'
-            PropertyType = 'DWORD'
-            Value        = '4'
+            }
 
-        }
+            Try {
 
-        # Update registry settings
-        If ($PSCmdlet.ShouldProcess("$env:computername")) {
+                # Display result without the runspace ID
+                Invoke-Command @IcmParams | Select-Object -Property * -ExcludeProperty RunspaceID
 
-            Write-Verbose 'Enforce CRL check for IKEv2 connections...'
-            New-ItemProperty @Parameters -Force | Out-Null
+            }
 
-        }
+            Catch {
 
-    }
+                Throw $_
 
-    # Restart the RemoteAccess service or warn administrator that it must be restarted.
-    If ($Restart) {
+            }
 
-        Write-Verbose 'Restarting the RemoteAccess service...'
-        Restart-Service -Name RemoteAccess -PassThru
+        } # ForEach computer
 
-    }
+    } # Process
 
-    Else {
+    End {
 
-        Write-Warning 'The RemoteAccess service must be restarted for changes to take effect.'
+        Write-Verbose "Ending $($myinvocation.MyCommand)"
 
-    }
+    } # End
 
-}
+} # Close function
 
 # SIG # Begin signature block
 # MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHHuq6cW8zFertBS7dMQhwboP
-# +4OggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdcewRbckWAkxV4GJHrrAeB8v
+# h2GggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -393,30 +330,30 @@ Function Set-IKEv2VpnSecurityBaseline {
 # NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
 # MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
 # gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
-# MRYEFMRpWS1WwF/7zwQieoUiHzuYHAh3MA0GCSqGSIb3DQEBAQUABIIBgG4EA45J
-# DCfLokXqbqLeuAIMG5COPzSs+IQ3b2pI7DDjtwnxXJT2cOe825t3dIK1iYDo3qdt
-# kemkNh+xIGet3JC0sf3t9RfT/Uuv7uUhibnSVA7VHvRZlKPYKV8HNbuYD6TCr119
-# OYLacgWQZNaBA6Qgrwhnz/0AL9ayKJcN2MY65KdJpZEJJsTta0PYM6ehwSe0zx13
-# HOyGrYypurCa/OxlP8QY5V4ZhC2QoVdQsZsGkRV9TzoxHKjxUkjPKCW8DrgUGuJ3
-# 0eSzftaAzExbvtoVMPn5ZREttgwexeiASt/fti6bvdmV82AZbgjkpSM1USkCm1Hy
-# 05OH+3GmFkQPC6BAIbveU3iL5zZ1IoIK+W0xI9lRhgNu77/VjRXa5Sj+H9GpUsXF
-# AlyQWE7egpJLvrCdg09ANuIS9LC/KT2ij2eUcJpQu0yjFLUqtTDyZeYthysVD06q
-# iVaJTtWxxS77CFEVWbaTcsH9F4Bz+Uw5PyibBsKrOih1qDTC/XZf3WkQTqGCAyAw
+# MRYEFJ+rF9SSmkiN8qYdIxwT1pc2Ww+kMA0GCSqGSIb3DQEBAQUABIIBgH6krk7N
+# kgxrLF1UL1jwOsiUPhXCs/iQxFanbpfXIAc/kav5zJirGiQZDpOej98vFb2QfTKl
+# dEYAAZsTJvZ5306siSKOv67MW5GG8w7Hl1TKjMqjj1/ZYUGOuKmJhb6PgDYwpQDS
+# lssIYI6CHtPO6v49pc1/csbneKCR/FJHAlkvsZ8AusKpPStO/GC/75CV/RHW2BO3
+# teoKQxWr7IILhA7lMtnDcu2pZH6NQApJB7QmHFiyqlzSIHfg0sIM1Buc6Z49GXIi
+# BF5kcT0L1cSqX8c215/G8kR1DivbKX8PKxmHy6d5MZvrQcjSvWaOoG2UiErDId9c
+# WdPUsrbK4svktWlSTlcjClG9pvfi5w6F2EOmQ2G6/z5EaZXXDp2DiAVXPZJdtyYU
+# vnuGOHorspu+Q6UZU09h659e+0p7wD7nbQOIjhI17oSTBfxL0lxMbVqI6kuHiE6S
+# T8AHdU11MpH531LMcWfDbG0f+3N8nL3yTYmnBxO3ohQCgGGrmvURs2TlkqGCAyAw
 # ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
 # VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
 # NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
 # YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-# CSqGSIb3DQEJBTEPFw0yNDA0MTMxNzUzMjZaMC8GCSqGSIb3DQEJBDEiBCB/81+N
-# BwnL+h/7lRKB0+7VP5xrEDlYU4dkMr81q8JskjANBgkqhkiG9w0BAQEFAASCAgCW
-# 6RDNm66syjE2qQni4V2MpSZFboKm577HUB27pyvzePVNJZ+Z6w7Fjvzq8S6Uxcoc
-# lpxP5RYdU9tift3DmnngCGfu1Ef1PcVCHQ6gsKUxbTdpUAY+TSDKC8U0AXX/X7RV
-# ynkb2rWBqlRq7gtT4NvUzqOtzmmK547nR+Kixy2zVGKT2iFZP2EORgPB2Posjx8T
-# S0Iijncf4mh3oD4ZsehAXf24TeVhlGdUG+fNwacxSzax/XW96MmgC7SBrO9Og0il
-# 3Ak/APUIIQNgZE4btg2mzBy+7Z10uDvJqkXGVd6J5HWFd0sTiCj6e3c0WE/buoNG
-# mE78fZnVtvEdOeja2KVXo6+qWunUyhmLwnlN02Mp9+mFgSZ6QtQIRR9QZuNXRdnh
-# wN90fFth7Sk8CgBoExM/W79eg6zhiEiGYsxy3BHCWRKXOQSSADtYN24+K+Z7FHbg
-# auHC+9VFQFhwAppllPNrIWQZCBXTNKFuwmWyiqcb34v+kmeI/y2bHo8XLiY5A6HR
-# qARA9Y2vnNZqdUe9udyEOjUnKFdc/whR3XMyEvEJFS1wlhawP8w9WEqXqVwXS+R9
-# sOLeb5cX7v7rv/S5jAZhnHweC3lXsEIiuTyPJmaKvJybnI3qvvF7FzExZTHG9Yw4
-# sNlOfhJjv+D7R76w7obceir0sZ1EBKqRymicOAFlVA==
+# CSqGSIb3DQEJBTEPFw0yNDAxMjIyMzU1NTFaMC8GCSqGSIb3DQEJBDEiBCAruIMS
+# Avp52uvWQ9yqTtTvurbWOY/v7b+SFxtfgwHLtDANBgkqhkiG9w0BAQEFAASCAgBe
+# OyP8ZUkwfmQ6Nm+YgFp9evwgulnZ/jhbPgPFgg82/lLwGuyApoyW5a6/Z7QvSPHn
+# 1horR3p1DiwvPSDjbB0NFcGhiNfQmoAUlOeAQU0ONOKzuvthmvPFNNaWi3Q4zEVu
+# xesN07FC/4WfaoE2HmfVAevCX2Pzp11+Sxjns/00KmPWOqhLwRyjXQKQW17jgOyk
+# 8eDw/jlcejRfYRBnSdrYf5hKjyYI19+LzQWw84hkhUEOK968AE0pvJXG3BzfhaRY
+# KFX290oF2MtykR+woTBPVgQq/70KQP5/bWq896gKNE5SjMZIPDT7DZOlMoJM800a
+# +cx1G6YEK4IHysNDCgAJ1M9j/Spy2Dx6OblsHEVDm409yO0YY1MxHCK9KCCtkq3a
+# Okj+JYOwgmgAbIDz+2mzQAp31fIfYcp0nzvtdaqtrYdk0HIJoectXsWFNQmWobvo
+# yA/xWfbPIP2vOo+K1PPU1aylV32YPm3/kX6ETuIk0Fadp3UWbrHmj2b+6ZWyJbWT
+# ibmaLYlK4p6GNGz5UOtdfK7e9xU4LuVzvUjZt68k1HeqU1IsXnaebTGvE1qNyf1D
+# bCxd/nvd7S2aMNwzx9ARnzj79S/gJpNZ7F8yLkBurP4GJH9TfSqABv+MJVowANAQ
+# BXIKmLVPbmeOPWUMOEjFUUXvx5ckAZ6SEAQBmVXdOQ==
 # SIG # End signature block

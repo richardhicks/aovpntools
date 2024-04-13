@@ -21,9 +21,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.2.4
+    Version:        1.2.5
     Creation Date:  April 14, 2020
-    Last Updated:   December 9, 2023
+    Last Updated:   March 13, 2024
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -31,12 +31,13 @@
 
 #>
 
+#Requires -Modules RemoteAccess
+
 Function Remove-VpnServerStaleConnection {
 
     [CmdletBinding(SupportsShouldProcess)]
 
     Param (
-
 
         [ValidateSet("8HRS", "1D", "2D", "3D", "4D", "5D", "1W")]
         [string]$ConnectionAge = '1D'
@@ -83,8 +84,8 @@ Function Remove-VpnServerStaleConnection {
 # SIG # Begin signature block
 # MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU8phtLjbWb8FPqzRH9eGpa3ch
-# avKggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU56rmHa98s4pMW96huN3OK/WE
+# s8yggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -264,30 +265,30 @@ Function Remove-VpnServerStaleConnection {
 # NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
 # MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
 # gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
-# MRYEFIHIcyOkxNs80yRt7GyX+Qaj/mfTMA0GCSqGSIb3DQEBAQUABIIBgJRER+rk
-# QVjikbRym5Lmkew7rX8tqIYXAcfJrqK+Is+DYh28bh98yWtorQt4IJumN1IPJWX8
-# Xna7zMCaBh8UQZ/iphNszXIMflKqpdMMHskU37TgJOqAUzbYhZz+4pELIzNwJ/8s
-# hSkf6Z1kyYMlRk/uqH3/M3oFSgQ3p+8f9fBbYMZCVo/omxOcC7xu/nOs3i1eiUY1
-# H+J82xm+95W/I3Nfz6wPJVxBViz5qblYwjE34j1QXgJZ8IAUFxcZQkPgDkBS1EWZ
-# M1n+iNo0aNJSLZ2IM8Ds/gOAd+QibBu/Qyd86wunrWpRarrlyp8fc6wxj1qKY9tp
-# Bq5LT/u/vGE7zmhxAAlhSF8QjSska9jvSG7Z0mAHPsPFdubbJy7kNU7ugovUMGmX
-# aAJsFOnDMOZx0GGiZravIhZVayLyAGCDvXjAnJdxRtehUmn4nazqNOfVKjvgp+zb
-# DK8xr1mejt801t6vggB7EJa9PEjn2dPBhajvy6EFotIKPyH8eraYh3HVTqGCAyAw
+# MRYEFGO+uDqchQHn0XrYBKLaYbGljHjzMA0GCSqGSIb3DQEBAQUABIIBgI3vB9MG
+# YopBd7R5GHke0VAA6qPeWEX82Jj6EqrzFjmi6ZeU3z+ly0R9S5NGOdffkBHNbK4H
+# v+mLYpcXQGKJk5bc9mjx8K8OufIRuUeHVXTWTyMOnCrelgnnLmBrkMxEQAcWWQT1
+# t03T3knwpwLqSgm7715hS53bmNM/qlAZX5pfYAdbrrG+xWAe0DtTKgXrmuIBUc/H
+# aRE0tpTTNhMrFYjQx9W/KJ0sEidSEMqb2y8lpi0hc74jx2CvEmmWTwOVztNnBPwV
+# J/diWX/0jMNkUq1aX4yzo8iymCiYq869QpkQ5jCzslbc6Kj4AUpzfaA1dX9Xn1rh
+# u3eBtgAAaL0Tw8ZWb8Vba869DEkquSJ0Mu2J0u+VKpLrs3x6u39xIVwJTDKdJ2wi
+# kF9dkFd7O1r4nxtserTnXT+uiSxlYo2oe5YJ74WY+GJek9P+8x3mA+h7AStILNpz
+# b/zXxICNFb+EUpK8MrFR9S/KL/0yaSnpxoejpYLt7BOIqV5RAbvnetKpaKGCAyAw
 # ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
 # VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
 # NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
 # YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-# CSqGSIb3DQEJBTEPFw0yMzEyMDkxOTMyMThaMC8GCSqGSIb3DQEJBDEiBCD9vIrb
-# /cxwOca3Ba8oEvUMy2Qq3U8bbA+qXGtLVcSXXjANBgkqhkiG9w0BAQEFAASCAgBl
-# xG11zJejfBs3CNhrZ0R1PmLfj55NXpF9T4NLbLDrpk2/RJRRvU36xOsn3fQiZgun
-# 4a2YprG7lNFnenyar92l0NEFpAXgu4LGq/cOTQwhwWijKtX076wk1UwHpSzDAvLE
-# ApNIXQoO7Z/+QYMLKf4dl75dWEbpj1nKZu4oGvcTz5oAI6MmFKTSbTf/uaRsoqcd
-# SZkcFmAQvLznPfdKjKhzfXiFhHjosRgcW0+rkbbKENMfTsnPCeORMLQYzmvv4BXu
-# fPJ9tbLYvEifOZC1Rk2MYOwHw3xhgeZCQB959Z/vEeL648vm+rvVtqgNcVZmhdJd
-# MUkpFBDA0B3IBDxqBUPguhRI4r97hG0EjHAq9fenNrK2JpA/mlfS9OUiRgR7LNjw
-# EHwPvjmtRgql8Szlticyvno7omtBr2HJoPSSdlyzNVRLndGvR4wNavz7hmDfbX32
-# 00CeXXA68EI/NadN5+gQbHpBwNZmcFdRsSmZ7H38gelkwxOXumfoljrJU3PVHkeU
-# sB3GY5jxwUUENqKfDS78HrbQjvg+c30wL9WDrAwvp0arYiFNYmOpEL9OddwxUgZc
-# Sjvqv3mGQTxQKFaTW9EoRkw+SqxiR20C04INxd8FenM5WiFKyT1y2+biHBMxsEDF
-# WrrDQo9v/FNNu5mTiEvmfOQBNuFM2LlbEe4AwkMHaw==
+# CSqGSIb3DQEJBTEPFw0yNDA0MTMxNzUzMThaMC8GCSqGSIb3DQEJBDEiBCBeX8D0
+# yFfUFTUy85jH4Q9YI1xllFZXn/JDWADUs2yFWzANBgkqhkiG9w0BAQEFAASCAgCB
+# u47JVSYCg9Xsy9zPoRzBCk1TVIglNeO54UKvuipd/kd5kOZxQaZQPjn6yhQSRcuy
+# BAS2er39EJVctWDj2LUuUzyQCy01TlukgrVY32t4QS7N/o5FyWOfZ1zxlGNyE15k
+# ih1Uh0kRFjKd69EWRD6SHx88W9qSSLDjF4bEK9VSK0/uB7peNUVF3UO8uUfDwOue
+# 0aqXa89tXmoKy5lZ9aqMqUqUrrwXAGfT9OU4/6Q1O75dyx00JRMSLEaaU8n4I5Sg
+# uUUoJsa2kX42N8K4oBZqQtO4rgMDsMlc1xz/WUPXVQifFAauqUVtbgaPAhvJudGh
+# FhKkTMamsYs6c/PwNAU7jaIrUocPoI6MuxwDq4ddeOpeCQHBwqgoCKt2r414SQlh
+# jyLJJvkBxbGZ71K1Q+qViy29haZK7UzvPqdaNGvPJCc2SLx6Pe31TvqokS6huRU5
+# TR8anFHbI6gnproLVA4gluLRw4vKNNPhR407F8zFr4/o8FqJpC45S0uXUjXH/EHo
+# lXXi/taulP+TzYZDp9+P5XpbRCTVdxhBQAKVodMqwh4dm3a9NMTjGIRiPDpvl+Fo
+# mZZsOyFeRz2IpY7qt5PX9e4+gA34Nr7/IGAoYsEFME1RDGTAEVbRqpc6MRdNQolJ
+# /SeHRuiqgeiIm10j58TcLStl9Nzzunswqvacaqj1jA==
 # SIG # End signature block
