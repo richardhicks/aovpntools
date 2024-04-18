@@ -18,9 +18,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.3.4
+    Version:        1.3.5
     Creation Date:  April 25, 2022
-    Last Updated:   March 13, 2024
+    Last Updated:   April 18, 2024
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -28,7 +28,6 @@
 
 #>
 
-#Requires -Modules @{ModuleName='InboxAccountingDatabaseManagement'; ModuleVersion='1.2'}
 #Requires -RunAsAdministrator
 
 Function Install-VpnServer {
@@ -125,8 +124,18 @@ Function Install-VpnServer {
     Invoke-Command -Scriptblock { netsh.exe ras aaaa set accounting provider = radius }
 
     # Optimize inbox accounting database
-    Write-Verbose 'Optimizing inbox accounting database...'
-    Optimize-InboxAccountingDatabase
+    If (Get-InstalledModule -Name InboxAccountingDatabaseManagement -ErrorAction SilentlyContinue) {
+
+        Write-Verbose 'Optimizing inbox accounting database...'
+        Optimize-InboxAccountingDatabase
+
+    }
+
+    Else {
+
+        Write-Warning 'The InboxAccoutingDatabaseManagement module is not installed. Skipping optimization.'
+
+    }
 
     # Disable IIS default document, delete default files, and disable default HTTP binding
     Write-Verbose 'Disabling IIS default document, deleting default files, and removing HTTP web binding... '
@@ -139,8 +148,8 @@ Function Install-VpnServer {
 # SIG # Begin signature block
 # MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNXkIm3acGAHkCfjU3A7SGlG7
-# Dh6ggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrkQ32KgftPBkobZztsTErVOm
+# 4XSggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -320,30 +329,30 @@ Function Install-VpnServer {
 # NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
 # MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
 # gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
-# MRYEFLZdZ2l9/huF8eVf47jmVlTHMlvWMA0GCSqGSIb3DQEBAQUABIIBgHR2Jji+
-# ICThlbMDdAAc7r7/ymw9BZAAQpWrepo7XeYnA3WPmzrDYmkIERQqzhf6ehk5KUbt
-# veOQsh7thbBNNsWB3dLRuv1q88U9TPoRSRSrYRLdgsrjpR9lCsviX+IUx73s5WzE
-# DktHpLgNw3zEeuWicpsRCVhgQDZEU50V5Rc5izfJYJvXbYW8rhkGgBrG3cWysZM+
-# gPDNMYJg9nt4N9EsdNLeL30X2PaT5jznng4YdrH7s3USfflqhUoVerDEk3TzZn6J
-# EG1QebMj9yTIaL7lLrwyh5IRnunKqPHzo3S9+M11evvctRr5D0mYDkTpGmE5YoVZ
-# iKakBED3u1+mmX/qdB3G80djaj510FUXOGn4orO2QHjHy1iFAuvgnGQHhcaSCJ+r
-# /BJTJtyT1CsEsftwk6GKNSsZtJj2RUvOXoPD9X3PIlD903KBeqYjJLFgGHGcFNKx
-# jRxOTULUTdn94by9TJZlnPkz06cRG6zUG8QPDdwSw9c32vxpMKsNLH14WKGCAyAw
+# MRYEFDqON2iJRoVui/yQ5kt7B5hitYlMMA0GCSqGSIb3DQEBAQUABIIBgD2AU0QQ
+# QccvYVrwpG+niIYAF87CK0vWXpUXu5us315d2+nNhZk51+lp39uRkRr6W5lPq9Kw
+# j0ALEOeg8Lgrh4JUFH14OVhSRx13grqGlgHDN9QSWyeODJ0WDE+tqfVDhLRJFUl7
+# hn/DwOHKpOd56DeOVfd+lujmyCYPqbbQDbUBKdu9thuyW+eU49epa5WhdyiVTrd0
+# aM2+iFG3QbvT3ZIo+re7Q6w72e3BgGtkipv6nNTZX+3/NKx9zO5re2iNI9blC8Zl
+# qVgA4Yw8EtwCrR/vp67tjoUu8aNWBh0hZneRImK8m/9TQL7hAK863hdcNz1GJvOT
+# thHr3kRHV66hiIt943zL7vfXVKQzLwBO/YecPkXc+HtfpCEJl20X6t/leorBFygB
+# JLf1BjaQLUWj6YX6J183ys+YvkTBRDROp23iZYXCooIrjQPfKwdNaazseMNHp44C
+# 8CwUXkmup+buNG3vJTa7xstGBbfv+hFYzwwjBCMfXvCtzv6BebIHC9AxT6GCAyAw
 # ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
 # VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
 # NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
 # YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-# CSqGSIb3DQEJBTEPFw0yNDA0MTMxNzQwNTVaMC8GCSqGSIb3DQEJBDEiBCAGD6Qe
-# kxMAE4cI3mNpsRn6YPSW7FqGrZA++/Vo8KlhYzANBgkqhkiG9w0BAQEFAASCAgBM
-# 7PpDUtqB6cFeyhZshi6n36Pt5t+GR8Yy/EVKOWYWfuMplbQ5u+c1n90s5tPWMkig
-# 3T8PNOBwmsOxLBWKidfxQ/D8Voql2EVMEuEctX2uvl/7BEU2ntu0AVNcjaQ5Wjov
-# CSabcLUf7CIaqZZ1kg4n1jE3+1vjZLPzanGYw/CurJJ1wTH2WQ8Sv8evm+ESiIYT
-# cnU+cDNK92zYu79QBP/q3RgbHS9tE0rxxgQy+lenenzxGQP/AcOzAd5THkx7Q8Hh
-# 1x+fwWhZKrOX4KMWKsLm+9lfiO9LDepY5NpYnfh4WDvCJRJD2CpoA3aVKvxIAf1S
-# erkWJq6PIKxmkYrIBSQf8ZxhT/Tf8iHBlm660qky2wFbKVlC2jH910MGKlqrgLjS
-# 8rl8F7TiEcrePXP0Tv6jBnkPnYPOqmVpPr2wPtHv/jLNVGkoevs0NMCJ8B0GD4BO
-# NNDLhtSDHuLZCvjVviAZyuFSgI4vsuzmDeOw0z5O6TfWYVvRXN3gNED9QicmC9a7
-# NXOzinOcjXka6WzfTVcV52/RLq/kfHsUhhM0rwlidNnf6MmB1oMUOPmHQFzy1TEh
-# UDE53D3d001QA7S8QQw4SacO1ffoDn4QSjsarzxUz8hWi3yDHuy/v1hPBB54H9Yo
-# ytnGv/xzgQXbeQVjjPBFvX/Ic91StevvK2vwBOecxg==
+# CSqGSIb3DQEJBTEPFw0yNDA0MTgyMzA1MDNaMC8GCSqGSIb3DQEJBDEiBCB4yUjI
+# UlQCtHReH317Be3E/dvLTosgCZsNxnJn8/1YkDANBgkqhkiG9w0BAQEFAASCAgAj
+# Uq+1LCQc39yxKkJuMr8i06klnbuCEWyNp/xqO8WJuQojtr52wQIKIBdZ2YkEDoa7
+# +5zNlCRvWGVsnvn+AXhCfy3VA2wDt1K2J0rpY+l4REWABle2R4XqHmHRJ5LX0LV6
+# PIIPgSguWHtmCH6TY0saKJCGi7eGhsfOeqFAygRib0maxwWzOFR5zw5xAnnXk8U1
+# C7Tq7Fk8uzZnj4VTJ3W8zXcrzEuA7xC/PKzSJ2xLu88EteVWQ9lSZk8IJ88kzdPT
+# ryTLE88bUlB/63r9ActdJsEWcWD3UMpCUzyvh+2uNC4M3DNdIu7tLXiN/fSSi+R7
+# xQy9GOEoNLEqDEm1sUXL3nmQv82WxZdecn/Iz9SEQGvTq18goYs6qjgFxSNOqb5m
+# qGyEoeVPzfwMn1djrtgrBkazzeI51emiQNLL9UxPKTkHrF/AxJTzUxwK2xbP1TDD
+# 5tveKmVQcPhLURG+MYwzvq818yDsV/Rx4TtCuhkk+CRLx0h3fVC0IaByUXvmpAj3
+# 7oNrq/vG1IcUWo+H70gc0akqIR/6OtQcdQB6gFkvalYmLoQG4RicEu0P4sgYNqIX
+# XOtZnTRsFLiYvyehoxDn0p9UNY5pjxUVnfs1DT5T3DrfexxWzGLU2T7w9Tzv1TdN
+# fidXtZadMGEl09aKCgfX9MAnjZ1aDsfCW13y76vvjw==
 # SIG # End signature block
