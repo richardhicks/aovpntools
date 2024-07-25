@@ -1,68 +1,39 @@
 <#
 
 .SYNOPSIS
-    Generate a Certificate Signing Request (CSR) for use with Windows Server Routing and Remote Access Service (RRAS) servers.
-
-.PARAMETER Hostname
-    The public hostname in fully qualified domain name (FQDN) format of the VPN server.
-
-.PARAMETER AdditionalNames
-    Additional public hostname(s) in fully qualified domain name (FQDN) format of the VPN server.
-
-.PARAMETER EC
-    This function generates a 2048-bit RSA key pair by default. Using this parameter will create a key pair using Elliptic Curve (EC) cryptography.
-
-.PARAMETER Exportable
-    Allows the private key of the certificate to be exported.
-
-.PARAMETER InfOnly
-    Creates the INF file only and does not generate the CSR.
-
-.PARAMETER Online
-    Submits the CSR to an online enterprise issuing CA.
-
-.PARAMETER TemplateName
-    The name of the certificate template to use for online requests.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net
-
-    Generates a CSR with the public hostname vpn.example.net
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -AdditionalNames vpn2.example.net, vpn3.example.net
-
-    Generates a CSR with the public hostname vpn.example.net and includes vpn2.example.net and vpn3.example.net in the Subject Alternative Names list.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -EC
-
-    Generates a CSR with the public hostname vpn.example.net using an EC key.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -Exportable
-
-    Generates a CSR with the public hostname vpn.example.net and allows the private key to be exported.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -InfOnly
-
-    Creates an INF file only.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -Online -TemplateName VpnServers
-
-    Generates a CSR with the public hostname vpn.example.net and submits the CSR to an online enterprise issuing CA using the certificate template named VpnServers. Use this option only if the certificate can be issued without CA manager approval.
+    Retrieves VPN profile information from the Windows MDM node cache.
 
 .DESCRIPTION
-    Automates the process of creating an INF file and generating a CSR on Windows Server RRAS servers. Also includes the option to submit the CSR to an online enterprise issuing CA for domain joined servers.
+    When Always On VPN profiles are deployed using Microsoft Intune, the VPN profile information is cached in the registry on the endpoint. It can be helpful to retrieve this information for troubleshooting purposes. This script retrieves VPN profile information from the Windows MDM node cache. The script searches the registry for VPN profile information and returns the ProfileXML and additional information for each VPN profile found.
+
+.PARAMETER OutFile
+    When this switch is specified, the script will save the ProfileXML for each VPN profile found in the registry to a file. The file will be saved in the same directory as the script and will be named ProfileXML.xml. If multiple VPN profiles are found, the script will save each ProfileXML to a separate file. The files will be named ProfileXML_1.xml, ProfileXML_2.xml, etc.
+
+.INPUTS
+    None.
+
+.OUTPUTS
+    System.Management.Automation.PSCustomObject
+
+.EXAMPLE
+    Get-VpnClientMdmNodeCache
+
+    This command retrieves VPN profile information from the Windows MDM node cache and displays the Key, NodeURI, and ProfileXML for each VPN profile found.
+
+.EXAMPLE
+    Get-VpnClientMdmNodeCache -OutFile
+
+    This command retrieves VPN profile information from the Windows MDM node cache and saves the ProfileXML for each VPN profile found to a file named ProfileXML.xml in the directory where the script was executed.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/blob/main/Functions/New-Csr.ps1
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-VpnClientMdmNodeCache.ps1
+
+.LINK
+    https://www.richardhicks.com/
 
 .NOTES
-    Version:        2.3
-    Creation Date:  June 6, 2022
+    Version:        1.0
+    Creation Date:  July 16, 2024
     Last Updated:   July 16, 2024
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
@@ -71,156 +42,136 @@
 
 #>
 
-Function New-Csr {
+Function Get-VpnClientMdmNodeCache {
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
 
     Param (
 
-        [Parameter(Mandatory, HelpMessage = 'Enter the public hostname of the VPN server')]
-        [string]$Hostname,
-        [string[]]$AdditionalNames,
-        [switch]$EC,
-        [switch]$Exportable,
-        [switch]$InfOnly,
-        [switch]$Online,
-        [string]$TemplateName
+        [switch]$OutFile
 
     )
 
-    # Define file locations
-    $InfPath = ".\$env:computername.inf"
-    $CsrPath = ".\$env:computername.csr"
-    $CerPath = ".\$env:computername.cer"
+    # Specify the registry path
+    $RegPath = 'HKLM:\SOFTWARE\Microsoft\Provisioning\NodeCache\CSP\Device\MS DM Server\Nodes\'
 
-    $Hostname = $Hostname.ToLower()
-    Write-Verbose "Subject name is $Hostname."
+    # Check if the registry path exists
+    If (-Not (Test-Path -Path $RegPath)) {
 
-    If ($Hostname -Match '\*') {
-
-        Write-Verbose 'Wildcard subject detected.'
-        $Wildcard = $Hostname -Replace "^\*\.", ""
+        Write-Warning "Registry path $RegPath does not exist."
+        Return
 
     }
 
-    # Create INF file
-    Write-Verbose 'Creating INF file...'
-    $Inf = @()
-    $Inf = { $Inf }.Invoke()
+    Write-Verbose "Searching registry path $RegPath..."
 
-    $Inf.Add('[NewRequest]')
-    $Inf.Add("Subject = ""CN=$Hostname""")
+    # Create an array to store objects
+    $Results = @()
 
-    If ($Wildcard) {
+    # Get all subkeys under the specified registry path
+    Write-Verbose "Getting all subkeys under $RegPath..."
+    $SubKeys = Get-ChildItem -Path $RegPath
+    Write-Verbose "Found $($SubKeys.Count) subkeys."
 
-        $Inf.Add("FriendlyName = $Wildcard")
+    # Loop through each subkey and retrieve the values of NodeURI and ExpectedValue
+    ForEach ($SubKey in $SubKeys) {
 
-    }
+        $NodeURI = Get-ItemProperty -Path $SubKey.PSPath -Name "NodeURI" -ErrorAction SilentlyContinue
 
-    Else {
+        If ($Null -ne $NodeURI -and $NodeURI.NodeURI -match 'vpnv2') {
 
-        $Inf.Add("FriendlyName = $Hostname")
+            Write-Verbose "Found VPN profile in $($SubKey.Name)."
+            $ExpectedValue = Get-ItemProperty -Path $SubKey.PSPath -Name "ExpectedValue" -ErrorAction SilentlyContinue
+            $Data = New-Object -TypeName PSObject -Property @{
 
-    }
+                Key = $SubKey.Name
+                URI = $NodeURI.NodeURI
+                XML = $ExpectedValue.ExpectedValue
 
-    If ($EC) {
+            }
 
-        Write-Verbose 'Generating CSR using 256-bit EC key...'
-        $Inf.Add('KeyAlgorithm = ECDSA_P256')
-        $Inf.Add('KeyLength = 256')
+            $Results += $Data
 
-    }
-
-    Else {
-
-        Write-Verbose 'Generating CSR using 2048-bit RSA key...'
-        $Inf.Add('KeyAlgorithm = RSA')
-        $Inf.Add('KeyLength = 2048')
+        }
 
     }
 
-    $Inf.Add('MachineKeySet = True')
+    If ($Results.Count -eq 0) {
 
-    If ($Exportable) {
-
-        Write-Verbose 'Private key will be marked exportable.'
-        $Inf.Add('Exportable = True')
+        Write-Warning 'No VPN profiles found.'
+        Return
 
     }
 
-    $Inf.Add('')
-    $Inf.Add('[Extensions]')
-    $Inf.Add('2.5.29.17 = "{text}"')
-    $Inf.Add("_continue_ = ""dns=$Hostname&""")
+    If ($OutFile) {
 
-    If ($Wildcard) {
+        # Function to format XML output
+        Function Format-XML ([xml]$Xml, $Indent = 3) {
 
-        Write-Verbose "Adding $Wildcard to the Subject Alternative Name list..."
-        $Inf.Add("_continue_ = ""dns=$Wildcard&""")
+            $StringWriter = New-Object System.IO.StringWriter
+            $XmlWriter = New-Object System.XMl.XmlTextWriter $StringWriter
+            $XmlWriter.Formatting = "Indented"
+            $XmlWriter.Indentation = $Indent
+            $Xml.WriteContentTo($XmlWriter)
+            $XmlWriter.Flush()
+            $StringWriter.Flush()
+            Write-Output $StringWriter.ToString()
 
-    }
+        } # Format-XML
 
-    ElseIf ($AdditionalNames) {
+        If ($Results.Count -gt 1) {
 
-        ForEach ($Name in $AdditionalNames) {
+            # Initialize counter
+            $Count = 1
 
-            # Add additional names to SAN list that do not match the primary subject name
-            If ($Name -Ne $Hostname) {
+            Write-Verbose 'Multiple VPN profiles found. Formatting XML for each...'
+            ForEach ($Result in $Results) {
 
-                Write-Verbose "Adding $Name to the Subject Alternative Name list..."
-                $Name = $Name.ToLower()
-                $Inf.Add("_continue_ = ""dns=$Name&""")
+                $Result = New-Object PSObject -Property @{
+
+                    Key = $Result.Key
+                    URI = $Result.URI
+                    XML = $Result.XML
+
+                }
+
+                # Extract the XML
+                $Xml = $Result | Select-Object -ExpandProperty XML
+
+                # Format XML output
+                Write-Verbose "Formatting XML for $($Result.Key)..."
+                $Output = Format-Xml -Xml $Xml
+                $FilePath = ".\ProfileXML_$Count.xml"
+                $Output | Out-File -FilePath $FilePath
+                Write-Output "ProfileXML saved to $FilePath."
+
+                # Increment the counter
+                $Count++
 
             }
 
         }
 
-    }
+        Else {
 
-    Write-Verbose "Writing INF file to $InfPath..."
-    $Inf | Out-File $InfPath
+            # Extract the XML
+            $Xml = $Results | Select-Object -ExpandProperty XML
 
-    If ($InfOnly) {
+            # Format XML output
+            Write-Verbose "Formatting XML for $($Results.Key)..."
+            $Output = Format-Xml -Xml $Xml
+            $FilePath = ".\ProfileXML.xml"
+            $Output | Out-File -FilePath $FilePath
+            Write-Output "ProfileXML saved to $FilePath."
 
-        Write-Output "INF file saved to $InfPath."
-        Return
+        }
 
     }
 
     Else {
 
-        # Create CSR
-        Write-Verbose "Writing CSR file to $CsrPath..."
-        Invoke-Command -ScriptBlock { certreq.exe -new $InfPath $CsrPath } | Out-Null
-
-        If (-Not ($Online)) {
-
-            Write-Output "CSR file saved to $CsrPath."
-            Return
-
-        }
-
-    }
-
-    If ($Online) {
-
-        # Submit CSR to online enterprise issuing CA
-        Write-Verbose "Submitting CSR to issuing CA using $TemplateName certificate template..."
-        Invoke-Command -ScriptBlock { certreq.exe -submit -attrib `"CertificateTemplate:$TemplateName`" $CsrPath $CerPath } | Out-Null
-
-        If (Test-Path $CerPath) {
-
-            # Import certificate
-            Write-Verbose 'Certificate issued successfully. Importing certificate...'
-            Import-Certificate -FilePath $CerPath -CertStoreLocation Cert:\LocalMachine\My | Out-Null
-
-        }
-
-        Else {
-
-            Write-Warning 'The certificate was not issued automatically or failed. Check the issuing CA for details. The certificate may require approval from the CA manager before issuance.'
-
-        }
+        # Display the results
+        $Results | Select-Object Key, URI, XML | Format-List
 
     }
 
@@ -229,8 +180,8 @@ Function New-Csr {
 # SIG # Begin signature block
 # MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUKFVWZs/AQLgvzc1LTpBU8PZQ
-# pRGggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCt8AaJNvxEl1D/+V27nXi9tf
+# vbaggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -410,30 +361,30 @@ Function New-Csr {
 # NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
 # MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
 # gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
-# MRYEFNO59PffARZ3uCH9k+llRZ+yfW8HMA0GCSqGSIb3DQEBAQUABIIBgFZvoJ+z
-# uEFhSiGRGWgtxbq4LRF1GmOKurYMXdmdr+yXb4lolTOtY+/Sdae+6s9+Jl+zIp7m
-# +Vg/MM8cLdyone0g/blzdL5QxDm9xKXykDPUzwxN+dOL8xUMQzNShkG3x3/zLvMM
-# pX1cBzIWRdPLyhvUy3Iu5xs3xVt0ldZ+2g6vjOASFas9y5ZSuDTsZ5N7MeZgRHmy
-# jadyEkRc1gnjFtPzoE2IJq5B7nGEWwvF/tZjrpcz6io+N06AlZMppC4/MFGX4N8p
-# 12tAeFzJ/LJmskowQN6AigJd6WYQfJO4slW7dJoUS+oTIYPAB69+iwgwp/gERqHL
-# xpTJGQ0Tq54qVa75hhTvjp+cORzrFuwrhvHX/e5JC3f5oYduuW9CBo4xDLYUa/HB
-# clWi3WbIKTXFyM/8RZAln43+TarocwNfmEfUKBYZXK0E4uCOWMyEmw6HXiG/x/CQ
-# j4IVO3jmw4xBDKH/V0ZvQNJHk2nx5m/srrMdsLoJeDpYiyfFx+hcPCs5m6GCAyAw
+# MRYEFCBIOItO6fIcN/4ECtIeZ3Lr4xAJMA0GCSqGSIb3DQEBAQUABIIBgMC4OwXM
+# dbsqktpwe0L87eNlttw6DMOvfzVaN71RIIiNHSBcr5++2r3MzZ6asAxbzb9m6c1J
+# 86QyOdR89aTCOqnRnqCSn4Pm/14SrPR0czu869xWNHLse4H21AWtuZpYLsLYDYaV
+# k0dU9jqiO+g+ArQxjJ5RiovZ3ROF6fXioSrvANYZbQj2cQQ32Wyiy4YXeX68TkYF
+# tx/SykY1sHKqQGsvhR33canbeAjm+C7NTZeo5jZ9OWwWdtdhJ7+eR2RICKrt0+W9
+# oHAKoFmjHenwiIqVG0jgLjns/jpO/zCvlvTvy5Sz3OoFEISHg5iW5+wDbPP96mMf
+# kfHspyjhE9ZTblUJo8ONZcllgbakkt++wQP/49pBDrwjHqiTqD4vWY81+XBbabHy
+# rRKryQJV1NyODTYeJeBJOZ4v8fI4G7WrCRfDtZFDq2zaVeSgk7XJHV3pmXxltsNS
+# I1mjJ/LlCpP2Yka4y3TKRPOJ4uUemnkqf55z9ECm6mrOUogAozRgkAjSRqGCAyAw
 # ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
 # VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
 # NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
 # YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-# CSqGSIb3DQEJBTEPFw0yNDA3MTYyMzUyMThaMC8GCSqGSIb3DQEJBDEiBCCIqB35
-# gsbuT/lKtpS2WNUpU/CiArWAaYs/9Eij4shU/TANBgkqhkiG9w0BAQEFAASCAgBQ
-# O34PfQ5kekgTrA42hCyLXtk+Hr1vDQm8mkc5e4arjEBNknK+lvraJSI2tCTIwa5u
-# tjWv7493+rqCk8+5mTYT5XhjbWderrtCfonVtXUNUDsyg0T3gsR1bm+n9vvRD5hp
-# UkwZm9us8ZiPNe4GyoWwRun0U62iQ8HlLO1SFPjW9Bc841A0DEipwBos4zWAdfo0
-# 34UVPypj/k1n/O6/MCNXDxJ0g11CNXjLh8YBicCv9azJl2UZv2AmqCIyqIBqOkLo
-# pZ9byH9qzOG5SSDaEkFBoQFaPBbMhGKQPeT9ce7e/UYqd/o0bt9Ph2yX5QRECYIj
-# A3xWx3NSxlJV9orARfDYi78WRmVD2t3Xe+s77jGZdvY6izWRleYugG3NTuhYisf5
-# gLDL3hBlZn2KOIrRdxSbaONqhg0IljX2fJ+NcptgzLm7GeDcBuvo/QIelt9P+FnM
-# hYC2lJfaSx1+etSJfNHsOdZanh3Rfa2FnLCJSGCYo32cBOOHLljBC9Ny+ezSGAE1
-# DP8m8FHe9qIbX6nYQJTtDAHhYEP+6xk0Sanx4un3vvk+PfMJGd0G/KYJRZT8Mlkp
-# oJYRFXkvbmBit8dodbjyMrxxp4WvLjRuVvRSDUm4q6s9ouAuX/j7zpj6BM4SNMUO
-# bLEJ9nyvytiOAoUjghbaqWbVg+XLim7uhkV3EQYzOg==
+# CSqGSIb3DQEJBTEPFw0yNDA3MTYyMzQ1MzVaMC8GCSqGSIb3DQEJBDEiBCAmeo9E
+# T+nUIALjJs4GHJN7Aek3c31UeM17wX3/zd22ejANBgkqhkiG9w0BAQEFAASCAgAy
+# nf44AZHXc8EwzKVN60sjMiU4Ui4Tr7JfBcceSkzuGLxiz3DVKrYHAz7/1xbg2wgY
+# gSy/i1RI8Po7cn7sTaxMgjlKOjN9SzgOplygoNh3vfi4F/wh2CUIuJMZ09FcdEXB
+# uuwcHr+0T8YyF/qHr/Nt8lrJgV0oD5JSHdztLYgHPwi0wyNroPA7zEIO3rGkj5+S
+# EDiWltqbfSGeo6wOjrmBTB8AZoOKG+6cN+lMdCNbDtqHTCuxvtXhH7WmN9OJOqwj
+# KIXMwbdQEgyvrEpyJ8wxx0rzeHPp3uEx0FsCJx/2w9l+xjYRdWRuz79dYtHY9F7w
+# wrVz4FDjkTuTrXP8OMDq3eNggadJAuk7+nWVkf3RPgOQBVvJQERIDqO/PGJAqv7U
+# hWOCCk6aTaX2YXCkZa24OZVJLPZrKgNqIuaY3y9YXnjeWRl7ki2ZGGE9aE8B4L9O
+# MJ8IxKy0W5Mtxs523pNywt+X1ZMlmECTPjlxJAsY4wlsF9BKbpvc8rEM6EM3s17x
+# Z/LMnZjeq1K4sh1Gac1tEPp/59pdGfAFFLEqArDHHGWi10AGEf3WKXSIWjJZLxI9
+# EUZRxv6hZeQ9DevmcrGOSVfJOWszAl/j0oTO8mcKP0Y93YJep1U10EHwdQAmz7Lb
+# GfWGuPI65tOjXoNbbJmQ5/1QU5YQv9hRYdO9Oqsd0g==
 # SIG # End signature block
