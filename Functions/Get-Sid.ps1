@@ -1,69 +1,40 @@
 <#
 
 .SYNOPSIS
-    Generate a Certificate Signing Request (CSR) for use with Windows Server Routing and Remote Access Service (RRAS) servers.
+    Translate a security principal's Security Identifier (SID).
 
-.PARAMETER Hostname
-    The public hostname in fully qualified domain name (FQDN) format of the VPN server.
+.PARAMETER Machine
+    Indicates that the security principal is a computer (machine) account.
 
-.PARAMETER AdditionalNames
-    Additional public hostname(s) in fully qualified domain name (FQDN) format of the VPN server.
-
-.PARAMETER EC
-    This function generates a 2048-bit RSA key pair by default. Using this parameter will create a key pair using Elliptic Curve (EC) cryptography.
-
-.PARAMETER Exportable
-    Allows the private key of the certificate to be exported.
-
-.PARAMETER InfOnly
-    Creates the INF file only and does not generate the CSR.
-
-.PARAMETER Online
-    Submits the CSR to an online enterprise issuing CA.
-
-.PARAMETER TemplateName
-    The name of the certificate template to use for online requests.
+.OUTPUTS
+    PSObject
 
 .EXAMPLE
-    New-CSR -Hostname vpn.example.net
+    Get-Sid
 
-    Generates a CSR with the public hostname vpn.example.net
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -AdditionalNames vpn2.example.net, vpn3.example.net
-
-    Generates a CSR with the public hostname vpn.example.net and includes vpn2.example.net and vpn3.example.net in the Subject Alternative Names list.
+    Returns the SID for the current user.
 
 .EXAMPLE
-    New-CSR -Hostname vpn.example.net -EC
+    Get-Sid -Machine
 
-    Generates a CSR with the public hostname vpn.example.net using an EC key.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -Exportable
-
-    Generates a CSR with the public hostname vpn.example.net and allows the private key to be exported.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -InfOnly
-
-    Creates an INF file only.
-
-.EXAMPLE
-    New-CSR -Hostname vpn.example.net -Online -TemplateName VpnServers
-
-    Generates a CSR with the public hostname vpn.example.net and submits the CSR to an online enterprise issuing CA using the certificate template named VpnServers. Use this option only if the certificate can be issued without CA manager approval.
+    Returns the SID for the current computer.
 
 .DESCRIPTION
-    Automates the process of creating an INF file and generating a CSR on Windows Server RRAS servers. Also includes the option to submit the CSR to an online enterprise issuing CA for domain joined servers.
+    This command translates a security principal (user or computer) to its corresponding Security Identifier (SID).
 
 .LINK
-    https://github.com/richardhicks/aovpntools/blob/main/Functions/New-Csr.ps1
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-Sid.ps1
+
+.LINK
+    https://directaccess.richardhicks.com/2024/11/12/powershell-script-to-display-user-or-computer-sid/
+
+.LINK
+    https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.3
-    Creation Date:  June 6, 2022
-    Last Updated:   July 16, 2024
+    Version:        1.0
+    Creation Date:  November 11, 2024
+    Last Updated:   November 11, 2024
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -71,166 +42,64 @@
 
 #>
 
-Function New-Csr {
+Function Get-Sid {
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
 
     Param (
 
-        [Parameter(Mandatory, HelpMessage = 'Enter the public hostname of the VPN server')]
-        [string]$Hostname,
-        [string[]]$AdditionalNames,
-        [switch]$EC,
-        [switch]$Exportable,
-        [switch]$InfOnly,
-        [switch]$Online,
-        [string]$TemplateName
+        [switch]$Machine
 
     )
 
-    # Define file locations
-    $InfPath = ".\$env:computername.inf"
-    $CsrPath = ".\$env:computername.csr"
-    $CerPath = ".\$env:computername.cer"
+    # Establish security principal - user or computer
+    Switch ($Machine) {
 
-    $Hostname = $Hostname.ToLower()
-    Write-Verbose "Subject name is $Hostname."
-
-    If ($Hostname -Match '\*') {
-
-        Write-Verbose 'Wildcard subject detected.'
-        $Wildcard = $Hostname -Replace "^\*\.", ""
+        $True { $SidType = 'Machine'; $Principal = "$env:computername$" }
+        Default { $SidType = 'User'; $Principal = "$env:username" }
 
     }
 
-    # Create INF file
-    Write-Verbose 'Creating INF file...'
-    $Inf = @()
-    $Inf = { $Inf }.Invoke()
+    Write-Verbose "Identifying SID for $($SidType.ToLower()) $Principal..."
 
-    $Inf.Add('[NewRequest]')
-    $Inf.Add("Subject = ""CN=$Hostname""")
+    # Translate principal to SID
+    Try {
 
-    If ($Wildcard) {
-
-        $Inf.Add("FriendlyName = $Wildcard")
+        $Id = New-Object System.Security.Principal.NTAccount($Principal)
+        $Sid = $Id.Translate([System.Security.Principal.SecurityIdentifier]).Value
 
     }
 
-    Else {
+    Catch {
 
-        $Inf.Add("FriendlyName = $Hostname")
-
-    }
-
-    If ($EC) {
-
-        Write-Verbose 'Generating CSR using 256-bit EC key...'
-        $Inf.Add('KeyAlgorithm = ECDSA_P256')
-        $Inf.Add('KeyLength = 256')
-
-    }
-
-    Else {
-
-        Write-Verbose 'Generating CSR using 2048-bit RSA key...'
-        $Inf.Add('KeyAlgorithm = RSA')
-        $Inf.Add('KeyLength = 2048')
-
-    }
-
-    $Inf.Add('MachineKeySet = True')
-
-    If ($Exportable) {
-
-        Write-Verbose 'Private key will be marked exportable.'
-        $Inf.Add('Exportable = True')
-
-    }
-
-    $Inf.Add('')
-    $Inf.Add('[Extensions]')
-    $Inf.Add('2.5.29.17 = "{text}"')
-    $Inf.Add("_continue_ = ""dns=$Hostname&""")
-
-    If ($Wildcard) {
-
-        Write-Verbose "Adding $Wildcard to the Subject Alternative Name list..."
-        $Inf.Add("_continue_ = ""dns=$Wildcard&""")
-
-    }
-
-    ElseIf ($AdditionalNames) {
-
-        ForEach ($Name in $AdditionalNames) {
-
-            # Add additional names to SAN list that do not match the primary subject name
-            If ($Name -Ne $Hostname) {
-
-                Write-Verbose "Adding $Name to the Subject Alternative Name list..."
-                $Name = $Name.ToLower()
-                $Inf.Add("_continue_ = ""dns=$Name&""")
-
-            }
-
-        }
-
-    }
-
-    Write-Verbose "Writing INF file to $InfPath..."
-    $Inf | Out-File $InfPath
-
-    If ($InfOnly) {
-
-        Write-Output "INF file saved to $InfPath."
+        Write-Warning "Unable to translate $SidType $Principal to SID."
+        Write-Warning $_.Exception.Message
         Return
 
     }
 
-    Else {
+    Finally {
 
-        # Create CSR
-        Write-Verbose "Writing CSR file to $CsrPath..."
-        Invoke-Command -ScriptBlock { certreq.exe -new $InfPath $CsrPath } | Out-Null
+        # Create object for return
+        $SidObject = New-Object PSobject -Property @{
 
-        If (-Not ($Online)) {
-
-            Write-Output "CSR file saved to $CsrPath."
-            Return
+            Principal = $Principal
+            SID       = $Sid
 
         }
 
     }
 
-    If ($Online) {
-
-        # Submit CSR to online enterprise issuing CA
-        Write-Verbose "Submitting CSR to issuing CA using $TemplateName certificate template..."
-        Invoke-Command -ScriptBlock { certreq.exe -submit -attrib `"CertificateTemplate:$TemplateName`" $CsrPath $CerPath } | Out-Null
-
-        If (Test-Path $CerPath) {
-
-            # Import certificate
-            Write-Verbose 'Certificate issued successfully. Importing certificate...'
-            Import-Certificate -FilePath $CerPath -CertStoreLocation Cert:\LocalMachine\My | Out-Null
-
-        }
-
-        Else {
-
-            Write-Warning 'The certificate was not issued automatically or failed. Check the issuing CA for details. The certificate may require approval from the CA manager before issuance.'
-
-        }
-
-    }
+    # Output object
+    Return $SidObject
 
 }
 
 # SIG # Begin signature block
-# MIIfdwYJKoZIhvcNAQcCoIIfaDCCH2QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIfeQYJKoZIhvcNAQcCoIIfajCCH2YCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUKFVWZs/AQLgvzc1LTpBU8PZQ
-# pRGgghpiMIIDWTCCAt+gAwIBAgIQD7inQLkVjQNRQ7xZ2fBAKTAKBggqhkjOPQQD
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURLn7W/g/0GymOy+CdHSrJCBs
+# R4CgghpiMIIDWTCCAt+gAwIBAgIQD7inQLkVjQNRQ7xZ2fBAKTAKBggqhkjOPQQD
 # AzBhMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQL
 # ExB3d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9v
 # dCBHMzAeFw0yMTA0MjkwMDAwMDBaFw0zNjA0MjgyMzU5NTlaMGQxCzAJBgNVBAYT
@@ -370,29 +239,29 @@ Function New-Csr {
 # +8RsWQSIXZpuG4WLFQOhtloDRWGoCwwc6ZpPddOFkM2LlTbMcqFSzm4cd0boGhBq
 # 7vkqI1uHRz6Fq1IX7TaRQuR+0BGOzISkcqwXu7nMpFu3mgrlgbAW+BzikRVQ3K2Y
 # HcGkiKjA4gi4OA/kz1YCsdhIBHXqBzR0/Zd2QwQ/l4Gxftt/8wY3grcc/nS//TVk
-# ej9nmUYu83BDtccHHXKibMs/yXHhDXNkoPIdynhVAku7aRZOwqw6pDGCBH8wggR7
+# ej9nmUYu83BDtccHHXKibMs/yXHhDXNkoPIdynhVAku7aRZOwqw6pDGCBIEwggR9
 # AgEBMHgwZDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTww
 # OgYDVQQDEzNEaWdpQ2VydCBHbG9iYWwgRzMgQ29kZSBTaWduaW5nIEVDQyBTSEEz
 # ODQgMjAyMSBDQTECEA1KNNqGkI/AEyy8gTeTryQwCQYFKw4DAhoFAKB4MBgGCisG
 # AQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQw
-# HAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFNO5
-# 9PffARZ3uCH9k+llRZ+yfW8HMAsGByqGSM49AgEFAARGMEQCIGxKrElWDbdGjHI6
-# OfYIvr0TEevU5e/MD6Mg883r8oEMAiB3AKaIbOeghcVLN9hwUwO0E2RtzE4kAjRt
-# +X6+a6HBMKGCAyAwggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNV
-# BAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNl
-# cnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAuu
-# Zrxaun+Vh8b56QTjMwQwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJ
-# KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNDEyMjEwMTU3MTdaMC8GCSqGSIb3
-# DQEJBDEiBCCdm6uIkjTRpbYiW/gzBQtbdCOMeihAKmW6Z2HdBwTzLTANBgkqhkiG
-# 9w0BAQEFAASCAgCNZumgwsPjoxcm19B9Ms4GeggSVkRY/zf8sOyD7cb94uzUXXKm
-# oVS1KwpLzV//15OXwJKKaicEBqIaorX7JzrZ22qtU5uZnco/5+ROy/fs2HNc+joY
-# aPCf7yi45BWtOaK7vzATFmRpZCQ+6VqxQ5acpT3qMI92Lo2uClmdlfa8l8rpDTqM
-# eC5Kkzujgmgw/GwiuIR4FgcBR/F12/mYCVwiIQSpuM4GPtobeUGJx5W15Efww3oI
-# CuFRBOT+3WEmZ/IfE5tkQinBzF302KLAoc4w0VUa8KMtmaU0qyr/gR3K67d2arI3
-# b1YiVU57YeQ6M1W5jyRpiD00PPwhkHQe9L9Je96q00h30wipCj7jPvgx80bGINP6
-# SHht3Y32eHHM7NmamD86GrBwrO1skA9z5lV80qdHEdYhnlqo8jcglMQA8r9e1VV9
-# URR5voxbJfycGm1ProW/Gf95BK1L1me3sCe1GI5JSVuWDCxMM8LCwTn0PhQN25vF
-# NMUUH4GG7zCbGAcbuMUqXsg5DgcEYXOHBH7uiWbE4MqFmmUOlDiLyfVc9257uTDV
-# 6kY9YbRj+dRU5p2GUVLJVpwd14VTKohrgZWpZoiRs0hl3FN+fM0LlxydqLseKwDs
-# 31TuqdIKTxAVUFgtiFn5lwooLXV4/yv0mJd3Ngd4sp8tI/m+MVFoyeZMkw==
+# HAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFFeR
+# r8DrXClQm4eWNK9DJe/Pe9z+MAsGByqGSM49AgEFAARIMEYCIQCt1YpGQYvtgOte
+# 2SggzfFTHRlp7ihpA/n7nhnv1Ru0VQIhALI/2bH264ter5SOoKQUECYJZJiGTg4w
+# 1uAkqpmUj8E7oYIDIDCCAxwGCSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkG
+# A1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdp
+# Q2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQ
+# C65mvFq6f5WHxvnpBOMzBDANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzEL
+# BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI0MTIyMTAxNTcxM1owLwYJKoZI
+# hvcNAQkEMSIEIF/oTfnyo2OvIXZLD4ARC9VOUcmQ3jxd2G1pFmRSJfrgMA0GCSqG
+# SIb3DQEBAQUABIICAD+FsF6q1tBzwV7qwLAKEe3Cew5RWlTs7ZE9zx2w5blpyk+m
+# Rn1IuF2ye1I27g+VfD1HTXNZgHOxUOHHIn4KTtxNFBoqsY9pvztGvvp7foUj8WIJ
+# ch+At+Bx9eLqlFUiEafT5YX44rRE5uBO+zdHBw7kaRdPT4PM3frB9KxcKhg2K+Ei
+# l/XgOqcGCN/odxu+HxZisHIHTRAWdXZulCiwimYVuI8nRavFeRqKXuSveiezEV16
+# g2P+DBNWVtoQRnifl6HNWq4fDUeVyqX8Cn3CZJKtvjWS6wRqm2Lme4wK/5dbVtOc
+# ywZT75UYKPBdKgLs2TxvUWfJ90Rd/CbmjZ7bhNXqYCdAmk9oLZ27Z44v1zDvWpwo
+# 5pvBVZJ557G2ql7CdNreLsGIaihfgiCoBOkxBIQiqj2L3sH4DQDWUTxUCNSyWazL
+# 8ftP24A3dFBTfkUtZAnJx41ayPQTHBDXZsMSnutl1NHkoS5dU2Gfz5SlFD1DH4ow
+# U/kHdt4liIDJ8bUuKo2mSQQ8P3mu+ANsEALGOmuy99PUMRCbekOfuyIpktHrZ0e9
+# p+qJDMXznbBQSQje+NhsXh4+Iq6aNd+6W1Mvd2peKMnY5SMR53iqGcOZubkqBnai
+# 6IuJsMJsNERL3wj8czdqoiTwc6fH+atOiiUy7r1peucVjneYlURlLfdF+/PM
 # SIG # End signature block
