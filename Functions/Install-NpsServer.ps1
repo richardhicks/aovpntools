@@ -3,10 +3,34 @@
 .SYNOPSIS
     Install a baseline configuration for Windows Server Network Policy and Access (NPAS) servers.
 
+.PARAMETER IgnoreNoRevocationCheck
+    Configure NPS to ignore NoRevocationCheck errors for EAP-TLS authentication when revocation information is missing or unavailable. This is required when using Entra Conditional Access short-lived certificates for VPN authentication.
+
+.PARAMETER Register
+    Register the NPS server in Active Directory after installing the Network Policy Server (NPS) role.
+
+.PARAMETER Restart
+    Restart the server after installing the workaround for a known issue with NPS on Windows Server 2019 servers.
+
 .EXAMPLE
     Install-NpsServer
 
-    Installs the Network Policy Server (NPS) role on Windows Server 2012 R2 and later servers. Also installs a workaround for NPS on Windows Server 2019 servers.
+    Installs the Network Policy Server (NPS) role on Windows Server 2012 R2 and later servers.
+
+.EXAMPLE
+    Install-NpsServer -IgnoreNoRevocationCheck
+
+    Installs the Network Policy Server (NPS) role on Windows Server 2012 R2 and later servers. Also configures NPS to ignore NoRevocationCheck errors for EAP-TLS authentication when using Entra Conditional Access short-lived certificates for VPN authentication.
+
+.EXAMPLE
+    Install-NpsServer -Register
+
+    Installs the Network Policy Server (NPS) role on Windows Server 2012 R2 and later servers. Also registers the NPS server in Active Directory.
+
+.EXAMPLE
+    Install-NpsServer -Restart
+
+    Installs the Network Policy Server (NPS) role on Windows Server 2012 R2 and later servers. Restarts the server after installing the workaround for a known issue with NPS on Windows Server 2019 servers.
 
 .DESCRIPTION
     Use this PowerShell script to install the minimum requirements for the Network Policy Server (NPS).
@@ -18,9 +42,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.1.2
+    Version:        2.0.1
     Creation Date:  April 25, 2022
-    Last Updated:   December 9, 2023
+    Last Updated:   January 4, 2025
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -34,21 +58,30 @@ Function Install-NpsServer {
 
     Param (
 
+        [switch]$IgnoreNoRevocationCheck,
+        [switch]$Register,
         [switch]$Restart
 
     )
 
+    #Requires -RunAsAdministrator
+
     # Install the Network Policy Server (NPS) role
     Write-Verbose 'Installing NPAS role...'
-    Install-WindowsFeature NPAS -IncludeManagementTools | Out-Null
+    [void](Install-WindowsFeature NPAS -IncludeManagementTools)
+
+    # Configure NPS security settings. Requires KB5040268
+    Write-Verbose 'Configuring NPS security settings...'
+    [void](Invoke-Command -ScriptBlock { netsh.exe nps set limitproxystate all = "enable" })
+    [void](Invoke-Command -ScriptBlock { netsh.exe nps set requiremsgauth all = "enable" })
 
     # Enable auditing
     Write-Verbose 'Enabling auditing...'
-    auditpol.exe /set /subcategory:"Network Policy Server" /success:enable /failure:enable | Out-Null
+    [void](auditpol.exe /set /subcategory:"Network Policy Server" /success:enable /failure:enable)
 
     # Update group policy and validate auditing setting
     Write-Verbose 'Updating group policy...'
-    Invoke-Command -ScriptBlock { gpupdate.exe /force }
+    [void](Invoke-Command -ScriptBlock { gpupdate.exe /force })
 
     Write-Verbose 'Validating NPS auditing settings...'
     $Validate = auditpol.exe /get /subcategory:"Network Policy Server" | Select-String 'Success and Failure'
@@ -59,6 +92,45 @@ Function Install-NpsServer {
 
     }
 
+    # Configure NPS to ignore NoRevocationCheck errors for EAP-TLS when using Entra Conditional Access short-lived certificates
+    If ($IgnoreNoRevocationCheck) {
+
+        Write-Verbose 'Setting the IgnoreNoRevocationCheck registry value for EAP-TLS...'
+        $Params = @{
+
+            Path         = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\PPP\EAP\13\'
+            Name         = 'IgnoreNoRevocationCheck'
+            PropertyType = 'DWORD'
+            Value        = 1
+            Force        = $True
+
+        }
+
+        [void](New-ItemProperty @Params)
+
+    }
+
+    If ($Register) {
+
+        # Identify domain membership information
+        $Domain = (Get-CimInstance -ClassName CIM_ComputerSystem).Domain
+
+        If ($Domain -ne 'WORKGROUP') {
+
+            # Register NPS in Active Directory
+            Write-Verbose "Registering NPS in Active Directory domain $Domain..."
+            [void](Invoke-Command -ScriptBlock { netsh.exe nps add registeredserver $Domain $env:computername })
+
+        }
+
+        Else {
+
+            Write-Verbose 'Server is not a member of an Active Directory domain. Skipping registration.'
+
+        }
+
+    }
+
     # Install workaround for NPS issue on Windows Server 2019
     $OSVersion = (Get-CimInstance 'Win32_OperatingSystem').Version
     Write-Verbose "Server version is $OSVersion."
@@ -66,7 +138,7 @@ Function Install-NpsServer {
     If ($OSVersion -eq '10.0.17763') {
 
         Write-Verbose 'Windows Server 2019 detected. Installing NPS workaround...'
-        Invoke-Command -ScriptBlock { sc.exe sidtype IAS unrestricted | Out-Null }
+        [void](Invoke-Command -ScriptBlock { sc.exe sidtype IAS unrestricted })
 
         If ($Restart) {
 
@@ -84,13 +156,19 @@ Function Install-NpsServer {
 
     }
 
+    Else {
+
+        Write-Verbose 'Server version is not Windows Server 2019. No NPS workaround required.'
+
+    }
+
 }
 
 # SIG # Begin signature block
-# MIIfeAYJKoZIhvcNAQcCoIIfaTCCH2UCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIfdwYJKoZIhvcNAQcCoIIfaDCCH2QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUpZKL6ETTgvxLSr8nDSkpdh0g
-# dsOgghpiMIIDWTCCAt+gAwIBAgIQD7inQLkVjQNRQ7xZ2fBAKTAKBggqhkjOPQQD
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHt2/60e2+vQ82k7FmNvWReQY
+# G8GgghpiMIIDWTCCAt+gAwIBAgIQD7inQLkVjQNRQ7xZ2fBAKTAKBggqhkjOPQQD
 # AzBhMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQL
 # ExB3d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9v
 # dCBHMzAeFw0yMTA0MjkwMDAwMDBaFw0zNjA0MjgyMzU5NTlaMGQxCzAJBgNVBAYT
@@ -230,29 +308,29 @@ Function Install-NpsServer {
 # +8RsWQSIXZpuG4WLFQOhtloDRWGoCwwc6ZpPddOFkM2LlTbMcqFSzm4cd0boGhBq
 # 7vkqI1uHRz6Fq1IX7TaRQuR+0BGOzISkcqwXu7nMpFu3mgrlgbAW+BzikRVQ3K2Y
 # HcGkiKjA4gi4OA/kz1YCsdhIBHXqBzR0/Zd2QwQ/l4Gxftt/8wY3grcc/nS//TVk
-# ej9nmUYu83BDtccHHXKibMs/yXHhDXNkoPIdynhVAku7aRZOwqw6pDGCBIAwggR8
+# ej9nmUYu83BDtccHHXKibMs/yXHhDXNkoPIdynhVAku7aRZOwqw6pDGCBH8wggR7
 # AgEBMHgwZDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTww
 # OgYDVQQDEzNEaWdpQ2VydCBHbG9iYWwgRzMgQ29kZSBTaWduaW5nIEVDQyBTSEEz
 # ODQgMjAyMSBDQTECEA1KNNqGkI/AEyy8gTeTryQwCQYFKw4DAhoFAKB4MBgGCisG
 # AQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQw
-# HAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFA3/
-# rM07OxbCVZ8hQbENeZViFU5kMAsGByqGSM49AgEFAARHMEUCIQD2cpTvYR2sE42B
-# mrE+bEiHijnfhR+BAkmnida30d3ArAIgQED2B0ia3MujaCoklXKn7d1hJPbiU91w
-# SBMFYqL0Qe6hggMgMIIDHAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYD
-# VQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lD
-# ZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAL
-# rma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsG
-# CSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjQxMjIxMDE1NzE1WjAvBgkqhkiG
-# 9w0BCQQxIgQghkvhFYw9J4diLli4ClLyrc1WUeT1PTGE7EcNpKx/KG0wDQYJKoZI
-# hvcNAQEBBQAEggIAcoMpm6QxsDDWvz6Txv4ouAfAsw0oyR0q6BpTjx8NruisrHzI
-# lkdP0PsGSsFpgvgM3QCmFP7DNUeJUFvdrg2mHp0euTbyipV9oBR8Ax936zWojkBp
-# /QhwGBn5Vi+R3nxBQzFZq3/KU7aDiOI63CaEC27wcp9ozuRdNofmhRCNQ/MMR0OG
-# vIC1We2C6FgZyu368/P7tFoZvQxIeMxmFJVroTU8RDmQnHHpmQ23HjE+7Gyw+yhr
-# pIe6wjmgbAnjhFIopXw/ehtshUhuXV1Yoic5EW1MSjq2lIKL7+7LuuwOtVdqUQCP
-# fjPakhrIpKH63YZ+B91rWRmAnDe+CJBOiNc9XznyodXssEm3YD2x9bDr4el79wep
-# MTkVKSHekynsgPiqEa2aSkFJIIZ8yf6PxuUKk6K3zbksKKhTzO4i+zUNDgwwB3ew
-# BYj1Fwo+TA0ZSPX7FJZB3V75HItP1k0k2eCq684yEich8S4G8LaTsgqybmRbbTN/
-# KIS45HjX2b0LO491jHNhpGhpRYd0SWI6yA0rqCVSCVdOknzEd5Jhl37uvz9ztFEf
-# kYaZItJYzZfd6EJM5Fc2NMlbyBkbz0Imoy95uG/Esb3qkfnnOIWMQD9S3dcuXc1n
-# KfPMHxMhz0xuqnz0IrwWlQrE6o3KWlZWkg9wKtdqJ/xiM16Ysg5S+wRyGlA=
+# HAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFAz6
+# 6zbkmPQc2mvd7JXMmhWFIfAOMAsGByqGSM49AgEFAARGMEQCIGoPUnds/GEwoKGk
+# fH/3rbBUqQgStxPxpcF9o2m7/fZ7AiB6sjzZxBPGdtUwU6W8SlWHr+QXT5+UjWI/
+# h/XFghm+JaGCAyAwggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNV
+# BAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNl
+# cnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAuu
+# Zrxaun+Vh8b56QTjMwQwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJ
+# KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNTAxMDYyMDQxNDdaMC8GCSqGSIb3
+# DQEJBDEiBCD583yRSDKPohUGXVQ7BCb2iWXno4Y4pu67wsyCzBWl7zANBgkqhkiG
+# 9w0BAQEFAASCAgAv8PiWRcnlCZRtCgcaRE06QY0+ilVk5T447oHcFws/6ablXnjk
+# S9qpK5oE+RtWAEnop2a22jbyJYq0Bp1QAlbRi6ZeXG1diYh1Tvn3dzAYzMaHiYs8
+# lxHNZn14MN8l+o3y6lSM2BYmeg3rGOvkOWvfp0dfqiGjtKK80t1EB6XYb9wT2Xb2
+# zg7ucCaRz5TCmcFwBn9mmsOTcr+Mx8OZoyGQu6d7F5sodQXchDUhPyHL8JSXO3Tw
+# VFVFvzaU7VT2PKlh02aJ1//GxHZTwBXkv5yYQpoRW1arJJZ3NtrkV94sn0Jo9hNS
+# LLLfShEVpNOz4/ACuD+yuHgzk0FQrzcMs2T8UAtMFHxC2JS5cR2owtgTsCDuRCYg
+# MpOb09gSUxc/hvVlUseqAXGSRkYI/Z68w9iXw5fwVAgYTt02OCaa1Ym3VCBkHKs0
+# Kl+rh9/DtfvoayPJt8+L6lwIBGGMIct+PilBIrjtri8Nr/tIVgHl9UiK86+PsbvL
+# OYUKuue6yikFgA1m3NsjfYtmUgYQJLfWh5Z0V69HxNYcd07kql+V6wDeswX5B6Ft
+# Dxy+0j10F3kY1OlFK6a5TizS3AR/fFNwT2WakwzoZoZbSIi/ANqK/vQvWoaV1g2s
+# LhdFtrxhmnFfUFA+4ZlrXCeWySK0KvyVu0kr/BC5CluZQFbqTVvEvrkC8A==
 # SIG # End signature block
