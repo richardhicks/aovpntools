@@ -4,7 +4,7 @@
     View and optionally save to a file the Transport Layer Security (TLS) certificate for a public website or service using HTTPS.
 
 .PARAMETER Hostname
-    The public hostname of the target resource.
+    The server name or Fully Qualified Domain Name (FQDN) of the target resource.
 
 .PARAMETER Port
     The TCP port of the target resource. The default is 443.
@@ -23,12 +23,39 @@
     Displays the TLS certificate for the website https://www.richardhicks.com/ listening on the nonstandard port 8443.
 
 .EXAMPLE
+    Get-TlsCertificate-Hostname 'www.richardhicks.com, www.richardhicks.net'
+
+    Displays the TLS certificates for the websites https://www.richardhicks.com/ and https://www.richardhicks.net/.
+
+.EXAMPLE
     Get-TlsCertificate -Hostname 'www.richardhicks.com' -OutFile .\tlscert.cer
 
     Displays the TLS certificate for the website https://www.richardhicks.com/ and saves the certificate to a file named .\tlscert.cer.
 
 .DESCRIPTION
     This PowerShell script is helpful for troubleshooting TLS issues associated with public websites or other HTTPS services like TLS VPNs. Using this script, administrators can view and optionally save the certificate returned during the TLS handshake. Administrators can confirm certificate details and perform revocation checks, if necessary.
+
+.INPUTS
+    String[]]
+
+    The Hostname parameter accepts a string array of public host names.
+
+.OUTPUTS
+    System.Management.Automation.PSCustomObject
+
+    The output of this script is a custom object that contains the following properties:
+
+    Subject            - The subject name of the certificate.
+    Issuer             - The issuer name of the certificate.
+    Thumbprint         - The thumbprint of the certificate.
+    NotBefore          - The date and time the certificate is valid from.
+    NotAfter           - The date and time the certificate expires.
+    SerialNumber       - The serial number of the certificate.
+    SignatureAlgorithm - The signature algorithm used by the certificate.
+    PublicKeyAlgorithm - The public key algorithm used by the certificate.
+    KeySize            - The size of the public key in bits.
+
+    If the OutFile parameter is specified, the certificate will be saved to a file in PEM format.
 
 .LINK
     https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-TlsCertificate.ps1
@@ -37,9 +64,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.0.7
+    Version:        2.0
     Creation Date:  August 12, 2021
-    Last Updated:   December 9, 2023
+    Last Updated:   January 8, 2025
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -53,90 +80,157 @@ Function Get-TlsCertificate {
 
     Param (
 
-        [Parameter(Mandatory)]
-        [string]$Hostname,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string[]]$Hostname,
         [int]$Port = 443,
-        [Alias('Path', 'FilePath')]
         [string]$OutFile
 
     )
 
-    $Certificate = $Null
+    Process {
 
-    $TcpClient = New-Object -TypeName System.Net.Sockets.TcpClient
+        ForEach ($Server in $Hostname) {
 
-    Try {
+            # Initialize certificate object
+            $Certificate = $Null
 
-        Write-Verbose "Connecting to $Hostname on port $Port..."
-        $TcpClient.Connect($Hostname, $Port)
-        $TcpStream = $TcpClient.GetStream()
+            # Create a TCP client object
+            $TcpClient = New-Object -TypeName System.Net.Sockets.TcpClient
 
-        $Callback = {
+            # Connect to the remote host
+            Try {
 
-            Param (
+                Write-Verbose "Connecting to $Server on port $Port..."
+                Try {
 
-            )
+                    $TcpClient.Connect($Server, $Port)
 
-            Return $True
+                }
 
-        }
+                Catch {
 
-        $SslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($TcpStream, $True, $Callback)
+                    Write-Warning "Failed to connect to $Server on port $Port."
+                    Break
 
-        Try {
+                }
 
-            Write-Verbose 'Retrieving TLS certificate...'
-            $SslStream.AuthenticateAsClient($Hostname)
-            $Certificate = $SslStream.RemoteCertificate
+                # Create a TCP stream object
+                $TcpStream = $TcpClient.GetStream()
 
-        }
+                # Create an SSL stream object
+                $SslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($TcpStream, $True)
 
-        Finally {
+                # Retrieve the TLS certificate
+                Try {
 
-            $SslStream.Dispose()
+                    Write-Verbose 'Retrieving TLS certificate...'
+                    $SslStream.AuthenticateAsClient($Server)
+                    $Certificate = $SslStream.RemoteCertificate
+
+                }
+
+                Catch {
+
+                    Write-Warning "Unable to retrieve TLS certificate from $Server."
+                    Break
+
+                }
+
+                Finally {
+
+                    # Cleanup
+                    $SslStream.Dispose()
+
+                }
+
+            }
+
+            Finally {
+
+                # Cleanup
+                $TcpClient.Dispose()
+
+            }
+
+            # Output certificate properties as an object
+            If ($Certificate) {
+
+                If ($Certificate -IsNot [System.Security.Cryptography.X509Certificates.X509Certificate2]) {
+
+                    Write-Verbose 'Converting certificate to X509Certificate2 object...'
+                    $Certificate = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $Certificate
+
+                }
+
+                # Create custom object and populate with certificate properties
+                $CertObject = [PSCustomObject]@{
+
+                    Subject            = $Certificate.Subject
+                    Issuer             = $Certificate.Issuer
+                    Thumbprint         = $Certificate.Thumbprint
+                    NotBefore          = $Certificate.NotBefore
+                    NotAfter           = $Certificate.NotAfter
+                    SerialNumber       = $Certificate.SerialNumber
+                    SignatureAlgorithm = $Certificate.SignatureAlgorithm.FriendlyName
+                    PublicKeyAlgorithm = $Certificate.PublicKey.Oid.FriendlyName
+                    KeySize            = $Certificate.PublicKey.Key.KeySize
+
+                }
+
+                # Output certificate details
+                $CertObject
+
+                # Save certificate to file if OutFile is specified
+                If ($OutFile) {
+
+                    $CurrentOutFile = $OutFile
+
+                    # If processing multiple host names, append an index to the file name
+                    If ($Hostname.Count -gt 1) {
+
+                        $FileExtension = [System.IO.Path]::GetExtension($OutFile)
+                        $FileNameWithoutExtension = [System.IO.Path]::GetFileNameWithoutExtension($OutFile)
+                        $Directory = [System.IO.Path]::GetDirectoryName($OutFile)
+
+                        If (-Not [string]::IsNullOrWhiteSpace($Directory)) {
+
+                            $CurrentOutFile = Join-Path $Directory "$FileNameWithoutExtension$FileIndex$FileExtension"
+
+                        }
+
+                        Else {
+
+                            $CurrentOutFile = "$FileNameWithoutExtension$FileIndex$FileExtension"
+
+                        }
+
+                        $FileIndex++
+
+                    }
+
+                    Write-Verbose "Saving certificate to $CurrentOutFile..."
+                    $CertOut = New-Object System.Text.StringBuilder
+                    [void]($CertOut.AppendLine("-----BEGIN CERTIFICATE-----"))
+                    [void]($CertOut.AppendLine([System.Convert]::ToBase64String($Certificate.RawData, 1)))
+                    [void]($CertOut.AppendLine("-----END CERTIFICATE-----"))
+                    [void]($CertOut.ToString() | Out-File $CurrentOutFile)
+
+                }
+
+            }
 
         }
 
     }
 
-    Finally {
+} # End process
 
-        $TcpClient.Dispose()
-
-    }
-
-    If ($Certificate) {
-
-        If ($Certificate -IsNot [System.Security.Cryptography.X509Certificates.X509Certificate2]) {
-
-            Write-Verbose 'Converting certificate to X509Certificate2 object...'
-            $Certificate = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $Certificate
-
-        }
-
-        # Display certificate details
-        Write-Output $Certificate.ToString()
-
-    }
-
-    If ($OutFile) {
-
-        Write-Verbose "Saving certificate to $OutFile..."
-        $CertOut = New-Object System.Text.StringBuilder
-        $CertOut.AppendLine("-----BEGIN CERTIFICATE-----") | Out-Null
-        $CertOut.AppendLine([System.Convert]::ToBase64String($Certificate.RawData, 1)) | Out-Null
-        $CertOut.AppendLine("-----END CERTIFICATE-----") | Out-Null
-        $CertOut.ToString() | Out-File $OutFile | Out-Null
-
-    }
-
-}
 
 # SIG # Begin signature block
-# MIIfdwYJKoZIhvcNAQcCoIIfaDCCH2QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIfeQYJKoZIhvcNAQcCoIIfajCCH2YCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUO2cPxqESikrq3G/pEpy1iX2Y
-# AhugghpiMIIDWTCCAt+gAwIBAgIQD7inQLkVjQNRQ7xZ2fBAKTAKBggqhkjOPQQD
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU7O9wRYvDzI6TUrbq/1nk4dAl
+# x3WgghpiMIIDWTCCAt+gAwIBAgIQD7inQLkVjQNRQ7xZ2fBAKTAKBggqhkjOPQQD
 # AzBhMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQL
 # ExB3d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9v
 # dCBHMzAeFw0yMTA0MjkwMDAwMDBaFw0zNjA0MjgyMzU5NTlaMGQxCzAJBgNVBAYT
@@ -276,29 +370,29 @@ Function Get-TlsCertificate {
 # +8RsWQSIXZpuG4WLFQOhtloDRWGoCwwc6ZpPddOFkM2LlTbMcqFSzm4cd0boGhBq
 # 7vkqI1uHRz6Fq1IX7TaRQuR+0BGOzISkcqwXu7nMpFu3mgrlgbAW+BzikRVQ3K2Y
 # HcGkiKjA4gi4OA/kz1YCsdhIBHXqBzR0/Zd2QwQ/l4Gxftt/8wY3grcc/nS//TVk
-# ej9nmUYu83BDtccHHXKibMs/yXHhDXNkoPIdynhVAku7aRZOwqw6pDGCBH8wggR7
+# ej9nmUYu83BDtccHHXKibMs/yXHhDXNkoPIdynhVAku7aRZOwqw6pDGCBIEwggR9
 # AgEBMHgwZDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTww
 # OgYDVQQDEzNEaWdpQ2VydCBHbG9iYWwgRzMgQ29kZSBTaWduaW5nIEVDQyBTSEEz
 # ODQgMjAyMSBDQTECEA1KNNqGkI/AEyy8gTeTryQwCQYFKw4DAhoFAKB4MBgGCisG
 # AQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQw
-# HAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFBF2
-# zkW2dJFnHllExb1C+lCskaUJMAsGByqGSM49AgEFAARGMEQCIE3bfqbtBft95KUP
-# 1cqTzPFgny3jK4tB3/cAEeALjeMeAiAxqGLlm7Xj3lQQLI06BSz8vgi2Z+ej6ANM
-# RzzT7tUhNKGCAyAwggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNV
-# BAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNl
-# cnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAuu
-# Zrxaun+Vh8b56QTjMwQwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJ
-# KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNDEyMjEwMTU3MTNaMC8GCSqGSIb3
-# DQEJBDEiBCBa0hKb7xrAfqL1xBkgu0ilhYCVeH9gDTBCpM7MhTceSzANBgkqhkiG
-# 9w0BAQEFAASCAgASnTjfhzEV2oW8hM1j49KePHyKKQ62Wkc5VESLtDAZnZwXH4V0
-# DS45zfK9ErURgVns78U3qmztSpRjNobz69oEBS22VIlp4oG92t2UzPSuMnBMskTN
-# LwVzc9/vmbLRLLWjNXOyjPQ3WH/Ldk7Yi+9Y759e9uCrgArbcNzOkwpsbIyUlBxJ
-# ea98kW+apWGatqSRKbyrvwJTJuW/ypvWGHCiZB6wzqaiOFe1FWKQdg9/UBjzh/Vt
-# WVqoQU7VKKlVf8HjPTyP0pZ6AjhV97Tp7ohJOZEwFF1lKuNiplartDYUNysVQpf5
-# ezfAXZomYrlLdB8WOqmdrYl55V9V3kx4X6pt360IpNJmM5LacndyWyAvkHqGStpt
-# yFCboQYXQo05JaxkLJjJHI80MvmPybUiXbZgIp0SW1pueqNkt0EQWwqoUpl54F1O
-# jrzT75auQ1RxfO6OnNbZf7wHHysqPqbN7p5kD/85xn/18EQ0K/hg0gM+4/yATOgE
-# Jn4YOJNXMLwan47A0KleXwgOlfXkiaIO9YSIYUuyMzTW79nirFelQwI797cwkjft
-# y4l+UNBqzwC7N314kFdzRNmyzgIJRofCMMrPkjelkZG9faA4au0gEZ+ON2zfB56J
-# vcESkBSwcIS94ujsEFkaECrZ81s+qKG2h9jB8KTkHoqp8gkIT9Lk1bjT8g==
+# HAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFORg
+# /asMu8fxOSlC0MovzSTSF3PNMAsGByqGSM49AgEFAARIMEYCIQDw0+Kvi7uFVwHC
+# W18zzap489HuGskWf68d5vgwiPW4SgIhAOa45yctTN4PrCHhiuX29KYqVUgcRb30
+# 06p/hACUqzA6oYIDIDCCAxwGCSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkG
+# A1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdp
+# Q2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQ
+# C65mvFq6f5WHxvnpBOMzBDANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzEL
+# BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI1MDEwOTAxMDc0OFowLwYJKoZI
+# hvcNAQkEMSIEICocT9VsnnmZiA6V4RDTVPo7V7IhChlXcv0dKHejD4TZMA0GCSqG
+# SIb3DQEBAQUABIICAGrz5xtm92Q3jDKm6TbkOgb5K+M99MOjJYYZGDd2z9cqLjEM
+# qUYxn8FzwEhWbjtKf6LEnKIPV+ydWTuW0heNEq3jVeCGlOE0NbzXmEUCGKidgiDJ
+# t5uS7ykWLquQnTO8sudG/Mnnx2/iFaW67S/fo+/uQfkwbspZhib5MotTHqQizzJL
+# GTjJ1kDq5hqar2FxtOamkn/xCvdsx4k0VzRbhJ7F0xnuq+I1OOTlnqwqECX7VvSY
+# 54FRhluZONab0it6L5V1rVjhMYDI/tjjJx7JAxUilDhyPCoV/d60Bnwkv2Qpl8Vz
+# V5lJXNnchve5Y7nJ+VoePTciJvW3GgQB5nyyFxExE2GyKCS1aNDykhR3a3hdWa+N
+# uB+nGpg/nYxOqs4VwrWsgIKH/YhEVhVZ+iWYXkrOMjjqtY6756m2Yseje+YwVGfj
+# WKM8VL9J3qTj7w2idneBXPEX0ivshcHKAM1Z/HQOEr+xv17MFD2fujlcltRGVnHx
+# X48tUv+JhZ1NpaFb5JKKq+lQP5oxvc+99qJ0HUky2pqvINF0SFPBDh9TWZcX3p51
+# ukbwM0iD5/6mXLiE8XbMQAvcqRDP400e3griszBbZ8ojYL0Jl7RESd7xdV84pHJg
+# pa5Eh/3uGnkl3JQIVg7quhTsH84l/zRedq7HVnSgiMHoz5/m90OQ8tG9vaG8
 # SIG # End signature block
