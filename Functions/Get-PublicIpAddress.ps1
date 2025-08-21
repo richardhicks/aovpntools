@@ -1,23 +1,15 @@
 <#
 
 .SYNOPSIS
-    Identify a client's public IPv4 address.
+    Identify a client's public IP address.
 
-.PARAMETER $Protocol
+.PARAMETER Protocol
     Use this parameter to specify the protocol to use when connecting to the server. Valid values are 'IPv4', 'IPv6', or 'Auto'. The default value is 'Auto', which will automatically determine the best protocol to use based on the client's network configuration.
-
-.PARAMETER $Detailed
-    Includes detailed information including city, country, and hostname.
 
 .EXAMPLE
     Get-PublicIPAddress
 
     Running this command will display the public IP address used by the client to access the Internet.
-
-.EXAMPLE
-    Get-PublicIPAddress -Detailed
-
-    Running this command will display the public IP address used by the client to access the Internet along with the city, country, and hostname.
 
 .EXAMPLE
     Get-PublicIPAddress -Protocol IPv4
@@ -39,9 +31,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.0
+    Version:        3.0
     Creation Date:  January 20, 2020
-    Last Updated:   June 10, 2025
+    Last Updated:   August 21, 2025
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -56,43 +48,32 @@ Function Get-PublicIPAddress {
     Param (
 
         [ValidateSet('IPv4', 'IPv6', 'Auto')]
-        [string]$Protocol = 'Auto',
-        [switch]$Detailed
+        [string]$Protocol = 'Auto'
 
     )
 
     # Define endpoint configuration
     $Endpoints = @{
 
-        'IPv4' = 'http://172.67.199.187/json'
-        'IPv6' = 'http://[2606:4700:3035::6815:2a21]/json'
-        'Auto' = 'http://ipconfig.io/json'
+        'IPv4' = 'http://34.160.111.145/all.json'
+        'IPv6' = 'http://[2600:1901:0:b2bd::]/all.json'
+        'Auto' = 'http://ifconfig.me/all.json'
 
     }
 
     # Select URI based on protocol
     $Uri = $Endpoints[$Protocol]
-    Write-Verbose "Collecting public address information from ipconfig.io using $Protocol..."
+    Write-Verbose "Collecting public address information from ifconfig.me using $Protocol..."
 
     Try {
 
-        # Query ipconfig.io for public IP address
-        $Content = Invoke-RestMethod -Method Get -Uri $Uri -Headers @{Host = 'ipconfig.io'} -ErrorAction Stop
+        # Query ifconfig.me for public IP address
+        $Content = Invoke-RestMethod -Method Get -Uri $Uri -Headers @{Host = 'ifconfig.me'} -ErrorAction Stop
 
         # Output information as an object
         $Output = [PSCustomObject]@{
 
-            IPAddress = $Content.IP
-
-        }
-
-        # Add detailed properties if requested
-        If ($Detailed) {
-
-            $Output | Add-Member -MemberType NoteProperty -Name City -Value $Content.City
-            $Output | Add-Member -MemberType NoteProperty -Name Region -Value $Content.Region_Name
-            $Output | Add-Member -MemberType NoteProperty -Name Country -Value $Content.Country
-            $Output | Add-Member -MemberType NoteProperty -Name ASN -Value $Content.ASN
+            IPAddress = $Content.Ip_Addr
 
         }
 
@@ -103,17 +84,17 @@ Function Get-PublicIPAddress {
     Catch {
 
         Write-Error "Failed to retrieve public IP address: $_"
-        Return $null
+        Return $Null
 
     }
 
 }
 
 # SIG # Begin signature block
-# MIIf2QYJKoZIhvcNAQcCoIIfyjCCH8YCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# MIIf2gYJKoZIhvcNAQcCoIIfyzCCH8cCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAbUR65Tqdc/tSF
-# fKNQyDvEbDV98cNGaUcitrlunepelqCCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBqKNnSOa3XXuZb
+# 3H0B/WO+HQNbVD1ecWtalynANJYyY6CCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
 # A1FDvFnZ8EApMAoGCCqGSM49BAMDMGExCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxE
 # aWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xIDAeBgNVBAMT
 # F0RpZ2lDZXJ0IEdsb2JhbCBSb290IEczMB4XDTIxMDQyOTAwMDAwMFoXDTM2MDQy
@@ -255,29 +236,29 @@ Function Get-PublicIPAddress {
 # roancJIFcbojBcxlRcGG0LIhp6GvReQGgMgYxQbV1S3CrWqZzBt1R9xJgKf47Cdx
 # VRd/ndUlQ05oxYy2zRWVFjF7mcr4C34Mj3ocCVccAvlKV9jEnstrniLvUxxVZE/r
 # ptb7IRE2lskKPIJgbaP5t2nGj/ULLi49xTcBZU8atufk+EMF/cWuiC7POGT75qaL
-# 6vdCvHlshtjdNXOCIUjsarfNZzGCBJYwggSSAgEBMHgwZDELMAkGA1UEBhMCVVMx
+# 6vdCvHlshtjdNXOCIUjsarfNZzGCBJcwggSTAgEBMHgwZDELMAkGA1UEBhMCVVMx
 # FzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTwwOgYDVQQDEzNEaWdpQ2VydCBHbG9i
 # YWwgRzMgQ29kZSBTaWduaW5nIEVDQyBTSEEzODQgMjAyMSBDQTECEA1KNNqGkI/A
 # Eyy8gTeTryQwDQYJYIZIAWUDBAIBBQCggYQwGAYKKwYBBAGCNwIBDDEKMAigAoAA
 # oQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4w
-# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQg0IyBFmoNfVbB/sQ3sZl738bp
-# 6FD+kuKzrXGsrPdzyJEwCwYHKoZIzj0CAQUABEYwRAIgAOEqqR8iDcBkteNq7cX0
-# 2toP18cOro97+DU2hWN9sYcCIAtd41vAaxsijzNGIf09tFXBLxjFinCSpRf04sdE
-# mxEooYIDJjCCAyIGCSqGSIb3DQEJBjGCAxMwggMPAgEBMH0waTELMAkGA1UEBhMC
-# VVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2VydCBU
-# cnVzdGVkIEc0IFRpbWVTdGFtcGluZyBSU0E0MDk2IFNIQTI1NiAyMDI1IENBMQIQ
-# CoDvGEuN8QWC0cR2p5V0aDANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzEL
-# BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI1MDYxMDIzMDc0MVowLwYJKoZI
-# hvcNAQkEMSIEIJGbJMmsKot0Cxuuwy3J8nV3zkiH/nOZtMCPpnSyqz7SMA0GCSqG
-# SIb3DQEBAQUABIICAFrr0qtC9/1K1nymOOpZL9jQJ4zZoTpgxVCLn9ypFMySPNf9
-# kLzKzuB0LmcAjb1tlz40kLNyy7f6gRU8hB3zN6nlqa5pXqRGtJbV2W4DaU/zzk07
-# 4NLm4kkPWre5QkUFe5CJ1UUEr1Wkpf6ekAD8Y2NyPAayPPZIpDmEl3hUhJ6VCHFO
-# mCtRibbjZa4nW3JhlMvr497xRNWCcHB6JAHyAF/XMam6Q5JcujLCgpk8slCmsnHL
-# /T+dF14TemE5bOC8sXcpCw6fBZLzxTa31NQ/VVbG6DbYOAE4vCIOuDF3IR3fQD67
-# F1sCc9BdmQWD4ikokZQaGt+ydh3kQOQPCPESZnS+Wmk7FW+GCNQ1vzv3nhMy88wW
-# vIeHiTEi8NiKb/J7bkIc9+hd/AaneLJQ3qGDd0/ZMxQzQs3SDSmJOeG04uXcDRsb
-# D5vzFP7UfwOaORKdrpE05Ner7aVITlURfNcgDbc/djm82GVs8hPDYlBs8XbZ5PQI
-# ZlrKzIqiyHEnmEDwfAWRmD9Ga93DhMoUzELUET+ZG270SlVPChjShiSn3hlmWyhj
-# Uz6FaMQ9ybnNFXsFJaJLpQbtSPbRM4l748SGtpP+V6GG0qVSDXx64VeJOj96poLW
-# cwFHo8YHxiyML9Y2AF/mXGKQc+t81q7nhFEzmWYtqs4RsnIEBZuxUj7zgMpX
+# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQg1EGjQnT2VqzOR0vNOf9DtU/y
+# UGN/0WXDvewhg4jEKZ8wCwYHKoZIzj0CAQUABEcwRQIgVAxbOxCsc0YHkt0I+Fq2
+# 50128QKEdn4SqRozEFnWB5ECIQD2ViNrSV5T/BB0TBe8v2vm6qpBhLQJXLgRcJ9N
+# 73vTwaGCAyYwggMiBgkqhkiG9w0BCQYxggMTMIIDDwIBATB9MGkxCzAJBgNVBAYT
+# AlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjFBMD8GA1UEAxM4RGlnaUNlcnQg
+# VHJ1c3RlZCBHNCBUaW1lU3RhbXBpbmcgUlNBNDA5NiBTSEEyNTYgMjAyNSBDQTEC
+# EAqA7xhLjfEFgtHEdqeVdGgwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMx
+# CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNTA4MjEyMjAyMDlaMC8GCSqG
+# SIb3DQEJBDEiBCALpxiu+vnBuFw5FH7k4F1INjKoKT+xMRfCqNtO0fOqiDANBgkq
+# hkiG9w0BAQEFAASCAgAUJb9X3sf45PDlmKW+gl0B9J5kBEIQYM2FpR0TV4LQdgXO
+# j+3TuzlzvcvFrc8NztpNhg1mvhelYMthjLoG63eoIoWWx5TzMf6/IaVXPQQzd0OS
+# s89kHy+K2U9VGnoNG+vdvYxcrs4uzstHqIV3C2D9ncTjeGmhzypdcXWqOksWRrWa
+# xSceXb/QGWw7iNycQAIr8a6n3dje/F+GpGeP2bmbmzQH4zNazRJx1UwunFnD4OF8
+# eSio58aY7bmep1tsWIDhUnTqRKiQJA/8lBvXdVYpuYFKS5IqXn9G3WRTMEVdHJRo
+# x0vkIMqiK41XjqrPlXgA8mnx3e80zHP3KWYMSSM5xfb7+XkldzOQItNoApmopVpP
+# vtSkV3uNd1qegyUD2KDwp/TU9H68ZCeymDbJqYCKiq7a/IcNyyAmiHucXq8hKfSX
+# eqW4u/kgSxvRmUfeks24vgRKhtVgidmykDCN4068aPN8QW/WQA1GRluKfaQCW9RR
+# 9s0Xjb5RCwaWP+wpFMRRlTWbleJoAaQ9wh04pim37/N9SzUr5m9BMBZ5nwDDrj5p
+# knz/WuD4ssPRDdm68nsy/in2EDOrfnaQh9qUlPZ+v2mMSSOdxuQXwVan9dbO27Y8
+# CFq2DEyqJ6SyHwCDXD3hUZ8xsfs1vtz1vTdcMvscy3MiLzQ1Htnl3RXlfZnGXw==
 # SIG # End signature block
