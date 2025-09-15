@@ -1,71 +1,44 @@
 <#
 
 .SYNOPSIS
-    View and optionally save to a file the Transport Layer Security (TLS) certificate for a public website or service using HTTPS.
-
-.PARAMETER Hostname
-    The server name or Fully Qualified Domain Name (FQDN) of the target resource.
-
-.PARAMETER Port
-    The TCP port of the target resource. The default is 443.
-
-.PARAMETER OutFile
-    When this parameter is added the TLS certificate will be saved as a file in this location.
-
-.EXAMPLE
-    Get-TlsCertificate -Hostname 'www.richardhicks.com'
-
-    Displays the TLS certificate for the website https://www.richardhicks.com/.
-
-.EXAMPLE
-    Get-TlsCertificate -Hostname 'www.richardhicks.com' -Port 8443
-
-    Displays the TLS certificate for the website https://www.richardhicks.com/ listening on the nonstandard port 8443.
-
-.EXAMPLE
-    Get-TlsCertificate-Hostname 'www.richardhicks.com, www.richardhicks.net'
-
-    Displays the TLS certificates for the websites https://www.richardhicks.com/ and https://www.richardhicks.net/.
-
-.EXAMPLE
-    Get-TlsCertificate -Hostname 'www.richardhicks.com' -OutFile .\tlscert.crt
-
-    Displays the TLS certificate for the website https://www.richardhicks.com/ and saves the certificate to a file named .\tlscert.crt.
+    Retrieve and display the TLS certificate used by the VPN server for SSTP.
 
 .DESCRIPTION
-    This PowerShell script is helpful for troubleshooting TLS issues associated with public websites or other HTTPS services like TLS VPNs. Using this script, administrators can view and optionally save the certificate returned during the TLS handshake. Administrators can confirm certificate details and perform revocation checks, if necessary.
+    This script retrieves the TLS certificate used by the VPN server for SSTP connections using the Get-RemoteAccess cmdlet.
+    It extracts key details from the certificate and displays them in a structured format. Optionally, it can save the
+    certificate to a specified file in DER format.
+
+.PARAMETER OutFile
+    Specifies the path to the output file where the certificate will be saved in binary (DER) format. If not specified, the certificate will not be saved to a file.
 
 .INPUTS
-    String[]]
-
-    The Hostname parameter accepts a string array of public host names.
+    None. This script does not accept pipeline input.
 
 .OUTPUTS
-    System.Management.Automation.PSCustomObject
+    [PSCustomObject] containing the details of the TLS certificate.
 
-    The output of this script is a custom object that contains the following properties:
+.EXAMPLE
+    Get-VpnServerTlsCertificate
 
-    Subject            - The subject name of the certificate.
-    Issuer             - The issuer name of the certificate.
-    SerialNumber       - The serial number of the certificate.
-    Thumbprint         - The thumbprint of the certificate.
-    Issued             - The date and time the certificate is valid from.
-    Expires            - The date and time the certificate expires.
-    PublicKeyAlgorithm - The public key algorithm used by the certificate.
-    KeySize            - The size of the public key in bits.
-    SignatureAlgorithm - The signature algorithm used by the certificate.
+    Retrieves and displays the TLS certificate details used by the VPN server for SSTP connections.
 
-    If the OutFile parameter is specified, the certificate will be saved to a file in PEM format.
+.EXAMPLE
+    Get-VpnServerTlsCertificate -OutFile 'C:\Temp\VpnServerCert.cer'
+
+    Retrieves the TLS certificate details and saves the certificate to the specified file in binary (DER) format.
 
 .LINK
-    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-TlsCertificate.ps1
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Get-VpnServerTlsCertificate.ps1
+
+.LINK
+    https://directaccess.richardhicks.com/2025/09/15/powershell-script-to-retrieve-the-vpn-server-tls-certificate/
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.1.1
-    Creation Date:  August 12, 2021
+    Version:        1.0
+    Creation Date:  September 15, 2025
     Last Updated:   September 15, 2025
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
@@ -74,178 +47,103 @@
 
 #>
 
-Function Get-TlsCertificate {
+Function Get-VpnServerTlsCertificate {
 
     [CmdletBinding()]
 
     Param (
 
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [string[]]$Hostname,
-        [int]$Port = 443,
-        [string]$OutFile
+        [Parameter()]
+        [switch]$OutFile,
+        [string]$FilePath = "$env:TEMP\$env:COMPUTERNAME.cer"
 
     )
 
-    Process {
+    Try {
 
-        $FileIndex = 1
+        # Call Get-RemoteAccess once and store the result
+        $GRAOutput = Get-RemoteAccess
 
-        ForEach ($Server in $Hostname) {
+        # Check PowerShell version
+        If ($PSVersionTable.PSVersion.Major -ge 7) {
 
-            # Initialize certificate object
-            $Certificate = $Null
+            # PowerShell 7: Convert byte array to X509Certificate2
+            $Certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($GRAOutput.SslCertificate)
 
-            # Create a TCP client object
-            $TcpClient = New-Object -TypeName System.Net.Sockets.TcpClient
+        }
 
-            # Connect to the remote host
-            Try {
+        Else {
 
-                Write-Verbose "Connecting to $Server on port $Port..."
-                Try {
+            # PowerShell 5.x: SslCertificate should return a certificate object directly
+            $Certificate = $GRAOutput.SslCertificate
+            If (-not $Certificate -or $Certificate -isnot [System.Security.Cryptography.X509Certificates.X509Certificate2]) {
 
-                    $TcpClient.Connect($Server, $Port)
-
-                }
-
-                Catch {
-
-                    Write-Warning "Failed to connect to $Server on port $Port."
-                    Continue
-
-                }
-
-                # Create a TCP stream object
-                $TcpStream = $TcpClient.GetStream()
-
-                # Create an SSL stream object with a validation callback
-                $Callback = {
-
-                    Param($Source, $Cert, $Chain, [System.Net.Security.SslPolicyErrors]$Errors)
-                    If ($Errors -ne [System.Net.Security.SslPolicyErrors]::None) {
-
-                        Write-Verbose "Ignoring certificate validation errors: $Errors"
-
-                    }
-
-                    $True
-
-                }
-
-                $SslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($TcpStream, $true, $Callback)
-
-                # Retrieve the TLS certificate
-                Try {
-
-                    Write-Verbose 'Retrieving TLS certificate...'
-                    $SslStream.AuthenticateAsClient($Server)
-                    $Certificate = $SslStream.RemoteCertificate
-
-                }
-
-                Catch {
-
-                    Write-Warning "Unable to retrieve TLS certificate from $Server."
-                    Continue
-
-                }
-
-                Finally {
-
-                    # Cleanup
-                    $SslStream.Dispose()
-
-                }
-
-            }
-
-            Finally {
-
-                # Cleanup
-                $TcpClient.Dispose()
-
-            }
-
-            # Output certificate properties as an object
-            If ($Certificate) {
-
-                If ($Certificate -IsNot [System.Security.Cryptography.X509Certificates.X509Certificate2]) {
-
-                    Write-Verbose 'Converting certificate to X509Certificate2 object...'
-                    $Certificate = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $Certificate
-
-                }
-
-                # Create custom object and populate with certificate properties
-                $CertObject = [PSCustomObject]@{
-
-                    Subject            = $Certificate.Subject
-                    Issuer             = $Certificate.Issuer
-                    SerialNumber       = $Certificate.SerialNumber
-                    Thumbprint         = $Certificate.Thumbprint
-                    Issued             = $Certificate.NotBefore
-                    Expires            = $Certificate.NotAfter
-                    PublicKeyAlgorithm = $Certificate.PublicKey.Oid.FriendlyName
-                    KeySize            = $Certificate.PublicKey.Key.KeySize
-                    SignatureAlgorithm = $Certificate.SignatureAlgorithm.FriendlyName
-
-                }
-
-                # Output certificate details
-                $CertObject
-
-                # Save certificate to file if OutFile is specified
-                If ($OutFile) {
-
-                    $CurrentOutFile = $OutFile
-
-                    # If processing multiple host names, append an index to the file name
-                    If ($Hostname.Count -gt 1) {
-
-                        $FileExtension = [System.IO.Path]::GetExtension($OutFile)
-                        $FileNameWithoutExtension = [System.IO.Path]::GetFileNameWithoutExtension($OutFile)
-                        $Directory = [System.IO.Path]::GetDirectoryName($OutFile)
-
-                        If (-Not [string]::IsNullOrWhiteSpace($Directory)) {
-
-                            $CurrentOutFile = Join-Path $Directory "$FileNameWithoutExtension$FileIndex$FileExtension"
-
-                        }
-
-                        Else {
-
-                            $CurrentOutFile = "$FileNameWithoutExtension$FileIndex$FileExtension"
-
-                        }
-
-                        $FileIndex++
-
-                    }
-
-                    Write-Verbose "Saving certificate to $CurrentOutFile..."
-                    $CertOut = New-Object System.Text.StringBuilder
-                    [void]($CertOut.AppendLine("-----BEGIN CERTIFICATE-----"))
-                    [void]($CertOut.AppendLine([System.Convert]::ToBase64String($Certificate.RawData, 1)))
-                    [void]($CertOut.AppendLine("-----END CERTIFICATE-----"))
-                    [void]($CertOut.ToString() | Out-File $CurrentOutFile -Encoding ascii -Force)
-                    Write-Output "Certificate saved to $CurrentOutFile."
-
-                }
+                Throw 'Unable to retrieve a valid X509Certificate2 object from Get-RemoteAccess.'
 
             }
 
         }
 
+        # Prepare output object
+        $CertificateDetails = [PSCustomObject]@{
+
+            Subject            = $Certificate.Subject
+            Issuer             = $Certificate.Issuer
+            SerialNumber       = $Certificate.SerialNumber
+            Thumbprint         = $Certificate.Thumbprint
+            Issued             = $Certificate.NotBefore
+            Expires            = $Certificate.NotAfter
+            PublicKeyAlgorithm = $Certificate.PublicKey.Oid.FriendlyName
+            KeySize            = $Certificate.PublicKey.Key.KeySize
+            SignatureAlgorithm = $Certificate.SignatureAlgorithm.FriendlyName
+
+        }
+
+        # Output certificate details
+        $CertificateDetails
+
+        # Save to file if OutFile is specified
+        If ($OutFile) {
+
+            # Resolve parent directory; default to current dir if none provided
+            $Directory = Split-Path -Path $FilePath -Parent
+            If ([string]::IsNullOrWhiteSpace($Directory)) {
+
+                $Directory = (Get-Location).Path
+                $FilePath = Join-Path -Path $Directory -ChildPath (Split-Path -Leaf $FilePath)
+
+            }
+
+            # Ensure parent directory exists (create if missing)
+            If (-not (Test-Path -LiteralPath $Directory)) {
+
+                New-Item -ItemType Directory -Path $Directory -Force | Out-Null
+
+            }
+
+            # Export cert as DER (.cer) and write raw bytes (works PS 5.1 and 7+)
+            $Bytes = $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+            [System.IO.File]::WriteAllBytes($FilePath, $Bytes)
+
+            Write-Output "Certificate saved to $FilePath."
+
+        }
+
     }
 
-} # End function
+    Catch {
+
+        Write-Error "Failed to retrieve or process the VPN server TLS certificate: $_"
+
+    }
+
+}
 
 # SIG # Begin signature block
-# MIIf2gYJKoZIhvcNAQcCoIIfyzCCH8cCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# MIIf2wYJKoZIhvcNAQcCoIIfzDCCH8gCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDHA/aGSsuw7xKX
-# 7LMtnnV/1XeME9xr5GhrAqm88ONcyaCCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBPZ/QVA4Kvbxcq
+# Mm6pPhFyMoep2+QGAQnP9BZiRY4K26CCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
 # A1FDvFnZ8EApMAoGCCqGSM49BAMDMGExCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxE
 # aWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xIDAeBgNVBAMT
 # F0RpZ2lDZXJ0IEdsb2JhbCBSb290IEczMB4XDTIxMDQyOTAwMDAwMFoXDTM2MDQy
@@ -387,29 +285,29 @@ Function Get-TlsCertificate {
 # roancJIFcbojBcxlRcGG0LIhp6GvReQGgMgYxQbV1S3CrWqZzBt1R9xJgKf47Cdx
 # VRd/ndUlQ05oxYy2zRWVFjF7mcr4C34Mj3ocCVccAvlKV9jEnstrniLvUxxVZE/r
 # ptb7IRE2lskKPIJgbaP5t2nGj/ULLi49xTcBZU8atufk+EMF/cWuiC7POGT75qaL
-# 6vdCvHlshtjdNXOCIUjsarfNZzGCBJcwggSTAgEBMHgwZDELMAkGA1UEBhMCVVMx
+# 6vdCvHlshtjdNXOCIUjsarfNZzGCBJgwggSUAgEBMHgwZDELMAkGA1UEBhMCVVMx
 # FzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTwwOgYDVQQDEzNEaWdpQ2VydCBHbG9i
 # YWwgRzMgQ29kZSBTaWduaW5nIEVDQyBTSEEzODQgMjAyMSBDQTECEA1KNNqGkI/A
 # Eyy8gTeTryQwDQYJYIZIAWUDBAIBBQCggYQwGAYKKwYBBAGCNwIBDDEKMAigAoAA
 # oQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4w
-# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQgptH/a2IYcIwUwPu8aHd49rNj
-# ApRfSO/Vpsa9OX7+zUUwCwYHKoZIzj0CAQUABEcwRQIgKLpi4SaaKxQqzKqCD4ft
-# dA7HHZ6Dx/lnY72btYLR2NoCIQCouJxL7PvuTNiMTAxa0VtYbr0ZEBMP/MCxX+Va
-# nFmZCaGCAyYwggMiBgkqhkiG9w0BCQYxggMTMIIDDwIBATB9MGkxCzAJBgNVBAYT
-# AlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjFBMD8GA1UEAxM4RGlnaUNlcnQg
-# VHJ1c3RlZCBHNCBUaW1lU3RhbXBpbmcgUlNBNDA5NiBTSEEyNTYgMjAyNSBDQTEC
-# EAqA7xhLjfEFgtHEdqeVdGgwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMx
-# CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNTA5MTUxODQyMDNaMC8GCSqG
-# SIb3DQEJBDEiBCAHYNhzUMuMtkmOziaCS/JSy6PuFDxO27QN3vY4YepA3jANBgkq
-# hkiG9w0BAQEFAASCAgBn/8Ej2ZcCeSMauNQ0KKZCVeiWk7Kb58K22GAk7ejmNJwK
-# iWX0XLSsBQKZKaX2fS0tdAq5bh/SIvd6b9zhovgzsBStbu+4SbuE0TUvuoLsLSUK
-# MHETHA/weZDJsDru3vanJcyJWezczZNw8/j/NJkPjO7MaWbdWwWZ3cHkUF6YFONQ
-# O4U1gi/Zkkpb7SFiVlA4/2G+Mdo1o8PVNDhAUfKyhBpOr+CsprR8F2RtQytKS10p
-# oBXA6OMhVnk0Y92yoUH4SAuJwvvw0XPh/RQxjDNnzkNH99hChBpROnvhmMksFCZf
-# e8v2bq9hvkiWORQxUEypUhpRD+Xk2AX8rkXA/CWv9x6/7+/y8hCmnNk3IIZnl0Tm
-# Tm2soG+I0QtaL9YNcnZGL+im6o8Hc3fxR5HWAGP2YANfurLTZMyCucuzqnN1G3jq
-# ck/mw/L2GvLxiLotN8qQyD5YEGLwCqsrLWOZjyerbMbRkEp5MRrYpVUAXYidEOVp
-# FQSII+AheR3R/JukpmJnPtJ+tzmXNx8mndwYUn2ggYajuoYA89ic3XLrYbu5HL6w
-# adLU4apT+g1Cxli+QItrn2TIIzp+mSU/8zp8P36SJKfj89KTPdPTGr0nlqbaR0b0
-# zNi4yHmzXwOX4bEk3CanSIG6jpGuPzDYDkNxCsrKbJcnK+vDHkEqFjnqov1k+w==
+# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQgEHd06qL++WvkIdsc8/sKp+ro
+# TpMJC6vRplenSxuT+1YwCwYHKoZIzj0CAQUABEgwRgIhAOfmGTRAkY7g5Y6WVXKY
+# 9FJaNZzC+Ks5q2zwYzjyzk7uAiEAsUr/phmFDzc2kACYbaBSiLnbVJpS4IYwGebP
+# p3JKyQahggMmMIIDIgYJKoZIhvcNAQkGMYIDEzCCAw8CAQEwfTBpMQswCQYDVQQG
+# EwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0
+# IFRydXN0ZWQgRzQgVGltZVN0YW1waW5nIFJTQTQwOTYgU0hBMjU2IDIwMjUgQ0Ex
+# AhAKgO8YS43xBYLRxHanlXRoMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkD
+# MQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjUwOTE1MTg0MjI4WjAvBgkq
+# hkiG9w0BCQQxIgQgfE2JkTzABQz8TmrWx3cz1Fmsnc2EhzKMxONDtOGzrFQwDQYJ
+# KoZIhvcNAQEBBQAEggIAFtN4j1J5huUj3IOrUdSxIluMC0/rTscOOSw6TucNML3P
+# n4X8oURsSwdBdPCFcQMqjFnNbHQyfEka2K0GPaBszD5gb4emaCQCWrPepOAh8HDn
+# 8azhMa4Dg9GJl94N8JQ/bpR0naob1BjpzoZqPJwq/iFbmGrSxgbeh5D80Eg8R00w
+# Uftcnp2Lr6UzKgk8B0CocXy/fxuZvz5ex9bM5mW+GILLEjWM4JtxAJlatrifEJzZ
+# mtiaMT3Wviar38fghFRaBt9UO0Flk2ZuEJXTS9Y+sbYtOl5540Y9GN6UrCuwJxHo
+# 2V7i071sMfzWTg8Fh/1MP4zBiUZis03Anx5T8mxfFVQA7EwH2SH80mE2QMz/cYMh
+# ADYRbx/Q+tYy9IO/K505tC/xLgJ1/ozAcBwtdkH41sjMldUst6E4CnQ3rXgekcon
+# ov4Yf9QbdDJfRFvUS8K6ntKx94wgj1AaJzWTmy3WRE4rf+nko6r/OO/19KepcAwo
+# Uym5oJC+/TInSVQcxu9j8iPyjxbxRRD9x6Jpwun1+ROyCq0gzPBVwYKrifWLKmv4
+# jEMA6xn9mG63F40SGFmA96OY8m/ObxgEwwDMfdvgzFDjD+A45bKBK6brsImErmWI
+# YixB88sv+N32nSU6KqT+qzu5coqEsYg5OyW4bb7H2Oq4Sn4O3H48Oo8lihx8Nuk=
 # SIG # End signature block
