@@ -1,7 +1,7 @@
 <#
 
 .SYNOPSIS
-    View and optionally save to a file the Transport Layer Security (TLS) certificate for a public website or service using HTTPS.
+    View and optionally save to a file the Transport Layer Security (TLS) certificate for a website or service using HTTPS.
 
 .PARAMETER Hostname
     The server name or Fully Qualified Domain Name (FQDN) of the target resource.
@@ -64,9 +64,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.1.1
+    Version:        2.2
     Creation Date:  August 12, 2021
-    Last Updated:   September 15, 2025
+    Last Updated:   December 4, 2025
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -177,6 +177,63 @@ Function Get-TlsCertificate {
 
                 }
 
+                # Determine key size based on algorithm type
+                $KeySize = $null
+
+                # Try to get key size directly (works for RSA)
+                If ($Certificate.PublicKey.Key -and $Certificate.PublicKey.Key.KeySize) {
+
+                    $KeySize = $Certificate.PublicKey.Key.KeySize
+
+                }
+
+                # For EC certificates, need alternative approach
+                ElseIf ($Certificate.PublicKey.Oid.FriendlyName -eq 'ECC' -or $Certificate.PublicKey.Oid.Value -eq '1.2.840.10045.2.1') {
+
+                    # Try to get from encoded parameters OID
+                    If ($Certificate.PublicKey.EncodedParameters -and $Certificate.PublicKey.EncodedParameters.Oid) {
+
+                        $Oid = $Certificate.PublicKey.EncodedParameters.Oid
+                        Switch ($Oid.Value) {
+
+                            '1.2.840.10045.3.1.7' { $KeySize = 256 }  # secp256r1 (P-256)
+                            '1.3.132.0.34' { $KeySize = 384 }         # secp384r1 (P-384)
+                            '1.3.132.0.35' { $KeySize = 521 }         # secp521r1 (P-521)
+
+                            Default {
+
+                                # Try to infer from friendly name
+                                If ($Oid.FriendlyName -match '256') { $KeySize = 256 }
+                                ElseIf ($Oid.FriendlyName -match '384') { $KeySize = 384 }
+                                ElseIf ($Oid.FriendlyName -match '521') { $KeySize = 521 }
+
+                            }
+
+                        }
+
+                    }
+
+                    # If still null, try to determine from the public key data length
+                    If (-not $KeySize -and $Certificate.PublicKey.EncodedKeyValue) {
+
+                        $KeyLength = $Certificate.PublicKey.EncodedKeyValue.RawData.Length
+                        # EC public keys in uncompressed format: 0x04 + X + Y coordinates
+                        Switch ($KeyLength) {
+
+                            65 { $KeySize = 256 }   # P-256: 1 + 32 + 32
+                            97 { $KeySize = 384 }   # P-384: 1 + 48 + 48
+                            133 { $KeySize = 521 }  # P-521: 1 + 66 + 66
+                            # ASN.1 encoded versions (with header bytes)
+                            { $_ -in 67, 68, 69 } { $KeySize = 256 }
+                            { $_ -in 99, 100, 101 } { $KeySize = 384 }
+                            { $_ -in 135, 136, 137 } { $KeySize = 521 }
+
+                        }
+
+                    }
+
+                }
+
                 # Create custom object and populate with certificate properties
                 $CertObject = [PSCustomObject]@{
 
@@ -187,7 +244,7 @@ Function Get-TlsCertificate {
                     Issued             = $Certificate.NotBefore
                     Expires            = $Certificate.NotAfter
                     PublicKeyAlgorithm = $Certificate.PublicKey.Oid.FriendlyName
-                    KeySize            = $Certificate.PublicKey.Key.KeySize
+                    KeySize            = $KeySize
                     SignatureAlgorithm = $Certificate.SignatureAlgorithm.FriendlyName
 
                 }
@@ -244,8 +301,8 @@ Function Get-TlsCertificate {
 # SIG # Begin signature block
 # MIIf2gYJKoZIhvcNAQcCoIIfyzCCH8cCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDHA/aGSsuw7xKX
-# 7LMtnnV/1XeME9xr5GhrAqm88ONcyaCCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAvuYsZaeAGqAZG
+# ge9Tqat2PuIAmzllhzqoPWUbZNHUkKCCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
 # A1FDvFnZ8EApMAoGCCqGSM49BAMDMGExCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxE
 # aWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xIDAeBgNVBAMT
 # F0RpZ2lDZXJ0IEdsb2JhbCBSb290IEczMB4XDTIxMDQyOTAwMDAwMFoXDTM2MDQy
@@ -392,24 +449,24 @@ Function Get-TlsCertificate {
 # YWwgRzMgQ29kZSBTaWduaW5nIEVDQyBTSEEzODQgMjAyMSBDQTECEA1KNNqGkI/A
 # Eyy8gTeTryQwDQYJYIZIAWUDBAIBBQCggYQwGAYKKwYBBAGCNwIBDDEKMAigAoAA
 # oQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4w
-# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQgptH/a2IYcIwUwPu8aHd49rNj
-# ApRfSO/Vpsa9OX7+zUUwCwYHKoZIzj0CAQUABEcwRQIgKLpi4SaaKxQqzKqCD4ft
-# dA7HHZ6Dx/lnY72btYLR2NoCIQCouJxL7PvuTNiMTAxa0VtYbr0ZEBMP/MCxX+Va
-# nFmZCaGCAyYwggMiBgkqhkiG9w0BCQYxggMTMIIDDwIBATB9MGkxCzAJBgNVBAYT
+# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQg+r62xehZipZXFWgafa6YiRki
+# FDNe5T5pY4tzFdtu0XMwCwYHKoZIzj0CAQUABEcwRQIhAObzX6AJ8gt2ZCOdRHvX
+# cuDcKg8K1H6ZjNolbaDYvLNcAiAlpHGKp3lBc1uzaPfNUb+o0s9nxzihLx3MeLBd
+# aRbG/KGCAyYwggMiBgkqhkiG9w0BCQYxggMTMIIDDwIBATB9MGkxCzAJBgNVBAYT
 # AlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjFBMD8GA1UEAxM4RGlnaUNlcnQg
 # VHJ1c3RlZCBHNCBUaW1lU3RhbXBpbmcgUlNBNDA5NiBTSEEyNTYgMjAyNSBDQTEC
 # EAqA7xhLjfEFgtHEdqeVdGgwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMx
-# CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNTA5MTUxODQyMDNaMC8GCSqG
-# SIb3DQEJBDEiBCAHYNhzUMuMtkmOziaCS/JSy6PuFDxO27QN3vY4YepA3jANBgkq
-# hkiG9w0BAQEFAASCAgBn/8Ej2ZcCeSMauNQ0KKZCVeiWk7Kb58K22GAk7ejmNJwK
-# iWX0XLSsBQKZKaX2fS0tdAq5bh/SIvd6b9zhovgzsBStbu+4SbuE0TUvuoLsLSUK
-# MHETHA/weZDJsDru3vanJcyJWezczZNw8/j/NJkPjO7MaWbdWwWZ3cHkUF6YFONQ
-# O4U1gi/Zkkpb7SFiVlA4/2G+Mdo1o8PVNDhAUfKyhBpOr+CsprR8F2RtQytKS10p
-# oBXA6OMhVnk0Y92yoUH4SAuJwvvw0XPh/RQxjDNnzkNH99hChBpROnvhmMksFCZf
-# e8v2bq9hvkiWORQxUEypUhpRD+Xk2AX8rkXA/CWv9x6/7+/y8hCmnNk3IIZnl0Tm
-# Tm2soG+I0QtaL9YNcnZGL+im6o8Hc3fxR5HWAGP2YANfurLTZMyCucuzqnN1G3jq
-# ck/mw/L2GvLxiLotN8qQyD5YEGLwCqsrLWOZjyerbMbRkEp5MRrYpVUAXYidEOVp
-# FQSII+AheR3R/JukpmJnPtJ+tzmXNx8mndwYUn2ggYajuoYA89ic3XLrYbu5HL6w
-# adLU4apT+g1Cxli+QItrn2TIIzp+mSU/8zp8P36SJKfj89KTPdPTGr0nlqbaR0b0
-# zNi4yHmzXwOX4bEk3CanSIG6jpGuPzDYDkNxCsrKbJcnK+vDHkEqFjnqov1k+w==
+# CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNTEyMDQyMzQxMzZaMC8GCSqG
+# SIb3DQEJBDEiBCDDnBeZPxFz9dL5CPPRl6iBNTKAweVtGfzz+pTFJ/83IDANBgkq
+# hkiG9w0BAQEFAASCAgCw6go5Ow6R5uTTVraqoR3AHuRBhwV3CeBtXVD7V3PZ64t3
+# RbVPx72dSGdmcydEA8XULPsPJPDMJ4JbHIHE0be2AmVYGl90681sRlfpiXq7e9Gg
+# 1LJTKMxZUUR/hRGw16l8X/pv75ijCgEu5knmiqOF9ciFWCayXhjtRnr775yaHmkG
+# egip9v9Glf7Vo5mqNyPv4rURd0n5LsT9/cRIso/Vp0Lxl8jx4hVKGBYqph8C2cuU
+# z00Zon2WTR9JiYlhMutB1bxvFtsJVDtdJZkOvsexzhY9HekT4n/9GXavc40/HMKN
+# HCKNrxt+UzMDiHIqS83m3PnfgKiKrztZmo5CXa1jC8c3aQ/D3C5MOtk1X4/fJDn0
+# z7+soKW4hc4V1RchEHXrmSO83PmQ3jQjtZmNg5TVEpRWckmfAVse0M2ibPGaB/cu
+# 4e2U6y6VzYHmBMN7wRtH07VvzNejfDf9n4u531TMnDtIUqzi6f15u7C8VaZxKSZc
+# ct5KhUfpuBXnMuQYcIwpgiffONodbxza8K4SitmkK+Ev+1XqYd/0rA9x9KcjKwNT
+# qgnjnrkrjZFZ+ztZfN6Y5t4P4uqzHGZPq7MX6EiMZXEGz71aFPJAcqurhuLkrWzN
+# xipV4335ONP+D4AHiI2TSqYxp8g0/DYaxk5JsVMs8GnQye7m8xx2M4Ibl482Qg==
 # SIG # End signature block
