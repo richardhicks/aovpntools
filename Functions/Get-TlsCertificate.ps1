@@ -10,27 +10,27 @@
     The TCP port of the target resource. The default is 443.
 
 .PARAMETER OutFile
-    When this parameter is added the TLS certificate will be saved as a file in this location.
+    When specified, the TLS certificate will be saved to the current directory using the hostname as the filename with a .crt extension.
 
 .EXAMPLE
-    Get-TlsCertificate -Hostname 'www.richardhicks.com'
+    .\Get-TlsCertificate -Hostname 'www.richardhicks.com'
 
     Displays the TLS certificate for the website https://www.richardhicks.com/.
 
 .EXAMPLE
-    Get-TlsCertificate -Hostname 'www.richardhicks.com' -Port 8443
+    .\Get-TlsCertificate -Hostname 'www.richardhicks.com' -Port 8443
 
     Displays the TLS certificate for the website https://www.richardhicks.com/ listening on the nonstandard port 8443.
 
 .EXAMPLE
-    Get-TlsCertificate-Hostname 'www.richardhicks.com, www.richardhicks.net'
+    .\Get-TlsCertificate -Hostname 'www.richardhicks.com, www.richardhicks.net'
 
     Displays the TLS certificates for the websites https://www.richardhicks.com/ and https://www.richardhicks.net/.
 
 .EXAMPLE
-    Get-TlsCertificate -Hostname 'www.richardhicks.com' -OutFile .\tlscert.crt
+    .\Get-TlsCertificate -Hostname 'www.richardhicks.com' -OutFile
 
-    Displays the TLS certificate for the website https://www.richardhicks.com/ and saves the certificate to a file named .\tlscert.crt.
+    Displays the TLS certificate for the website https://www.richardhicks.com/ and saves the certificate to a file named www.richardhicks.com.crt in the current directory.
 
 .DESCRIPTION
     This PowerShell script is helpful for troubleshooting TLS issues associated with public websites or other HTTPS services like TLS VPNs. Using this script, administrators can view and optionally save the certificate returned during the TLS handshake. Administrators can confirm certificate details and perform revocation checks, if necessary.
@@ -45,15 +45,17 @@
 
     The output of this script is a custom object that contains the following properties:
 
-    Subject            - The subject name of the certificate.
-    Issuer             - The issuer name of the certificate.
-    SerialNumber       - The serial number of the certificate.
-    Thumbprint         - The thumbprint of the certificate.
-    Issued             - The date and time the certificate is valid from.
-    Expires            - The date and time the certificate expires.
-    PublicKeyAlgorithm - The public key algorithm used by the certificate.
-    KeySize            - The size of the public key in bits.
-    SignatureAlgorithm - The signature algorithm used by the certificate.
+    Subject                 - The subject name of the certificate.
+    Issuer                  - The issuer name of the certificate.
+    SerialNumber            - The serial number of the certificate.
+    Thumbprint              - The thumbprint of the certificate.
+    Issued                  - The date and time the certificate is valid from.
+    Expires                 - The date and time the certificate expires.
+    AlternativeNames        - The subject alternative names (SANs) of the certificate.
+    EnhancedKeyUsage        - The enhanced key usage (EKU) values of the certificate.
+    PublicKeyAlgorithm      - The public key algorithm used by the certificate.
+    KeySize                 - The size of the public key in bits.
+    SignatureAlgorithm      - The signature algorithm used by the certificate.
 
     If the OutFile parameter is specified, the certificate will be saved to a file in PEM format.
 
@@ -64,9 +66,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.2
+    Version:        2.4.0
     Creation Date:  August 12, 2021
-    Last Updated:   December 4, 2025
+    Last Updated:   February 21, 2026
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -83,15 +85,21 @@ Function Get-TlsCertificate {
         [Parameter(Mandatory, ValueFromPipeline)]
         [string[]]$Hostname,
         [int]$Port = 443,
-        [string]$OutFile
+        [switch]$OutFile
 
     )
 
     Process {
 
-        $FileIndex = 1
-
         ForEach ($Server in $Hostname) {
+
+            # Test connectivity before proceeding
+            If (-not (Test-NetConnection -ComputerName $Server -Port $Port -InformationLevel Quiet)) {
+
+                Write-Warning "Unable to connect to $Server on port $Port."
+                Continue
+
+            }
 
             # Initialize certificate object
             $Certificate = $Null
@@ -234,6 +242,75 @@ Function Get-TlsCertificate {
 
                 }
 
+                # Extract Subject Alternative Names (SANs) from the certificate
+                $SubjectAlternativeNames = @()
+                $SanExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' }
+
+                If ($SanExtension) {
+
+                    Write-Verbose 'Extracting Subject Alternative Names...'
+                    $SanString = $SanExtension.Format($true)
+
+                    # Parse the formatted SAN string to extract individual entries
+                    ForEach ($Line in $SanString -split "`n") {
+
+                        $Line = $Line.Trim()
+
+                        If ($Line -match '^DNS Name=(.+)$') {
+
+                            $SubjectAlternativeNames += $Matches[1].Trim()
+
+                        }
+
+                        ElseIf ($Line -match '^IP Address=(.+)$') {
+
+                            $SubjectAlternativeNames += $Matches[1].Trim()
+
+                        }
+
+                        ElseIf ($Line -match '^RFC822 Name=(.+)$') {
+
+                            $SubjectAlternativeNames += $Matches[1].Trim()
+
+                        }
+
+                        ElseIf ($Line -match '^URL=(.+)$') {
+
+                            $SubjectAlternativeNames += $Matches[1].Trim()
+
+                        }
+
+                    }
+
+                }
+
+                # Extract Enhanced Key Usage (EKU) from the certificate
+                $EnhancedKeyUsage = @()
+                $EkuExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' }
+
+                If ($EkuExtension) {
+
+                    Write-Verbose 'Extracting Enhanced Key Usage...'
+                    $EkuExtensionTyped = [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]$EkuExtension
+
+                    ForEach ($Eku in $EkuExtensionTyped.EnhancedKeyUsages) {
+
+                        If ($Eku.FriendlyName) {
+
+                            $EnhancedKeyUsage += $Eku.FriendlyName
+
+                        }
+
+                        Else {
+
+                            $EnhancedKeyUsage += $Eku.Value
+
+                        }
+
+                    }
+
+                }
+
                 # Create custom object and populate with certificate properties
                 $CertObject = [PSCustomObject]@{
 
@@ -243,6 +320,8 @@ Function Get-TlsCertificate {
                     Thumbprint         = $Certificate.Thumbprint
                     Issued             = $Certificate.NotBefore
                     Expires            = $Certificate.NotAfter
+                    AlternativeNames   = $SubjectAlternativeNames
+                    EnhancedKeyUsage   = $EnhancedKeyUsage
                     PublicKeyAlgorithm = $Certificate.PublicKey.Oid.FriendlyName
                     KeySize            = $KeySize
                     SignatureAlgorithm = $Certificate.SignatureAlgorithm.FriendlyName
@@ -255,38 +334,14 @@ Function Get-TlsCertificate {
                 # Save certificate to file if OutFile is specified
                 If ($OutFile) {
 
-                    $CurrentOutFile = $OutFile
-
-                    # If processing multiple host names, append an index to the file name
-                    If ($Hostname.Count -gt 1) {
-
-                        $FileExtension = [System.IO.Path]::GetExtension($OutFile)
-                        $FileNameWithoutExtension = [System.IO.Path]::GetFileNameWithoutExtension($OutFile)
-                        $Directory = [System.IO.Path]::GetDirectoryName($OutFile)
-
-                        If (-Not [string]::IsNullOrWhiteSpace($Directory)) {
-
-                            $CurrentOutFile = Join-Path $Directory "$FileNameWithoutExtension$FileIndex$FileExtension"
-
-                        }
-
-                        Else {
-
-                            $CurrentOutFile = "$FileNameWithoutExtension$FileIndex$FileExtension"
-
-                        }
-
-                        $FileIndex++
-
-                    }
-
+                    $CurrentOutFile = "$Server.crt"
                     Write-Verbose "Saving certificate to $CurrentOutFile..."
                     $CertOut = New-Object System.Text.StringBuilder
                     [void]($CertOut.AppendLine("-----BEGIN CERTIFICATE-----"))
                     [void]($CertOut.AppendLine([System.Convert]::ToBase64String($Certificate.RawData, 1)))
                     [void]($CertOut.AppendLine("-----END CERTIFICATE-----"))
                     [void]($CertOut.ToString() | Out-File $CurrentOutFile -Encoding ascii -Force)
-                    Write-Output "Certificate saved to $CurrentOutFile."
+                    Write-Output "Certificate saved to $((Resolve-Path $CurrentOutFile).Path)."
 
                 }
 
@@ -296,13 +351,13 @@ Function Get-TlsCertificate {
 
     }
 
-} # End function
+}
 
 # SIG # Begin signature block
-# MIIf2gYJKoZIhvcNAQcCoIIfyzCCH8cCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# MIIf2wYJKoZIhvcNAQcCoIIfzDCCH8gCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAvuYsZaeAGqAZG
-# ge9Tqat2PuIAmzllhzqoPWUbZNHUkKCCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAzZtPuk8VHTV9d
+# zYl2YUh97pRxmZwwRpNJqt3wuKzEoKCCGpkwggNZMIIC36ADAgECAhAPuKdAuRWN
 # A1FDvFnZ8EApMAoGCCqGSM49BAMDMGExCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxE
 # aWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xIDAeBgNVBAMT
 # F0RpZ2lDZXJ0IEdsb2JhbCBSb290IEczMB4XDTIxMDQyOTAwMDAwMFoXDTM2MDQy
@@ -444,29 +499,29 @@ Function Get-TlsCertificate {
 # roancJIFcbojBcxlRcGG0LIhp6GvReQGgMgYxQbV1S3CrWqZzBt1R9xJgKf47Cdx
 # VRd/ndUlQ05oxYy2zRWVFjF7mcr4C34Mj3ocCVccAvlKV9jEnstrniLvUxxVZE/r
 # ptb7IRE2lskKPIJgbaP5t2nGj/ULLi49xTcBZU8atufk+EMF/cWuiC7POGT75qaL
-# 6vdCvHlshtjdNXOCIUjsarfNZzGCBJcwggSTAgEBMHgwZDELMAkGA1UEBhMCVVMx
+# 6vdCvHlshtjdNXOCIUjsarfNZzGCBJgwggSUAgEBMHgwZDELMAkGA1UEBhMCVVMx
 # FzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTwwOgYDVQQDEzNEaWdpQ2VydCBHbG9i
 # YWwgRzMgQ29kZSBTaWduaW5nIEVDQyBTSEEzODQgMjAyMSBDQTECEA1KNNqGkI/A
 # Eyy8gTeTryQwDQYJYIZIAWUDBAIBBQCggYQwGAYKKwYBBAGCNwIBDDEKMAigAoAA
 # oQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4w
-# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQg+r62xehZipZXFWgafa6YiRki
-# FDNe5T5pY4tzFdtu0XMwCwYHKoZIzj0CAQUABEcwRQIhAObzX6AJ8gt2ZCOdRHvX
-# cuDcKg8K1H6ZjNolbaDYvLNcAiAlpHGKp3lBc1uzaPfNUb+o0s9nxzihLx3MeLBd
-# aRbG/KGCAyYwggMiBgkqhkiG9w0BCQYxggMTMIIDDwIBATB9MGkxCzAJBgNVBAYT
-# AlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjFBMD8GA1UEAxM4RGlnaUNlcnQg
-# VHJ1c3RlZCBHNCBUaW1lU3RhbXBpbmcgUlNBNDA5NiBTSEEyNTYgMjAyNSBDQTEC
-# EAqA7xhLjfEFgtHEdqeVdGgwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMx
-# CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNTEyMDQyMzQxMzZaMC8GCSqG
-# SIb3DQEJBDEiBCDDnBeZPxFz9dL5CPPRl6iBNTKAweVtGfzz+pTFJ/83IDANBgkq
-# hkiG9w0BAQEFAASCAgCw6go5Ow6R5uTTVraqoR3AHuRBhwV3CeBtXVD7V3PZ64t3
-# RbVPx72dSGdmcydEA8XULPsPJPDMJ4JbHIHE0be2AmVYGl90681sRlfpiXq7e9Gg
-# 1LJTKMxZUUR/hRGw16l8X/pv75ijCgEu5knmiqOF9ciFWCayXhjtRnr775yaHmkG
-# egip9v9Glf7Vo5mqNyPv4rURd0n5LsT9/cRIso/Vp0Lxl8jx4hVKGBYqph8C2cuU
-# z00Zon2WTR9JiYlhMutB1bxvFtsJVDtdJZkOvsexzhY9HekT4n/9GXavc40/HMKN
-# HCKNrxt+UzMDiHIqS83m3PnfgKiKrztZmo5CXa1jC8c3aQ/D3C5MOtk1X4/fJDn0
-# z7+soKW4hc4V1RchEHXrmSO83PmQ3jQjtZmNg5TVEpRWckmfAVse0M2ibPGaB/cu
-# 4e2U6y6VzYHmBMN7wRtH07VvzNejfDf9n4u531TMnDtIUqzi6f15u7C8VaZxKSZc
-# ct5KhUfpuBXnMuQYcIwpgiffONodbxza8K4SitmkK+Ev+1XqYd/0rA9x9KcjKwNT
-# qgnjnrkrjZFZ+ztZfN6Y5t4P4uqzHGZPq7MX6EiMZXEGz71aFPJAcqurhuLkrWzN
-# xipV4335ONP+D4AHiI2TSqYxp8g0/DYaxk5JsVMs8GnQye7m8xx2M4Ibl482Qg==
+# DAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0BCQQxIgQg2jobCTHg8cRBvUX4pOWHLNJY
+# 70p8Rjp/BPLBFXdmW/4wCwYHKoZIzj0CAQUABEgwRgIhAPXMKK2KC3nnC69DlwbV
+# D+xjea0pZ3nHKSxn7v35AyqFAiEA8C3Bi8oiJ4MN6gos490bwUdKzJzMNlXtzOA3
+# PXUxD9WhggMmMIIDIgYJKoZIhvcNAQkGMYIDEzCCAw8CAQEwfTBpMQswCQYDVQQG
+# EwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0
+# IFRydXN0ZWQgRzQgVGltZVN0YW1waW5nIFJTQTQwOTYgU0hBMjU2IDIwMjUgQ0Ex
+# AhAKgO8YS43xBYLRxHanlXRoMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkD
+# MQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjYwMjIxMjIzOTAwWjAvBgkq
+# hkiG9w0BCQQxIgQg+xl0Mt0QlmkxlFkb5Vd/2c+BvA0YAhQCXDSZmpAGDoowDQYJ
+# KoZIhvcNAQEBBQAEggIAgykmxURrHUixs9Ci9J8TUO0fFeQ7FXiiJ98TGjnb186H
+# lrxAhn+iPMLgOjiPoP9kdvSmN7n8Nux2n9iMdRnNLMx9xBryUlDpTcUIvW3QKdx3
+# RsNv+/VNB9Op14pa+LgPTIRTaQ+oCdHvCdTcnngY85GIhqdPwkeIjpXijXAt/aL3
+# h1shajWzc3FVx1qAevpFn5UhQqj4Spit9OjT19OVWMfpASYDIl2nkDmsdLe5mgMn
+# lOuKS+/DkgAIh51zEKWmSxNwPq8SZvZMNzddwi99G9L/sIQssQnimtM7lSMDBCeC
+# yMJs2rgi3hoTxVnitFkhvTcYWAxM/X5R2gMkF/TRc2h2meu+VHWXrD+X4e/X9I4f
+# VOyED4etws1aVBTJYkNONx+eDeucgYFXmUt97hyazlK6a+SuqfQeqkDkwRWGKdkC
+# MiBvYjK0jTJ0aRyPVt3Iq/hRyfaraqPfm4PthI8kX2wcTNwxZcQRmirBXQe7h6LT
+# cann1Njd7GjC2du6iY+Cr0xgpvRmCqaWB3Gsy0vEmmlf6yYQmE8IsYk4IpMosuBP
+# /jkfU/GoDxtDBpEX3hzeQ4P83qlginDD47jNt10Js0m38iYCE/0yrG4AY3qDectV
+# xpwJOt5LHnCPwCxLxFMpC7BVYUcbwlc4iv0xyo2CRnZMxFsvUnGn3I43spwPi+0=
 # SIG # End signature block
