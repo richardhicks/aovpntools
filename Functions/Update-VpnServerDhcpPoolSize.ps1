@@ -1,29 +1,31 @@
 <#
 
 .SYNOPSIS
-    Enable IKEv2 fragmentation support on Windows Server 1803 and later operating systems.
+    PowerShell script to update the size of the DHCP address pool request on a Windows Server Routing and Remote Access Service (RRAS) VPN server.
+
+.PARAMETER InitialPoolSize
+    Defines the size of the initial DHCP address pool request. This parameter is mandatory. The minimum value is 10 and the maximum value is 1000.
 
 .PARAMETER Restart
-    Restarts the RemoteAccess service.
+    Restarts the RemoteAccess service after updating the DHCP address pool request size. Restarting the RemoteAccess service will disconnect all active VPN connections.
 
 .EXAMPLE
-    Enable-VpnServerIKEv2Fragmentation
+    Update-VpnServerDhcpPoolSize.ps1 -InitialPoolSize 50 -Restart
+
+    Running this command will update the size of the initial DHCP address pool request to 50 and restart the RemoteAccess service.
 
 .DESCRIPTION
-    Create a registry entry to enable IKEv2 fragmentation support on Windows Server 1803 and later operating systems.
+    When deploying a Windows Server RRAS VPN server, the default size of the DHCP address pool request is 10. This script allows you to update the size of the initial DHCP address pool request to a value of your choosing. The script also includes a switch parameter that allows you to restart the RemoteAccess service after making the change.
 
 .LINK
-    https://directaccess.richardhicks.com/2019/02/11/always-on-vpn-and-ikev2-fragmentation/
-
-.LINK
-    https://github.com/richardhicks/aovpntools/
+    https://github.com/richardhicks/aovpntools/blob/main/Functions/Update-VpnServerDhcpPoolSize.ps1
 
 .LINK
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.3.7
-    Creation Date:  August 3, 2019
+    Version:        1.1.1
+    Creation Date:  February 7, 2024
     Last Updated:   July 7, 2026
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
@@ -32,48 +34,84 @@
 
 #>
 
-Function Enable-VpnServerIKEv2Fragmentation {
+Function Update-VpnServerDhcpPoolSize {
 
     #Requires -RunAsAdministrator
 
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
 
     Param (
 
+        [Parameter(Mandatory, HelpMessage = 'Enter the size of the initial DHCP address pool request. The minimum value is 10 and the maximum value is 1000.')]
+        [ValidateRange(10, 1000)]
+        [int]$InitialPoolSize,
         [switch]$Restart
 
     )
 
-    $OSVersion = (Get-CimInstance 'Win32_OperatingSystem').Version
+    # Define the registry path to the RRAS configuration settings
+    $RegPath = 'HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ip'
+    Write-Verbose "Registry path: $RegPath"
 
-    # Must be running Windows Server 1803 or later to support IKEv2 fragmentation. Abort script if earlier release is detected.
-    If ($OSVersion -lt '10.0.17134') {
+    # Validate registry path
+    Write-Verbose 'Validating registry path...'
+    If (-not (Test-Path -Path $RegPath)) {
 
-        Write-Warning 'IKEv2 VPN fragmentation is only supported on Windows Server 1803 (10.0.17134) or later operating systems.'
-        Return
-
-    }
-
-    # Registry settings
-    $Parameters = @{
-
-        Path         = 'HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ikev2\'
-        Name         = 'EnableServerFragmentation'
-        PropertyType = 'DWORD'
-        Value        = '1'
+        Throw "Registry path not found: $RegPath. Confirm the Remote Access role is installed on this server."
 
     }
 
-    Write-Verbose 'Adding registry entry to enable IKEv2 fragmentation support...'
+    # Update the size of the initial address pool
+    If ($PSCmdlet.ShouldProcess($RegPath, "Set InitialAddressPoolSize to $InitialPoolSize")) {
 
-    # Update registry
-    New-ItemProperty @Parameters -Force | Out-Null
+        Write-Verbose "Setting initial DHCP address pool size to $InitialPoolSize..."
+        Try {
 
-    # Restart RemoteAccess service
+            Set-ItemProperty -Path $RegPath -Name 'InitialAddressPoolSize' -Value $InitialPoolSize -Type DWORD -ErrorAction Stop
+
+        }
+
+        Catch {
+
+            Throw "Failed to update the initial DHCP address pool size. Error: $($_.Exception.Message)"
+
+        }
+
+        # Confirm the updated value
+        $CurrentValue = (Get-ItemProperty -Path $RegPath -Name 'InitialAddressPoolSize').InitialAddressPoolSize
+        Write-Verbose "The initial DHCP address pool size is now $CurrentValue."
+
+    }
+
+    # Restart the RemoteAccess service if the -Restart switch is specified
     If ($Restart) {
 
-        Write-Verbose 'Restarting the RemoteAccess service...'
-        Restart-Service -Name RemoteAccess -PassThru
+        # Validate the RemoteAccess service before attempting a restart
+        $Service = Get-Service -Name 'RemoteAccess' -ErrorAction SilentlyContinue
+
+        If ($Null -eq $Service) {
+
+            Throw 'The RemoteAccess service was not found on this server.'
+
+        }
+
+        If ($PSCmdlet.ShouldProcess('RemoteAccess', 'Restart service')) {
+
+            Write-Warning 'Restarting the RemoteAccess service will disconnect all active VPN connections.'
+            Write-Verbose 'Restarting the RemoteAccess service...'
+            Try {
+
+                Restart-Service -Name 'RemoteAccess' -PassThru -ErrorAction Stop
+
+            }
+
+            Catch {
+
+                Throw "Failed to restart the RemoteAccess service. Error: $($_.Exception.Message)"
+
+            }
+
+        }
 
     }
 
@@ -86,10 +124,10 @@ Function Enable-VpnServerIKEv2Fragmentation {
 }
 
 # SIG # Begin signature block
-# MIIk7AYJKoZIhvcNAQcCoIIk3TCCJNkCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# MIIk6wYJKoZIhvcNAQcCoIIk3DCCJNgCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCn9u4h31PYIVvd
-# IrEbp5m3wYsIBufQISui6Q1oOfq6k6CCH6YwggWNMIIEdaADAgECAhAOmxiO+dAt
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBm7Fg0elDTNvbc
+# UtRaCEbBk7/9u2ejfr6K9MkY/J0QAqCCH6YwggWNMIIEdaADAgECAhAOmxiO+dAt
 # 5+/bUOIIQBhaMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
 # EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xJDAiBgNV
 # BAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0yMjA4MDEwMDAwMDBa
@@ -258,29 +296,29 @@ Function Enable-VpnServerIKEv2Fragmentation {
 # cJIFcbojBcxlRcGG0LIhp6GvReQGgMgYxQbV1S3CrWqZzBt1R9xJgKf47CdxVRd/
 # ndUlQ05oxYy2zRWVFjF7mcr4C34Mj3ocCVccAvlKV9jEnstrniLvUxxVZE/rptb7
 # IRE2lskKPIJgbaP5t2nGj/ULLi49xTcBZU8atufk+EMF/cWuiC7POGT75qaL6vdC
-# vHlshtjdNXOCIUjsarfNZzGCBJwwggSYAgEBMH0waTELMAkGA1UEBhMCVVMxFzAV
+# vHlshtjdNXOCIUjsarfNZzGCBJswggSXAgEBMH0waTELMAkGA1UEBhMCVVMxFzAV
 # BgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2VydCBUcnVzdGVk
 # IEc0IENvZGUgU2lnbmluZyBSU0E0MDk2IFNIQTM4NCAyMDIxIENBMQIQDsYrSCrm
 # UJuvTRscProh/zANBglghkgBZQMEAgEFAKCBhDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJBDEiBCACsKWhJaVFsMBkx6FDtw2c
-# wV57Ik6JxlyiJgXjj2QMujALBgcqhkjOPQIBBQAERzBFAiEA57kTLZXS0YDdch67
-# TOI8RQv+++s/pKd3tiXOZXqbEPgCIB48NW69ZOF2mCwanKzRNWJXDJ2AQEh1n0a5
-# muizxLcaoYIDJjCCAyIGCSqGSIb3DQEJBjGCAxMwggMPAgEBMH0waTELMAkGA1UE
-# BhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2Vy
-# dCBUcnVzdGVkIEc0IFRpbWVTdGFtcGluZyBSU0E0MDk2IFNIQTI1NiAyMDI1IENB
-# MQIQCoDvGEuN8QWC0cR2p5V0aDANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJ
-# AzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI2MDcwNzE5MDA0N1owLwYJ
-# KoZIhvcNAQkEMSIEIAjJOEwb3g2CEWYA2TEh8dIbC38s5nwcOE1AP4frdMl6MA0G
-# CSqGSIb3DQEBAQUABIICAKaQ30leKB4PH0TF6K/vBQPNx14SRa7rDG94PhYuZQj7
-# 6911J5DBHBgK+4PWaMO1GJJVSKjFyzPENvy881Fn4hRTU9e00g3U4v2jYOkBfh7t
-# eRo3I12HY4DxrIPWGu1sCiHHFVtJN9eQJcMzQV8pCZUW2jDmJOnLkAHdzAQxFoAL
-# UEENbrd3gZp3Ct/d1U5Wll1crJSJtl1Z9niFmascuhVF6OkXcU2lzYQpHGx98MJ4
-# L8cko5IuiDK+sBMsbSywcWBqRIWEjYIGpHuirg3CoXA4tcqIjMtGdU5YPEsU8gNG
-# Vx1VmZHz5O/t+dc/FTQMBezXMTLbCFQfcx7/mbH5J43vPyNoO7t0iH0DTauzzP8h
-# /7BUYbk+cw8mT6DET/QtXoBe5h0gujTmP7mOCduaR6VK1o0gOynoeTMNDjDBZ0b3
-# 9xiG4ObA7ZuusyqLzH0emiQja6guV7Zx4yQJZKR/CCa7hHcIvPigquodjc4/LcOp
-# zJ+biV08X+vbIW14FMyRTGFtwmOdRE6sr7AEWXLcj2uZ8ZgtH9RhdbFz6B8PTuf/
-# sS5WMoQjLMPx9j1D88Lsiuwm8IsFNZVrPX9ZO5sQi8tyXrvN1aQUC033sfUvavUj
-# +i04m3/58EswKyH4J+wsWjBmRfzSUf85XrSNPhOqfh3WrQA1x4o/nBwAuGzkpVKz
+# DjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJBDEiBCBrFI0S53bBwsKhPKt74ZFy
+# PvegvRBTYKFI3gN1+/g/FDALBgcqhkjOPQIBBQAERjBEAiACT2ArsUyECBkwp4XL
+# H/ZBVzhqA32kKbY6E4PK1LPnEQIgGNlWEOjCBfebbfC6dIoeoG/DA/R8Q1gg3Zrc
+# 868uJVahggMmMIIDIgYJKoZIhvcNAQkGMYIDEzCCAw8CAQEwfTBpMQswCQYDVQQG
+# EwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0
+# IFRydXN0ZWQgRzQgVGltZVN0YW1waW5nIFJTQTQwOTYgU0hBMjU2IDIwMjUgQ0Ex
+# AhAKgO8YS43xBYLRxHanlXRoMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkD
+# MQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjYwNzA3MTkwMDUzWjAvBgkq
+# hkiG9w0BCQQxIgQghVTxit5JABtk677ryoSXAmMBW3knqP37axUFmnzJnaYwDQYJ
+# KoZIhvcNAQEBBQAEggIAUPEeXJfHcurFGspGKbNFgNw/WIv5FKpX6FWoToJdTSpv
+# sHzAJUqghgh1int0qkI4dYseQWkqB/NkSzMpxgD7RXSNQK3cxpaUKjhmvphKfzuW
+# gi/2Keb4of5tr9Tdg31tq1C6jxvlZU2JxtI+la6ncPwxLrBmAvg+zEYDuBY4Ka1k
+# iP1TsJN3ttU87K6wb1R/I7Dp838CvlJxgVvGqvsbHPbPEKbfhs7lx2gTeQnR1M7Z
+# gHSzQauv9KZPGnkdxzpDFn8slEFcafq9zoUr/hFNvIJyjg/j8R5Yd39mg6ZxcL0q
+# PAVkfFY6wAFBArYMuG4qNTa70u6z8OIFQni6mjsuE2TAk4JvuYlWfAi5rBSpEUGd
+# Eir+fmorhcYTGSLjLZPiR5bvgxS3NzxZ0CWHPd23MsxpE0sAvZa9Dlahnnh+hWHY
+# hjTdXUVeHjil+QuEDx7hRvBePLfbypnK7ORsg5a730WfH7i3/7f9sqZRyQzEAEbj
+# hrViGt0wzAK33WQ97sf7rLHuX2RMW/HMTYs5a5MRU+GBstQ+6/cusXedDZImn+NB
+# fxf9kc0uGbm+chhu2V4vRI8k0ubMtIrxzZ9iKGIcC9yE6prmlM/V+EPtuQtfQrg7
+# IX0u4/W1cYfKHgsQC7yXlZwM5dZRNzS0cZyRr4ivUs75+YGRHDhXfbtuG27Ynrg=
 # SIG # End signature block

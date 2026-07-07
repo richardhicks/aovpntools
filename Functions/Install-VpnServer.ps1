@@ -18,9 +18,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        1.5
+    Version:        2.0
     Creation Date:  April 25, 2022
-    Last Updated:   May 19, 2026
+    Last Updated:   July 7, 2026
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -28,9 +28,9 @@
 
 #>
 
-#Requires -RunAsAdministrator
-
 Function Install-VpnServer {
+
+    #Requires -RunAsAdministrator
 
     [CmdletBinding()]
 
@@ -49,143 +49,270 @@ Function Install-VpnServer {
 
     Start-Transcript -Path "$LogPath\Install-VpnServer_$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 
-    # Install the DirectAccess-VPN role
     Try {
 
-        Write-Verbose 'Installing DirectAccess-VPN role...'
-        $Install = Install-WindowsFeature -Name DirectAccess-VPN -IncludeManagementTools -ErrorAction Stop
+        # Install the DirectAccess-VPN role if it is not already installed
+        If ((Get-WindowsFeature -Name DirectAccess-VPN).Installed) {
+
+            Write-Verbose 'The DirectAccess-VPN role is already installed.'
+
+        }
+
+        Else {
+
+            Try {
+
+                Write-Verbose 'Installing DirectAccess-VPN role...'
+                $Install = Install-WindowsFeature -Name DirectAccess-VPN -IncludeManagementTools -ErrorAction Stop
+
+            }
+
+            Catch {
+
+                Write-Error "Failed to install DirectAccess-VPN role. $_"
+                Return
+
+            }
+
+            # Check if the installation was successful (catches silent failures not thrown as exceptions)
+            If (-not $Install.Success) {
+
+                Write-Error 'DirectAccess-VPN role installation failed. Review the transcript, correct the issue, and run the script again.'
+                Return
+
+            }
+
+            # Check if the installation requires a restart
+            If ($Install.RestartNeeded -ne 'No') {
+
+                Write-Warning 'A restart is required to complete the DirectAccess-VPN role installation. Restart the server and run the script again.'
+                Return
+
+            }
+
+        }
+
+        # Configure client-based VPN support
+        Try {
+
+            Write-Verbose 'Installing VPN services...'
+            [void](Install-RemoteAccess -VpnType VPN -Legacy -ErrorAction Stop)
+
+        }
+
+        Catch {
+
+            Write-Error "Failed to install VPN services. $_"
+            Return
+
+        }
+
+        # Enable inbox accounting
+        Write-Verbose 'Enabling Remote Access inbox accounting...'
+        [void](Set-RemoteAccessAccounting -EnableAccountingType Inbox -ErrorAction Stop)
+
+        # Enable IKEv2 fragmentation support
+        $Parameters = @{
+
+            Path         = 'HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ikev2\'
+            Name         = 'EnableServerFragmentation'
+            PropertyType = 'DWORD'
+            Value        = 1
+
+        }
+
+        Write-Verbose 'Enabling IKEv2 fragmentation support...'
+        [void](New-ItemProperty @Parameters -Force -ErrorAction Stop)
+
+        # Set IKEv2 VPN security baseline
+        $Parameters = @{
+
+            AuthenticationTransformConstants    = 'GCMAES128'
+            CipherTransformConstants            = 'GCMAES128'
+            DHGroup                             = 'Group14'
+            EncryptionMethod                    = 'GCMAES128'
+            IntegrityCheckMethod                = 'SHA256'
+            PFSgroup                            = 'ECP256'
+            SALifeTimeSeconds                   = 28800
+            MMSALifeTimeSeconds                 = 86400
+            SADataSizeForRenegotiationKilobytes = 1024000
+
+        }
+
+        Write-Verbose 'Setting IKEv2 VPN security baseline...'
+        [void](Set-VpnServerConfiguration @Parameters -CustomPolicy -ErrorAction Stop)
+
+        # Enforce CRL checking for device-based connections
+        $Parameters = @{
+
+            Path         = 'HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ikev2\'
+            Name         = 'CertAuthFlags'
+            PropertyType = 'DWORD'
+            Value        = 4
+
+        }
+
+        Write-Verbose 'Enforce CRL check for device-based IKEv2 connections...'
+        [void](New-ItemProperty @Parameters -Force -ErrorAction Stop)
+
+        # Enable fix for RemoteAccess service hang on restart in Windows Server 2025
+        # Reference: https://directaccess.richardhicks.com/2026/03/03/remoteaccess-service-hangs-in-windows-server-2025/
+        If ((Get-CimInstance -ClassName Win32_OperatingSystem).Caption -match 'Server 2025') {
+
+            # The fix is included in the April 2026 security update (KB5082063, OS build 26100.32690) but is not enabled by default
+            $UBR = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR -ErrorAction Stop).UBR
+            If ($UBR -ge 32690) {
+
+                Write-Verbose 'Enabling fix for RemoteAccess service hang on restart in Windows Server 2025...'
+                $OverridesPath = 'HKLM:\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides'
+                If (-not (Test-Path -Path $OverridesPath)) {
+
+                    [void](New-Item -Path $OverridesPath -Force -ErrorAction Stop)
+
+                }
+
+                $Parameters = @{
+
+                    Path         = $OverridesPath
+                    Name         = '3247592078'
+                    PropertyType = 'DWORD'
+                    Value        = 1
+
+                }
+
+                [void](New-ItemProperty @Parameters -Force -ErrorAction Stop)
+                Write-Warning 'A fix for a known issue with the RemoteAccess service hanging on restart in Windows Server 2025 has been enabled. Restart the server for this change to take effect.'
+
+            }
+
+            Else {
+
+                Write-Warning 'Windows Server 2025 has a known issue that causes the RemoteAccess service to hang on restart. Install the April 2026 (or later) security update and run this script again to enable the fix. See https://directaccess.richardhicks.com/2026/03/03/remoteaccess-service-hangs-in-windows-server-2025/ for more information.'
+
+            }
+
+        }
+
+        # Set authentication settings
+        Write-Verbose 'Enabling EAP and machine certificate authentication...'
+        [void](Set-VpnAuthProtocol -UserAuthProtocolAccepted @('EAP', 'Certificate') -ErrorAction Stop)
+
+        # Enable RADIUS authentication and accounting
+        Write-Verbose 'Enabling RADIUS authentication...'
+        $Result = netsh.exe ras aaaa set authentication provider = radius
+
+        If ($LASTEXITCODE -ne 0) {
+
+            Write-Error "Failed to enable RADIUS authentication. Netsh.exe returned exit code $LASTEXITCODE. $($Result -join ' ')"
+            Return
+
+        }
+
+        Write-Verbose 'Enabling RADIUS accounting...'
+        $Result = netsh.exe ras aaaa set accounting provider = radius
+
+        If ($LASTEXITCODE -ne 0) {
+
+            Write-Error "Failed to enable RADIUS accounting. Netsh.exe returned exit code $LASTEXITCODE. $($Result -join ' ')"
+            Return
+
+        }
+
+        # Restrict IPv6 access to the server only
+        Write-Verbose 'Restricting IPv6 access to the server only...'
+        $Result = netsh.exe ras ipv6 set access mode = serveronly
+
+        If ($LASTEXITCODE -ne 0) {
+
+            Write-Error "Failed to restrict IPv6 access. Netsh.exe returned exit code $LASTEXITCODE. $($Result -join ' ')"
+            Return
+
+        }
+
+        # Disable IPv6 router advertisements
+        Write-Verbose 'Disabling IPv6 router advertisements...'
+        $Result = netsh.exe ras ipv6 set routeradvertise mode = disabled
+
+        If ($LASTEXITCODE -ne 0) {
+
+            Write-Error "Failed to disable IPv6 router advertisements. Netsh.exe returned exit code $LASTEXITCODE. $($Result -join ' ')"
+            Return
+
+        }
+
+        # Restart the RemoteAccess service to apply authentication, RADIUS, and registry changes
+        Write-Verbose 'Restarting the RemoteAccess service...'
+        Restart-Service -Name RemoteAccess -ErrorAction Stop
+
+        Write-Warning 'RADIUS authentication and accounting are enabled, but no RADIUS servers are defined. Additional configuration is required before clients can connect. Use Add-RemoteAccessRadius to define one or more RADIUS servers.'
+
+        # Optimize inbox accounting database
+        If (-Not (Get-Module -ListAvailable -Name InboxAccountingDatabaseManagement)) {
+
+            Write-Verbose 'Installing the InboxAccountingDatabaseManagement module from the PowerShell Gallery...'
+            Try {
+
+                # Install the NuGet package provider if required to prevent an interactive prompt when installing the module
+                If (-Not (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue | Where-Object { $_.Version -ge [Version]'2.8.5.201' })) {
+
+                    Write-Verbose 'Installing the NuGet package provider...'
+                    [void](Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ErrorAction Stop)
+
+                }
+
+                Install-Module -Name InboxAccountingDatabaseManagement -Repository PSGallery -Scope AllUsers -Force -ErrorAction Stop
+
+            }
+
+            Catch {
+
+                Write-Warning 'The InboxAccountingDatabaseManagement module is not installed. Skipping optimization.'
+
+            }
+
+        }
+
+        If (Get-Module -ListAvailable -Name InboxAccountingDatabaseManagement) {
+
+            Write-Verbose 'Optimizing inbox accounting database...'
+            Optimize-InboxAccountingDatabase
+
+        }
+
+        # Disable IIS default document, delete default files, and disable default HTTP binding
+        Write-Verbose 'Disabling IIS default document, deleting default files, and removing HTTP web binding... '
+        Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter 'system.webServer/defaultDocument' -Name 'Enabled' -Value 'False' -ErrorAction Stop
+
+        If (Get-IISSiteBinding -Name 'Default Web Site' -ErrorAction SilentlyContinue | Where-Object { $_.BindingInformation -eq '*:80:' }) {
+
+            Remove-IISSiteBinding -Name 'Default Web Site' -BindingInformation '*:80:' -Confirm:$false
+
+        }
+
+        Remove-Item -Path "$env:SystemDrive\Inetpub\wwwroot\iisstart.*" -ErrorAction SilentlyContinue
 
     }
 
     Catch {
 
-        Write-Warning "Failed to install DirectAccess-VPN role. $_"
+        Write-Error "Failed to configure the VPN server. $_"
+
+    }
+
+    Finally {
+
+        Write-Verbose 'Stopping transcript...'
         Stop-Transcript
-        Return
 
     }
-
-    # Check if the installation was successful (catches silent failures not thrown as exceptions)
-    If (-not $Install.Success) {
-
-        Write-Warning 'DirectAccess-VPN role installation failed. Review the transcript, correct the issue, and run the script again.'
-        Stop-Transcript
-        Return
-
-    }
-
-    # Check if the installation requires a restart
-    If ($Install.RestartNeeded -ne 'No') {
-
-        Write-Warning 'A restart is required to complete the DirectAccess-VPN role installation. Restart the server and run the script again.'
-        Stop-Transcript
-        Return
-
-    }
-
-    # Configure client-based VPN support
-    Try {
-
-        Write-Verbose 'Installing VPN services...'
-        [void](Install-RemoteAccess -VpnType VPN -Legacy -ErrorAction Stop)
-
-    }
-
-    Catch {
-
-        Write-Warning "Failed to install VPN services. $_"
-        Stop-Transcript
-        Return
-
-    }
-
-    # Enable inbox accounting
-    Write-Verbose 'Enabling Remote Access inbox accounting...'
-    [void](Set-RemoteAccessAccounting -EnableAccountingType Inbox)
-
-    # Enable IKEv2 fragmentation support
-    $Parameters = @{
-
-        Path         = 'HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ikev2\'
-        Name         = 'EnableServerFragmentation'
-        PropertyType = 'DWORD'
-        Value        = '1'
-
-    }
-
-    Write-Verbose 'Enabling IKEv2 fragmentation support...'
-    [void](New-ItemProperty @Parameters -Force)
-
-    # Set IKEv2 VPN security baseline
-    $Parameters = @{
-
-        AuthenticationTransformConstants    = 'GCMAES128'
-        CipherTransformConstants            = 'GCMAES128'
-        DHGroup                             = 'Group14'
-        EncryptionMethod                    = 'GCMAES128'
-        IntegrityCheckMethod                = 'SHA256'
-        PFSgroup                            = 'ECP256'
-        SALifeTimeSeconds                   = '28800'
-        MMSALifeTimeSeconds                 = '86400'
-        SADataSizeForRenegotiationKilobytes = '1024000'
-
-    }
-
-    Write-Verbose 'Setting IKEv2 VPN security baseline...'
-    [void]([PSCustomObject]$Parameters | Set-VpnServerConfiguration -CustomPolicy)
-
-    # Enforce CRL checking for device-based connections
-    $Parameters = @{
-
-        Path         = 'HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ikev2\'
-        Name         = 'CertAuthFlags'
-        PropertyType = 'DWORD'
-        Value        = '4'
-
-    }
-
-    Write-Verbose 'Enforce CRL check for device-based IKEv2 connections...'
-    [void](New-ItemProperty @Parameters -Force)
-
-    # Set authentication settings
-    Write-Verbose 'Enabling EAP and machine certificate authentication...'
-    [void](Set-VpnAuthProtocol -UserAuthProtocolAccepted @('EAP', 'Certificate'))
-
-    Write-Verbose 'Restarting the RemoteAccess service...'
-    Restart-Service -Name RemoteAccess
-
-    # Enable RADIUS authentication and accounting
-    Write-Verbose 'Enabling RADIUS authentication...'
-    Invoke-Command -ScriptBlock { netsh.exe ras aaaa set authentication provider = radius }
-    Invoke-Command -Scriptblock { netsh.exe ras aaaa set accounting provider = radius }
-
-    # Optimize inbox accounting database
-    If (Get-InstalledModule -Name InboxAccountingDatabaseManagement -ErrorAction SilentlyContinue) {
-
-        Write-Verbose 'Optimizing inbox accounting database...'
-        Optimize-InboxAccountingDatabase
-
-    }
-
-    Else {
-
-        Write-Warning 'The InboxAccountingDatabaseManagement module is not installed. Skipping optimization.'
-
-    }
-
-    # Disable IIS default document, delete default files, and disable default HTTP binding
-    Write-Verbose 'Disabling IIS default document, deleting default files, and removing HTTP web binding... '
-    Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter 'system.webServer/defaultDocument' -Name 'Enabled' -Value 'False'
-    Remove-IISSiteBinding -Name 'Default Web Site' -BindingInformation '*:80:' -Confirm:$false
-    Remove-Item -Path C:\Inetpub\wwwroot\iisstart.*
 
 }
 
 # SIG # Begin signature block
-# MIIk7QYJKoZIhvcNAQcCoIIk3jCCJNoCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# MIIk7AYJKoZIhvcNAQcCoIIk3TCCJNkCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCD1roniDWzPq/Od
-# ShM3wGOhZI2tPA29XHhV0zJvAj5KAaCCH6YwggWNMIIEdaADAgECAhAOmxiO+dAt
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCmDGGezE/R8rBf
+# YXrR+JxuDRmvNka40gHcUP8u6jOwoqCCH6YwggWNMIIEdaADAgECAhAOmxiO+dAt
 # 5+/bUOIIQBhaMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
 # EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xJDAiBgNV
 # BAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0yMjA4MDEwMDAwMDBa
@@ -354,30 +481,29 @@ Function Install-VpnServer {
 # cJIFcbojBcxlRcGG0LIhp6GvReQGgMgYxQbV1S3CrWqZzBt1R9xJgKf47CdxVRd/
 # ndUlQ05oxYy2zRWVFjF7mcr4C34Mj3ocCVccAvlKV9jEnstrniLvUxxVZE/rptb7
 # IRE2lskKPIJgbaP5t2nGj/ULLi49xTcBZU8atufk+EMF/cWuiC7POGT75qaL6vdC
-# vHlshtjdNXOCIUjsarfNZzGCBJ0wggSZAgEBMH0waTELMAkGA1UEBhMCVVMxFzAV
+# vHlshtjdNXOCIUjsarfNZzGCBJwwggSYAgEBMH0waTELMAkGA1UEBhMCVVMxFzAV
 # BgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2VydCBUcnVzdGVk
 # IEc0IENvZGUgU2lnbmluZyBSU0E0MDk2IFNIQTM4NCAyMDIxIENBMQIQDsYrSCrm
 # UJuvTRscProh/zANBglghkgBZQMEAgEFAKCBhDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJBDEiBCAYdgpl4VdxfyKBnEq8ug5k
-# y3tp8V1qAdDM/M4aSUpOMTALBgcqhkjOPQIBBQAESDBGAiEA5d0tIZOj9b2zlnBu
-# Wu7ArviQvOauUvVRdV44/irtx38CIQCVF9F+Mh3ontO41j0i/hBlyWIVQ1mZGU7O
-# rPLJXaKZEKGCAyYwggMiBgkqhkiG9w0BCQYxggMTMIIDDwIBATB9MGkxCzAJBgNV
-# BAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjFBMD8GA1UEAxM4RGlnaUNl
-# cnQgVHJ1c3RlZCBHNCBUaW1lU3RhbXBpbmcgUlNBNDA5NiBTSEEyNTYgMjAyNSBD
-# QTECEAqA7xhLjfEFgtHEdqeVdGgwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0B
-# CQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNjA1MjAwMTA4MDRaMC8G
-# CSqGSIb3DQEJBDEiBCBhyQhIFw3jrXbRDYa/waZe+kPQfdAinfpfjjJgDRCq8jAN
-# BgkqhkiG9w0BAQEFAASCAgASYKroji0S3I7sNVleanH21YTwAquGZnstBLBZC0Uf
-# t+BFln9ipZW4sSX91sEdrHnOR2fZo8UPbTm9s/T6djAa30Z8ptuSSgjiqqWEZVm4
-# 8Z42jqr5+px8rgyofUEknw2lpGAyFUQ1I9zQEgayKo4FT9D9u40RgUcMMSsWxZ8b
-# ndyFCSYnFtU6JpAzM/baexfMKYelThljIuoiecFAtbomqAmQ5/uONr9OE00BvKn0
-# Ac6AVN2ap4iV3uTxGeC+oOEA8i7XqJBTb1wOT0KqVEa5qyw2A6pys8nk51LvtbHF
-# q62O8DkXguhZmggeJAsXoMMe6gkyklgMfXTJQT1muOTqhPRYKN8cNBBsYpinOfIi
-# l4eM2pOVAa54aCsmTrmvzn7oYe68g7i5GoolQaw8EW7mfHrmWYBcbnBtRrNfw7BG
-# e/pZVfyp5a4d7nB+W0HfpdaqnQLZlb+DmYh4vDLg8KlQ3JpkB/h2YbxS+22HA+Nm
-# U1mHxpBKPQadzuy6sJpbgaQm0Q7VXTzASVfIXJ/lRGkw5rKhkDyN+Fi9ZSqwvsC4
-# eILYsVN341+347bJtfFysfzceqGraaofJIxQqX1u2QfnikppJoxKrLm1fCZ/d0hH
-# PPeaIQhcijl5g/Gx1ASmrZRbtZMprEBlo6kwSWP2Y7UdYeoyRKoyr+bdwpn8SxtI
-# 9w==
+# DjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJBDEiBCBvmhgDVlFmokBxy+ru+YjZ
+# 9mYMEKncSqCetq7qseD2WzALBgcqhkjOPQIBBQAERzBFAiBBImzmO5Sclaw9ct4B
+# yD88tVN8sZZJtUAjNdwf7+sDjQIhANdbqmOnllSPwKtvSTk+lc7MlgV87ijZG4nT
+# UQyNdsMXoYIDJjCCAyIGCSqGSIb3DQEJBjGCAxMwggMPAgEBMH0waTELMAkGA1UE
+# BhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2Vy
+# dCBUcnVzdGVkIEc0IFRpbWVTdGFtcGluZyBSU0E0MDk2IFNIQTI1NiAyMDI1IENB
+# MQIQCoDvGEuN8QWC0cR2p5V0aDANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJ
+# AzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI2MDcwNzE5MDA0OVowLwYJ
+# KoZIhvcNAQkEMSIEIBD3j4jE7j05dq4QMtVO+nIHHiMtnjZK+WWrq3QR69tVMA0G
+# CSqGSIb3DQEBAQUABIICADEY4CBmS7ddOIy0gvbwJr/oC2RTRZhV95/VSZvhsrtI
+# Frn3DWGD+/MCTNmlVGFLqgB0bYpE5oU7/ilVQV1HcxHSWG2GlE6CHAAGbh8PpITl
+# g/bfOynBri1L7t9Fc9A/H7urpkRL4jFyNjSlAKAiMrKTNBMydO4kx369ZOXe8swT
+# yInoMdwaGQ6G0X3Wx1q9hJf91vyLy1kA7dtb3Kk4u6VitArPr6bD0wCKg6xcQpBu
+# R/dOAYwkWQBn/4KOGDG2/YcoTDN1oMTQUfupNVyRPsC1UOVV7TuWFVOXscpX0hnA
+# QmiYODHLpRwhY5uvm7xxsBXJmahFv5oY3F4tSKL0lJjT35o1B1MAEnT1s40fU0yC
+# juCbCgqZg24EY0u1mGdF5pJnHaTgxaxlGyvi3V1Zdo76Mou5p5G7+FHQfb3qsYXA
+# qyddnjXkwag6e+cWuauq6xwTpLkvfpbNOiL6IPymmYL66HjC43cPUQvgqzYAdLdH
+# bzrG3hi1TSXwFefnYRkvvpbOE4MECsDsonD3qiIEaWGvX3i68Mkgz5FGVoEoaOuS
+# 3qyNVKApYWi60MpOUWeYkSfRZ+XYTAryQvA15CGLhpVxsVCDlQiSLl+c/9hvvR6s
+# bbE9PbBpwXRf1d+t3ot/Tm9lLa6FWmAxh26QfHh2/HZBLB5RToKkCmNONulxpYYV
 # SIG # End signature block

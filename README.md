@@ -1,6 +1,6 @@
 # AOVPNTools
 
-[![PowerShell Gallery](https://img.shields.io/badge/PowerShell%20Gallery-AOVPNTools-blue)](https://www.powershellgallery.com/packages/AOVPNTools) [![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/richardhicks/aovpntools/blob/main/LICENSE) [![Version](https://img.shields.io/badge/Version-1.9.14-brightgreen)](https://github.com/richardhicks/aovpntools)
+[![PowerShell Gallery](https://img.shields.io/badge/PowerShell%20Gallery-AOVPNTools-blue)](https://www.powershellgallery.com/packages/AOVPNTools) [![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/richardhicks/aovpntools/blob/main/LICENSE) [![Version](https://img.shields.io/badge/Version-1.9.15-brightgreen)](https://github.com/richardhicks/aovpntools)
 
 PowerShell module for configuring, optimizing, and troubleshooting Windows Server Routing and Remote Access Service (RRAS) for Always On VPN.
 
@@ -44,7 +44,6 @@ Import-Module -Name AOVPNTools
 | `Get-VpnClientProfileXml`              | Extract ProfileXML from an existing VPN connection                                                           |
 | `Get-VpnServerTlsCertificate`          | Retrieve and display the TLS certificate used by the VPN server for SSTP                                      |
 | `Import-VpnServerConfiguration`        | Import RRAS configuration from a text file                                                                   |
-| `Install-NpsServer`                    | Install a baseline configuration for Windows Server Network Policy and Access Services (NPAS) servers          |
 | `Install-VpnServer`                    | Install a baseline configuration for Windows Server RRAS servers                                              |
 | `Install-VpnServerTlsCertificate`      | Assign a TLS certificate to the SSTP listener on RRAS servers                                                 |
 | `New-AovpnConnection`                  | Create an Always On VPN user or device tunnel connection                                                      |
@@ -58,6 +57,7 @@ Import-Module -Name AOVPNTools
 | `Set-Ikev2VpnRootCertificate`          | Configure the trusted root certification authority (CA) for IKEv2 VPN connections on RRAS servers             |
 | `Set-Ikev2VpnSecurityBaseline`         | Configure baseline IPsec security settings on RRAS servers                                                    |
 | `Set-VpnServerPortConfiguration`       | Configure SSTP and IKEv2 VPN ports on an RRAS server                                                          |
+| `Update-VpnServerDhcpPoolSize`         | Configure DHCP pool size when using the DHCP assignment method for VPN client IP addresses                    |
 
 ## Requirements
 
@@ -68,7 +68,7 @@ Import-Module -Name AOVPNTools
 
 ## Author
 
-**Richard M. Hicks** - [Richard M. Hicks Consulting, Inc.](https://www.richardhicks.com/)
+**Richard Hicks** - [Richard M. Hicks Consulting, Inc.](https://www.richardhicks.com/)
 
 - Website: <https://www.richardhicks.com/>
 - GitHub: <https://github.com/richardhicks/aovpntools>
